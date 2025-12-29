@@ -1,0 +1,4 @@
+node_modules/
+azure/
+.vscode/
+.DS_Store
