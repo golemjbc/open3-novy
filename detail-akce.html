@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700" rel="stylesheet">
+
+  <title>OOO - detail akce</title>
+
+  <!-- Bootstrap core CSS -->
+  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Additional CSS Files -->
+  <link rel="stylesheet" href="assets/css/fontawesome.css">
+  <link rel="stylesheet" href="assets/css/tooplate-main.css">
+  <link rel="stylesheet" href="assets/css/owl.css">
+  <link rel="stylesheet" href="assets/css/flex-slider.css">
+
+  <style>
+    .event-section-title {
+      margin-top: 1.5rem;
+      margin-bottom: 0.25rem;
+      font-weight: 500;
+    }
+    .event-label {
+      font-weight: 500;
+    }
+    .pref-list {
+      list-style: none;
+      padding-left: 0;
+    }
+    .pref-list li {
+      margin-bottom: 0.25rem;
+    }
+  </style>
+</head>
+
+<body>
+<!-- Pre Header -->
+<div id="pre-header">
+  <div class="container">
+    <div class="pre-header-inner">
+      <span>OOO Community</span>
+
+      <div class="pre-header-login">
+        <div id="user-info">
+          <img id="user-avatar" src="" alt="Avatar">
+          <span id="user-name"></span>
+        </div>
+        <div class="main-button">
+          <a id="login-button" href="#" class="main-button login-btn">Přihlásit</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark static-top">
+  <div class="container">
+    <a class="navbar-brand" href="#"><img src="assets/images/OOOlogo.png" alt=""></a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive"
+            aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarResponsive">
+      <ul class="navbar-nav ml-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="index.html">Domů</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="akce.html">Akce</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Page Content -->
+<div class="single-product">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="section-heading">
+          <div class="line-dec"></div>
+          <h1 id="event-header">Načítám detail akce...</h1>
+        </div>
+      </div>
+
+      <!-- levý sloupec – obrázky -->
+      <div class="col-md-6">
+        <div class="product-slider">
+          <div id="slider" class="flexslider">
+            <ul class="slides">
+              <li><img src="assets/images/big-01.jpg" /></li>
+              <li><img src="assets/images/big-02.jpg" /></li>
+              <li><img src="assets/images/big-03.jpg" /></li>
+              <li><img src="assets/images/big-04.jpg" /></li>
+            </ul>
+          </div>
+          <div id="carousel" class="flexslider">
+            <ul class="slides">
+              <li><img src="assets/images/thumb-01.jpg" /></li>
+              <li><img src="assets/images/thumb-02.jpg" /></li>
+              <li><img src="assets/images/thumb-03.jpg" /></li>
+              <li><img src="assets/images/thumb-04.jpg" /></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- pravý sloupec – informace a formulář -->
+      <div class="col-md-6">
+        <div class="right-content">
+          <!-- ZÁKLADNÍ INFORMACE -->
+          <h2 id="event-name">Název akce</h2>
+          <h4 id="event-price" class="text-primary mb-3">Cena</h4>
+
+          <h5 class="event-section-title">Popis akce</h5>
+          <p id="event-popis" class="mb-3">Popis akce.</p>
+
+          <h5 class="event-section-title">Termín &amp; místo</h5>
+          <p id="event-meta" class="mb-3 text-muted"></p>
+
+          <h5 class="event-section-title">Registrace</h5>
+          <p id="event-registrace" class="mb-4"></p>
+
+          <!-- FORMULÁŘ PŘIHLÁŠKY -->
+          <div id="registrationBlock">
+            <h4 class="mt-4 mb-3">Přihláška na akci</h4>
+
+            <form id="registration-form">
+              <!-- Single / Pár -->
+              <div class="form-group">
+                <label class="event-label d-block">Typ účasti:</label>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="typUcasti" id="typSingle" value="single" checked>
+                  <label class="form-check-label" for="typSingle">Single</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="typUcasti" id="typPar" value="par">
+                  <label class="form-check-label" for="typPar">Pár</label>
+                </div>
+              </div>
+
+              <!-- Discord jméno partnera -->
+              <div class="form-group" id="partner-group" style="display:none;">
+                <label class="event-label" for="partnerDiscord">Discord jméno partnera (pokud má):</label>
+                <input type="text" class="form-control" id="partnerDiscord" placeholder="např. Partner#1234">
+              </div>
+
+              <!-- Preference -->
+              <div class="form-group">
+                <label class="event-label d-block">Preference (můžeš vybrat více možností):</label>
+                <ul id="pref-list" class="pref-list">
+                  <!-- JS -->
+                </ul>
+              </div>
+
+              <button type="submit" id="btn-register" class="btn btn-primary btn-lg">
+                Přihlásit se na akci
+              </button>
+            </form>
+          </div>
+
+          <!-- Info o přihlášení – mimo blok, aby zůstalo vidět -->
+          <div id="registrationInfo" style="display:none; margin-top: 1rem;">
+            <strong>Jsi přihlášen!</strong><br>
+            <span>Tvá přihláška na tuto akci byla úspěšně zaregistrována.</span>
+          </div>
+          <hr class="mt-4 mb-3">
+
+          <div id="depositInfo" style="display:none; margin-top: 1rem;">
+            <strong>Záloha:</strong><br>
+            <span id="depositAmount"></span><br>
+            <span id="depositMessage"></span><br>
+            <img id="depositQR" src="" alt="QR kód pro zálohu" style="max-width: 200px;">
+          </div>
+
+          <a href="akce.html" class="btn btn-link">← Zpět na seznam akcí</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Subscribe / Footer ... (beze změny) -->
+<div class="subscribe-form">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="section-heading">
+          <div class="line-dec"></div>
+          <h1>Přihlaste se k odběru novinek!</h1>
+        </div>
+      </div>
+      <div class="col-md-8 offset-md-2">
+        <div class="main-content">
+          <p>Sledujte nové akce a dostávejte upozornění na Discord!</p>
+          <div class="container">
+            <form id="subscribe" action="" method="get">
+              <div class="row">
+                <div class="col-md-7">
+                  <fieldset>
+                    <input name="email" type="text" class="form-control" id="email"
+                           onfocus="if(this.value == 'Your Email...') { this.value = ''; }"
+                           onBlur="if(this.value == '') { this.value = 'Your Email...';}"
+                           value="Your Email..." required="">
+                  </fieldset>
+                </div>
+                <div class="col-md-5">
+                  <fieldset>
+                    <button type="submit" id="form-submit" class="button">Subscribe Now!</button>
+                  </fieldset>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="logo">
+          <img src="assets/images/header-logo.png" alt="">
+        </div>
+      </div>
+      <div class="col-md-12">
+        <div class="footer-menu">
+          <ul>
+            <li><a href="#">Home</a></li>
+            <li><a href="#">Help</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">How It Works ?</a></li>
+            <li><a href="#">Contact Us</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-md-12">
+        <div class="social-icons">
+          <ul>
+            <li><a href="#"><i class="fa fa-facebook"></i></a></li>
+            <li><a href="#"><i class="fa fa-twitter"></i></a></li>
+            <li><a href="#"><i class="fa fa-linkedin"></i></a></li>
+            <li><a href="#"><i class="fa fa-rss"></i></a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sub-footer">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="copyright-text">
+          <p>Copyright &copy; 2019 Company Name
+            - Design: <a rel="nofollow" href="https://www.facebook.com/tooplate">Tooplate</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="vendor/jquery/jquery.min.js"></script>
+<script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/custom.js"></script>
+<script src="assets/js/owl.js"></script>
+<script src="assets/js/isotope.js"></script>
+<script src="assets/js/flex-slider.js"></script>
+
+<!-- DETAIL AKCE + ROLE -->
+<!-- DETAIL AKCE + ROLE -->
+<script>
+  const API_BASE = 'https://ooo-functions-hjajhxe2b4aqgqc5.westeurope-01.azurewebsites.net';
+
+  function getLoggedUser() {
+    const storedUserJson = localStorage.getItem('oooUser');
+    if (!storedUserJson) return null;
+    try {
+      return JSON.parse(storedUserJson);
+    } catch (e) {
+      console.error('Chyba při parsování oooUser z localStorage:', e);
+      return null;
+    }
+  }
+
+  (function () {
+    const params = new URLSearchParams(window.location.search);
+    const eventId = params.get('event_id');
+
+    const headerEl     = document.getElementById('event-header');
+    const nameEl       = document.getElementById('event-name');
+    const priceEl      = document.getElementById('event-price');
+    const popisEl      = document.getElementById('event-popis');
+    const metaEl       = document.getElementById('event-meta');
+    const regEl        = document.getElementById('event-registrace');
+    const prefListEl   = document.getElementById('pref-list');
+    const partnerGroup = document.getElementById('partner-group');
+    const partnerInput = document.getElementById('partnerDiscord');
+    const regForm      = document.getElementById('registration-form');
+    const btnRegister  = document.getElementById('btn-register');
+
+    const depositAmountEl  = document.getElementById('depositAmount');
+    const depositMessageEl = document.getElementById('depositMessage');
+    const depositQREl      = document.getElementById('depositQR');
+
+    if (!eventId) {
+      headerEl.textContent = 'Akce nenalezena (chybí event_id v URL).';
+      return;
+    }
+
+    document.getElementById('typSingle').addEventListener('change', function () {
+      if (this.checked) partnerGroup.style.display = 'none';
+    });
+    document.getElementById('typPar').addEventListener('change', function () {
+      if (this.checked) partnerGroup.style.display = 'block';
+    });
+
+    fetch(API_BASE + '/api/events')
+      .then(function (response) {
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        return response.json();
+      })
+      .then(function (events) {
+        const e = events.find(function (ev) { return ev.event_id === eventId; });
+        if (!e) {
+          headerEl.textContent = 'Akce s ID ' + eventId + ' nebyla nalezena.';
+          return;
+        }
+
+        headerEl.textContent = e.event_id + ' – ' + (e.nazev || '');
+        nameEl.textContent   = e.nazev || '';
+        priceEl.textContent  = e.cena ? (e.cena + ' Kč') : 'Cena bude upřesněna';
+        popisEl.textContent  = e.popis || '';
+
+        metaEl.innerHTML =
+          '<span class="event-label">Místo:</span> ' + (e['místo'] || '') + '<br>' +
+          '<span class="event-label">Termín:</span> ' +
+          (e['datum od'] || '') + ' – ' + (e.datum_do || '');
+
+        regEl.innerHTML =
+          '<span class="event-label">Registrace do:</span> ' +
+          (e.registrace_konec || 'bude upřesněno');
+
+        const prefs = [e.pref_A, e.pref_B, e.pref_C, e.pref_D, e.pref_E]
+          .filter(function (p) { return !!p; });
+
+        prefListEl.innerHTML = '';
+        if (prefs.length === 0) {
+          prefListEl.innerHTML =
+            '<li><em>Pro tuto akci nejsou definované žádné preference.</em></li>';
+        } else {
+          prefs.forEach(function (pref, index) {
+            const id = 'pref_' + index;
+            const li = document.createElement('li');
+            li.innerHTML =
+              '<div class="form-check">' +
+              '  <input class="form-check-input" type="checkbox" id="' + id + '" value="' + pref.replace(/"/g, '&quot;') + '">' +
+              '  <label class="form-check-label" for="' + id + '">' + pref + '</label>' +
+              '</div>';
+            prefListEl.appendChild(li);
+          });
+        }
+
+        // Pomocná funkce: načtení a zobrazení info o záloze (vč. 2× záloha)
+        function loadDepositInfo(userId, userName, typUcasti) {
+          if (!userId) return;
+
+          const params = new URLSearchParams({
+            event_id: e.event_id,
+            user_id: userId,
+            user_name: userName || '',
+            typ_ucasti: typUcasti || 'single'
+          });
+
+          fetch(API_BASE + '/api/get-deposit-info?' + params.toString())
+            .then(r => r.json())
+            .then(data => {
+              console.log('deposit-info:', data);
+              if (!data || !data.deposit_amount || !data.qr_base64) return;
+
+              const baseDeposit = e.zaloha; // záloha za 1 osobu z /api/events
+              const isPair = (typUcasti === 'par');
+
+              let text;
+              if (isPair) {
+                text = '<strong>Částka zálohy:</strong> 2× záloha (' +
+                  baseDeposit + ' Kč) = ' + data.deposit_amount + ' Kč';
+              } else {
+                text = '<strong>Částka zálohy:</strong> ' +
+                  data.deposit_amount + ' Kč';
+              }
+
+              depositAmountEl.innerHTML = text;
+
+              depositMessageEl.innerHTML =
+                '<strong>Účet:</strong> ' + (data.account_cz || data.iban) + '<br>' +
+                '<strong>Variabilní symbol:</strong> ' + data.vs + '<br>' +
+                '<strong>Zpráva pro příjemce:</strong> ' + data.message;
+
+              depositQREl.src = 'data:image/png;base64,' + data.qr_base64;
+
+              const depositInfo = document.getElementById('depositInfo');
+              if (depositInfo) {
+                depositInfo.style.display = 'block';
+              }
+            })
+            .catch(err => {
+              console.error('Chyba při načítání informací o záloze:', err);
+            });
+        }
+
+        // KONTROLA, zda už je přihlášen na tuto akci
+          (function checkAlreadyRegistered() {
+            const storedUserJson = localStorage.getItem('oooUser');
+            if (!storedUserJson) return;
+
+            let userId = null;
+            let userName = '';
+            try {
+              const storedUser = JSON.parse(storedUserJson);
+              userId   = storedUser.userId || null;
+              userName = storedUser.userName || '';
+            } catch (e) {
+              console.error('Chyba při parsování oooUser z localStorage (checkAlreadyRegistered):', e);
+              return;
+            }
+
+            if (!userId) return;
+
+            fetch(API_BASE + '/api/my-registrations?user_id=' + encodeURIComponent(userId))
+              .then(r => r.json())
+              .then(list => {
+                console.log('my-registrations:', list);
+                if (!Array.isArray(list)) return;
+
+                const found = list.find(item => item.event_id === e.event_id);
+                if (!found) return;
+
+                const regBlock = document.getElementById('registrationBlock');
+                const info     = document.getElementById('registrationInfo');
+                const depositInfoBox = document.getElementById('depositInfo');
+                const depositAmountEl  = document.getElementById('depositAmount');
+
+                if (regBlock) regBlock.style.display = 'none';
+                if (info)     info.style.display = 'block';
+
+                // když je v tabulce deposit_status = 'OK', jen zobraz text a QR/údaje skryj
+                if (found.deposit_status && found.deposit_status.toUpperCase() === 'OK') {
+                  if (depositInfoBox) depositInfoBox.style.display = 'block';
+                  if (depositAmountEl) {
+                    depositAmountEl.innerHTML = '<strong>Záloha:</strong> zaplacena';
+                  }
+                  
+                  // skryj QR a text s údaji
+                    const depositMessageEl = document.getElementById('depositMessage');
+                    const depositQREl = document.getElementById('depositQR');
+                    if (depositMessageEl) depositMessageEl.innerHTML = '';
+                    if (depositQREl) {
+                      depositQREl.src = '';
+                      depositQREl.style.display = 'none';
+                      }
+                  return;
+                }
+
+                // jinak normálně spočítáme, jestli je single/par a načteme QR
+                let foundType = 'single';
+                if (found.partner === 'par') {
+                  foundType = 'par';
+                } else {
+                  foundType = 'single';
+                }
+
+                loadDepositInfo(userId, userName, foundType);
+
+
+              })
+              .catch(err => {
+                console.error('my-registrations error:', err);
+              });
+          })();
+
+
+        // ODESLÁNÍ FORMULÁŘE
+        regForm.addEventListener('submit', function (evSubmit) {
+          evSubmit.preventDefault();
+
+          const typUcasti = document.querySelector('input[name="typUcasti"]:checked').value;
+          const partner   = partnerInput.value.trim();
+
+          const selectedPrefs = [];
+          prefListEl.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
+            if (cb.checked) selectedPrefs.push(cb.value);
+          });
+
+          const storedUserJson = localStorage.getItem('oooUser');
+          let userId = null;
+          let userName = null;
+
+          if (storedUserJson) {
+            try {
+              const storedUser = JSON.parse(storedUserJson);
+              userId   = storedUser.userId || null;
+              userName = storedUser.userName || null;
+            } catch (e) {
+              console.error('Chyba při parsování oooUser z localStorage:', e);
+            }
+          }
+
+          const payload = {
+            event_id: e.event_id,
+            typ_ucasti: typUcasti,
+            user_discord: userName || 'NEPRIHLASENY_USER',
+            partner_discord: partner || null,
+            preference: selectedPrefs,
+            user_id: userId || null
+          };
+
+          fetch(API_BASE + '/api/register-event', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          })
+            .then(async response => {
+              let data = null;
+              try {
+                data = await response.json();
+              } catch (err) {
+                console.error('JSON parse error:', err);
+              }
+
+              console.log('HTTP status:', response.status, 'data:', data);
+
+              if (!response.ok) {
+                const msg = (data && data.error) || `HTTP ${response.status}`;
+                alert('Chyba při odesílání přihlášky: ' + msg);
+                return;
+              }
+
+              console.log('register-event response:', data);
+
+              if (data && data.ok) {
+                if (userId) {
+                  const roleZajemce = e.discord_role_zajemce || null;
+
+                  if (roleZajemce) {
+                    fetch(API_BASE + '/api/members-register', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        user_id: userId,
+                        role_header: roleZajemce
+                      })
+                    }).catch(err => {
+                      console.error('members-register error:', err);
+                    });
+                  } else {
+                    console.log('Pro tuto akci není vyplněn discord_role_zajemce – nic se do members nezapisuje.');
+                  }
+                }
+
+                alert('Přihláška byla úspěšně odeslána!');
+                // po registraci hned načteme info o záloze pro daný typ
+                if (userId) {
+                  loadDepositInfo(userId, userName, typUcasti);
+                }
+              } else {
+                alert('Chyba při odesílání přihlášky (prázdná nebo neplatná odpověď).');
+              }
+            })
+            .catch(err => {
+              console.error('register-event error:', err);
+              alert('Chyba připojení: ' + err.message);
+            });
+        });
+      })
+      .catch(function (err) {
+        console.error(err);
+        headerEl.textContent = 'Chyba při načítání detailu akce.';
+      });
+  })();
+</script>
+
+
+
+
+<!-- DISCORD LOGIN (bez změny) -->
+<script>
+  const DISCORD_AUTH_URL =
+    "https://discord.com/oauth2/authorize?client_id=1452709238601154580&response_type=code&" +
+    "redirect_uri=https%3A%2F%2Fooo-functions-hjajhxe2b4aqgqc5.westeurope-01.azurewebsites.net%2Fapi%2Flogin-callback&" +
+    "scope=identify%20guilds.members.read";
+
+  function setLoggedIn(user) {
+    const userBox = document.getElementById('user-info');
+    const userNameEl = document.getElementById('user-name');
+    const userAvatarEl = document.getElementById('user-avatar');
+    const loginBtn = document.getElementById('login-button');
+
+    userNameEl.textContent = user.userName;
+    userAvatarEl.src = user.avatarUrl;
+    userBox.style.display = 'flex';
+    loginBtn.textContent = 'Odhlásit';
+    loginBtn.dataset.mode = 'logout';
+  }
+
+  function setLoggedOut() {
+    const userBox = document.getElementById('user-info');
+    const loginBtn = document.getElementById('login-button');
+
+    userBox.style.display = 'none';
+    loginBtn.textContent = 'Přihlásit';
+    loginBtn.dataset.mode = 'login';
+    localStorage.removeItem('oooUser');
+  }
+
+  let storedUser = null;
+  try {
+    const s = localStorage.getItem('oooUser');
+    if (s) storedUser = JSON.parse(s);
+  } catch (e) {}
+
+  if (storedUser && storedUser.userId) {
+    setLoggedIn(storedUser);
+  } else {
+    setLoggedOut();
+  }
+
+  window.addEventListener('message', function (event) {
+    const data = event.data;
+    if (!data || data.type !== 'ooo-discord-login') return;
+
+    const user = data.user;
+    localStorage.setItem('oooUser', JSON.stringify(user));
+    setLoggedIn(user);
+  });
+
+  document.getElementById('login-button').addEventListener('click', function (e) {
+    e.preventDefault();
+    const mode = this.dataset.mode;
+
+    if (mode === 'logout') {
+      setLoggedOut();
+      return;
+    }
+
+    window.open(DISCORD_AUTH_URL, 'discordLogin', 'width=500,height=700');
+  });
+</script>
+
+</body>
+</html>
