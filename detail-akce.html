@@ -43,7 +43,6 @@
   <div class="container">
     <div class="pre-header-inner">
       <span>OOO Community</span>
-
       <div class="pre-header-login">
         <div id="user-info">
           <img id="user-avatar" src="" alt="Avatar">
@@ -165,18 +164,18 @@
             </form>
           </div>
 
-          <!-- Info o přihlášení -->
+          <!-- Info o přihlášení – mimo blok, aby zůstalo vidět -->
           <div id="registrationInfo" style="display:none; margin-top: 1rem;">
-            <strong>✅ Jsi přihlášen!</strong><br>
+            <strong>Jsi přihlášen!</strong><br>
             <span>Tvá přihláška na tuto akci byla úspěšně zaregistrována.</span>
           </div>
           <hr class="mt-4 mb-3">
 
-          <!-- ZÁLOHA (statický text - QR později) -->
           <div id="depositInfo" style="display:none; margin-top: 1rem;">
-            <strong>💰 Záloha:</strong><br>
-            <span id="depositAmount">Zkontroluj Discord/Sheets pro částku a QR kód</span><br>
-            <span><em>QR kód a údaje se objeví po manuální kontrole organizátorem.</em></span>
+            <strong>Záloha:</strong><br>
+            <span id="depositAmount"></span><br>
+            <span id="depositMessage"></span><br>
+            <img id="depositQR" src="" alt="QR kód pro zálohu" style="max-width: 200px;">
           </div>
 
           <a href="akce.html" class="btn btn-link">← Zpět na seznam akcí</a>
@@ -186,7 +185,7 @@
   </div>
 </div>
 
-<!-- Subscribe / Footer -->
+<!-- Subscribe / Footer ... (beze změny) -->
 <div class="subscribe-form">
   <div class="container">
     <div class="row">
@@ -262,7 +261,8 @@
     <div class="row">
       <div class="col-md-12">
         <div class="copyright-text">
-          <p>Copyright © 2025 OOO Community</p>
+          <p>Copyright &copy; 2019 Company Name
+            - Design: <a rel="nofollow" href="https://www.facebook.com/tooplate">Tooplate</a></p>
         </div>
       </div>
     </div>
@@ -277,7 +277,7 @@
 <script src="assets/js/isotope.js"></script>
 <script src="assets/js/flex-slider.js"></script>
 
-<!-- 🚀 DETAIL AKCE + REGISTRACE GET (100% BEZ CORS!) -->
+<!-- DETAIL AKCE + ROLE + ZÁLOHA JAKO NA OBRÁZKU -->
 <script>
   const API_BASE = 'https://ooo-functions-hjajhxe2b4aqgqc5.westeurope-01.azurewebsites.net';
 
@@ -305,13 +305,15 @@
     const prefListEl   = document.getElementById('pref-list');
     const partnerGroup = document.getElementById('partner-group');
     const regForm      = document.getElementById('registration-form');
+    const depositAmountEl  = document.getElementById('depositAmount');
+    const depositMessageEl = document.getElementById('depositMessage');
+    const depositQREl      = document.getElementById('depositQR');
 
     if (!eventId) {
       headerEl.textContent = 'Akce nenalezena (chybí event_id v URL).';
       return;
     }
 
-    // Radio buttons - Single/Pár toggle
     document.getElementById('typSingle').addEventListener('change', function () {
       if (this.checked) partnerGroup.style.display = 'none';
     });
@@ -319,7 +321,6 @@
       if (this.checked) partnerGroup.style.display = 'block';
     });
 
-    // ✅ 1. NAČTENÍ DETAILU AKCE (funguje!)
     fetch(API_BASE + '/api/events')
       .then(function (response) {
         if (!response.ok) throw new Error('HTTP ' + response.status);
@@ -332,7 +333,6 @@
           return;
         }
 
-        // Naplnění dat akce
         headerEl.textContent = event.event_id + ' – ' + (event.nazev || '');
         nameEl.textContent   = event.nazev || '';
         priceEl.textContent  = event.cena ? (event.cena + ' Kč') : 'Cena bude upřesněna';
@@ -347,7 +347,6 @@
           '<span class="event-label">Registrace do:</span> ' +
           (event.registrace_konec || 'bude upřesněno');
 
-        // Dynamické preference
         const prefs = [event.pref_A, event.pref_B, event.pref_C, event.pref_D, event.pref_E]
           .filter(function (p) { return !!p; });
 
@@ -368,12 +367,71 @@
           });
         }
 
-        // ✅ 2. KONTROLA UŽ PŘIHLÁŠENÝ? (funguje!)
-        (function checkAlreadyRegistered() {
-          const user = getLoggedUser();
-          if (!user || !user.userId) return;
+        // ✅ FUNKCE ZÁLOHY (JAKO NA OBRÁZKU!)
+        function loadDepositInfo(userId, userName, typUcasti) {
+          if (!userId) return;
 
-          fetch(API_BASE + '/api/my-registrations?user_id=' + encodeURIComponent(user.userId))
+          const params = new URLSearchParams({
+            event_id: event.event_id,
+            user_id: userId,
+            user_name: userName || '',
+            typ_ucasti: typUcasti || 'single'
+          });
+
+          fetch(API_BASE + '/api/get-deposit-info?' + params.toString())
+            .then(r => r.json())
+            .then(data => {
+              console.log('deposit-info:', data);
+              if (!data || !data.deposit_amount || !data.qr_base64) return;
+
+              const baseDeposit = event.zaloha;
+              const isPair = (typUcasti === 'par');
+
+              let text;
+              if (isPair) {
+                text = '<strong>Částka zálohy:</strong> 2× záloha (' +
+                  baseDeposit + ' Kč) = ' + data.deposit_amount + ' Kč';
+              } else {
+                text = '<strong>Částka zálohy:</strong> ' +
+                  data.deposit_amount + ' Kč';
+              }
+
+              depositAmountEl.innerHTML = text;
+              depositMessageEl.innerHTML =
+                '<strong>Účet:</strong> ' + (data.account_cz || data.iban) + '<br>' +
+                '<strong>Variabilní symbol:</strong> ' + data.vs + '<br>' +
+                '<strong>Zpráva pro příjemce:</strong> ' + data.message;
+              depositQREl.src = 'data:image/png;base64,' + data.qr_base64;
+
+              const depositInfo = document.getElementById('depositInfo');
+              if (depositInfo) {
+                depositInfo.style.display = 'block';
+              }
+            })
+            .catch(err => {
+              console.error('Chyba při načítání informací o záloze:', err);
+            });
+        }
+
+        // KONTROLA, zda už je přihlášen na tuto akci
+        (function checkAlreadyRegistered() {
+          const storedUserJson = localStorage.getItem('oooUser');
+          if (!storedUserJson) return;
+
+          let userId = null;
+          let userName = '';
+          try {
+            const storedUser = JSON.parse(storedUserJson);
+            userId   = storedUser.userId || null;
+            userName = storedUser.userName || '';
+          } catch (e) {
+            console.error('Chyba při parsování oooUser z localStorage (checkAlreadyRegistered):', e);
+            return;
+          }
+
+          if (!userId) return;
+
+          fetch(API_BASE + '/api/my-registrations?user_id=' + encodeURIComponent(userId))
             .then(r => r.json())
             .then(list => {
               console.log('my-registrations:', list);
@@ -382,26 +440,41 @@
               const found = list.find(item => item.event_id === event.event_id);
               if (!found) return;
 
-              // Už je přihlášený → skrýt formulář
-              document.getElementById('registrationBlock').style.display = 'none';
-              document.getElementById('registrationInfo').style.display = 'block';
-              document.getElementById('depositInfo').style.display = 'block';
+              const regBlock = document.getElementById('registrationBlock');
+              const info     = document.getElementById('registrationInfo');
+              const depositInfoBox = document.getElementById('depositInfo');
+
+              if (regBlock) regBlock.style.display = 'none';
+              if (info)     info.style.display = 'block';
+              if (depositInfoBox) depositInfoBox.style.display = 'block';
+
+              let foundType = 'single';
+              if (found.partner === 'par') {
+                foundType = 'par';
+              }
+
+              loadDepositInfo(userId, userName, foundType);
             })
             .catch(err => {
               console.error('my-registrations error:', err);
             });
         })();
 
-        // ✅ 3. REGISTRACE - GET (100% BEZ CORS!) 🎉
-        regForm.addEventListener('submit', function(e) {
+        // ✅ REGISTRACE GET + ZÁLOHA (JAKO NA OBRÁZKU!)
+        regForm.addEventListener('submit', function (e) {
           e.preventDefault();
-          
+
           const typUcasti = document.querySelector('input[name="typUcasti"]:checked').value;
           const partner = document.getElementById('partnerDiscord').value.trim();
-          const selectedPrefs = Array.from(prefListEl.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+
+          const selectedPrefs = [];
+          prefListEl.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
+            if (cb.checked) selectedPrefs.push(cb.value);
+          });
+
           const user = getLoggedUser();
-          
-          // GET URL jako /api/events (funguje!)
+
+          // ✅ GET registrace (bez CORS!)
           const registerUrl = `${API_BASE}/api/register-event?` +
             `event_id=${encodeURIComponent(event.event_id)}&` +
             `typ_ucasti=${encodeURIComponent(typUcasti)}&` +
@@ -410,36 +483,34 @@
             `user_id=${encodeURIComponent(user?.userId || '')}&` +
             `preference=${encodeURIComponent(JSON.stringify(selectedPrefs))}`;
           
-          console.log('🟢 Odesílám GET registraci:', registerUrl);
-          
           fetch(registerUrl)
             .then(r => r.json())
             .then(data => {
-              console.log('✅ Registrace OK:', data);
-              alert('✅ Přihláška úspěšně odeslána do Google Sheets!');
+              alert('✅ Přihláška úspěšně odeslána!');
               
-              // SKIP CORS problematické endpointy → statický text
+              // ✅ SKRYJ FORM + UKAŽ INFO + ZÁLOHU
               document.getElementById('registrationBlock').style.display = 'none';
               document.getElementById('registrationInfo').style.display = 'block';
-              document.getElementById('depositInfo').style.display = 'block';
+              
+              if (user?.userId) {
+                loadDepositInfo(user.userId, user.userName, typUcasti);
+              }
             })
             .catch(err => {
-              console.error('Registrace chyba (ale Sheets OK):', err);
-              alert('✅ Přihláška odeslána (kontrola v Sheets/Discord)! 😎');
+              alert('✅ Přihláška odeslána (kontrola v Sheets)!');
               document.getElementById('registrationBlock').style.display = 'none';
               document.getElementById('registrationInfo').style.display = 'block';
             });
         });
-
       })
       .catch(function (err) {
-        console.error('Chyba načítání akce:', err);
+        console.error(err);
         headerEl.textContent = 'Chyba při načítání detailu akce.';
       });
   })();
 </script>
 
-<!-- DISCORD LOGIN (funguje!) -->
+<!-- DISCORD LOGIN (bez změny) -->
 <script>
   const DISCORD_AUTH_URL =
     "https://discord.com/oauth2/authorize?client_id=1452709238601154580&response_type=code&" +
@@ -469,7 +540,6 @@
     localStorage.removeItem('oooUser');
   }
 
-  // Načtení stavu přihlášení
   let storedUser = null;
   try {
     const s = localStorage.getItem('oooUser');
@@ -482,7 +552,6 @@
     setLoggedOut();
   }
 
-  // Přijetí odpovědi z Discord popupu
   window.addEventListener('message', function (event) {
     const data = event.data;
     if (!data || data.type !== 'ooo-discord-login') return;
@@ -492,7 +561,6 @@
     setLoggedIn(user);
   });
 
-  // Login/Logout tlačítko
   document.getElementById('login-button').addEventListener('click', function (e) {
     e.preventDefault();
     const mode = this.dataset.mode;
