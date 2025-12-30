@@ -1,268 +1,365 @@
 <!DOCTYPE html>
 <html lang="cs">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="OOO Community - registrace na akce přes Discord s QR platbami a automatickými rolemi">
-    <meta name="author" content="">
-    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700" rel="stylesheet">
-    <title>OOO Community - Akce a registrace</title>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="OOO Community - registrace na akce přes Discord s QR platbami a automatickými rolemi">
+  <meta name="author" content="">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  
+  <!-- Bootstrap core CSS -->
+  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Additional CSS Files -->
+  <link rel="stylesheet" href="assets/css/fontawesome.css">
+  <link rel="stylesheet" href="assets/css/tooplate-main.css">
+  
+  <style>
+    /* SJEDNOCENÍ PÍSMA - VŠE Roboto */
+    * { font-family: 'Roboto', sans-serif !important; }
+    
+    /* STEJNÝ PINK BOX STYLE JAKO BANNER */
+    .ooo-box {
+      background: rgba(255, 105, 180, 0.1) !important;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 105, 180, 0.3);
+      border-radius: 20px;
+      padding: 3rem !important;
+      margin: 2rem 0;
+      box-shadow: 0 8px 32px rgba(255, 105, 180, 0.1);
+    }
+    
+    /* Hlavičky */
+    .ooo-box h1, .ooo-box h2, .ooo-box h3 { 
+      font-weight: 500 !important; 
+      color: #fff !important;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      margin-bottom: 1.5rem;
+    }
+    
+    h3 { 
+      color: #ff69b4 !important; 
+      font-size: 1.4rem;
+      display: flex;
+      align-items: center;
+    }
+    
+    h3 i { 
+      margin-right: 0.8rem; 
+      font-size: 1.5rem;
+      width: 2rem;
+    }
+    
+    /* Text */
+    .ooo-box p, .ooo-box li { 
+      color: #f0f0f0 !important; 
+      font-size: 1.1rem;
+      line-height: 1.7;
+    }
+    
+    /* Banner specific */
+    .banner .caption h2 { font-size: 3rem; font-weight: 300; }
+    .banner .caption p { font-size: 1.2rem; }
+    
+    /* Tlačítka */
+    .main-button a { 
+      background: linear-gradient(45deg, #ff69b4, #ff1493);
+      color: white !important;
+      padding: 12px 30px;
+      border-radius: 50px;
+      font-weight: 500;
+      text-decoration: none;
+      margin: 0 10px;
+      box-shadow: 0 4px 15px rgba(255, 105, 180, 0.4);
+      display: inline-block;
+    }
+    
+    .main-button a:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255, 105, 180, 0.5);
+    }
+    
+    /* Pilíře grid */
+    #pilire-ooo .col-md-6 { padding: 1rem; }
+    
+    /* List */
+    .ooo-box ol li { margin-bottom: 1rem; }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .ooo-box { padding: 2rem !important; margin: 1rem 0; }
+      .banner .caption h2 { font-size: 2rem; }
+    }
+  </style>
+  
+  <title>OOO Community</title>
+</head>
 
-    <!-- Bootstrap core CSS -->
-    <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Additional CSS Files -->
-    <link rel="stylesheet" href="assets/css/fontawesome.css">
-    <link rel="stylesheet" href="assets/css/tooplate-main.css">
-  </head>
-
-  <body>
-    <!-- Pre Header -->
-    <div id="pre-header">
-      <div class="container">
-        <div class="pre-header-inner">
-          <span>OOO Community</span>
-          <div class="pre-header-login">
-            <div id="user-info">
-              <img id="user-avatar" src="" alt="Avatar">
-              <span id="user-name"></span>
-            </div>
-            <div class="main-button">
-              <a id="login-button" href="#" class="main-button login-btn">Přihlásit</a>
-            </div>
+<body>
+  <!-- Pre Header -->
+  <div id="pre-header">
+    <div class="container">
+      <div class="pre-header-inner">
+        <span>OOO Community</span>
+        <div class="pre-header-login">
+          <div id="user-info">
+            <img id="user-avatar" src="" alt="Avatar">
+            <span id="user-name"></span>
+          </div>
+          <div class="main-button">
+            <a id="login-button" href="#" class="main-button login-btn">Přihlásit</a>
           </div>
         </div>
       </div>
     </div>
-
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark static-top">
-      <div class="container">
-        <a class="navbar-brand" href="#home">
-          <img src="assets/images/OOOlogo.png" alt="OOO community logo">
-        </a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarResponsive">
-          <ul class="navbar-nav ml-auto">
-            <li class="nav-item active">
-              <a class="nav-link" href="#home">Domů <span class="sr-only">(current)</span></a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="akce.html">Akce</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#jak-to-funguje">Jak to funguje</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#pravidla">Pravidla</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#kontakt">Kontakt</a>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </nav>
-
-    <!-- Banner -->
-    <div class="banner" id="home">
-      <div class="container">
-        <div class="row">
-          <div class="col-md-12">
-            <div class="caption">
-              <h2>Otevřená OOO komunita</h2>
-              <div class="line-dec"></div>
-              <p>Jsme bezpečný prostor pro všechny, kdo chtějí rozvíjet <strong>emoční inteligenci</strong>, komunikovat bez předsudků a zkoumat rozmanité podoby vztahů, sexuality a seberozvoje.</p>
-              <div class="main-button">
-                <a href="akce.html">Zobrazit akce</a>
-                <a href="https://discord.gg/qYCAubmDQc" class="ml-2">Připojit se na Discord</a>
-              </div>
-            </div>
-          </div>
-        </div>
+  </div>
+  
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark static-top">
+    <div class="container">
+      <a class="navbar-brand" href="#home">
+        <img src="assets/images/OOOlogo.png" alt="OOO community logo">
+      </a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse"
+              data-target="#navbarResponsive" aria-controls="navbarResponsive"
+              aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarResponsive">
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item active">
+            <a class="nav-link" href="#home">Domů<span class="sr-only">(current)</span></a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="akce.html">Akce</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#jak-to-funguje">Jak to funguje</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#pravidla">Pravidla</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#kontakt">Kontakt</a>
+          </li>
+        </ul>
       </div>
     </div>
+  </nav>
 
-    <!-- PILÍŘE OOO - Nahrazuje slajder -->
-    <div class="container mt-5 mb-5" id="pilire-ooo">
+  <!-- Banner - STEJNÝ JAK TVŮJ SCREEN -->
+  <div class="banner" id="home">
+    <div class="container">
       <div class="row">
         <div class="col-md-12">
-          <div class="section-heading text-center">
+          <div class="caption ooo-box">
+            <h2>Otevřená OOO komunita</h2>
             <div class="line-dec"></div>
-            <h1>Pilíře OOO</h1>
+            <p>Jsme bezpečný prostor pro všechny, kdo chtějí rozvíjet <strong>emoční inteligenci</strong>, komunikovat bez předsudků a zkoumat rozmanité podoby vztahů, sexuality a seberozvoje.</p>
+            <div class="main-button">
+              <a href="akce.html">Zobrazit akce</a>
+              <a href="https://discord.gg/qYCAubmDQc">Připojit se na Discord</a>
+            </div>
           </div>
         </div>
       </div>
-      <div class="row">
-        <div class="col-md-6 mb-4">
-          <h3>🔥 Kinky Events</h3>
+    </div>
+  </div>
+
+  <!-- PILÍŘE OOO -->
+  <div class="container mt-5 mb-5" id="pilire-ooo">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="ooo-box text-center">
+          <h1>Pilíře OOO</h1>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-6 mb-4">
+        <div class="ooo-box">
+          <h3><i class="fas fa-fire"></i> Kinky Events</h3>
           <p>Tematické párty, větší víkendové akce výpravnějšího charakteru – intenzivnější a často výrazně kinky. (Káča & Adam)</p>
         </div>
-        <div class="col-md-6 mb-4">
-          <h3>🌱 OOO zóna</h3>
+      </div>
+      <div class="col-md-6 mb-4">
+        <div class="ooo-box">
+          <h3><i class="fas fa-seedling"></i> OOO zóna</h3>
           <p>Komunitní workshopy, setkání a jemnější akce pořádané členy při dodržení našich základních hodnot.</p>
         </div>
-        <div class="col-md-6 mb-4">
-          <h3>📚 Edu & Personal Growth</h3>
+      </div>
+      <div class="col-md-6 mb-4">
+        <div class="ooo-box">
+          <h3><i class="fas fa-book-open"></i> Edu & Personal Growth</h3>
           <p>Kurzy, meditace, koučink – rozvoj sebe sama a vztahů.</p>
         </div>
-        <div class="col-md-6 mb-4">
-          <h3>🤝 Komunitní podpora</h3>
+      </div>
+      <div class="col-md-6 mb-4">
+        <div class="ooo-box">
+          <h3><i class="fas fa-users"></i> Komunitní podpora</h3>
           <p>Seznamka, mentoring, Discord – spojujeme lidi.</p>
         </div>
-        <div class="col-md-6 mb-4">
-          <h3>🔬 Výzkum a publikace</h3>
+      </div>
+      <div class="col-md-6 mb-4">
+        <div class="ooo-box">
+          <h3><i class="fas fa-flask"></i> Výzkum a publikace</h3>
           <p>Studie o BDSM, vztazích, změněných stavech vědomí.</p>
         </div>
-        <div class="col-md-6 mb-4">
-          <h3>🎨 Umění a kreativita</h3>
+      </div>
+      <div class="col-md-6 mb-4">
+        <div class="ooo-box">
+          <h3><i class="fas fa-palette"></i> Umění a kreativita</h3>
           <p>Prostor a podpora pro tvůrce a umělce.</p>
         </div>
       </div>
-      <div class="text-center mt-4">
-        <a href="akce.html" class="main-button">Najdi si akci →</a>
+    </div>
+    <div class="text-center mt-4">
+      <a href="akce.html" class="main-button">Najdi si akci →</a>
+    </div>
+  </div>
+
+  <!-- CO DĚLÁME -->
+  <div class="container mb-5">
+    <div class="ooo-box text-center">
+      <h2>Co děláme</h2>
+      <div class="line-dec mx-auto"></div>
+      <p class="lead mt-4">Naše akce jsou rozmanité stejně jako naše komunita. Organizujeme tematické večírky, víkendové retreaty, kreativní setkání, komunitní pikniky i besedy s odborníky. Některé akce mají hravý charakter, jiné se věnují hlubším tématům. Všechny jsou ale vedeny respektem, bezpečím a otevřeností. Část akcí pořádá tým OOO, jiné vznikají iniciativou samotných členů.</p>
+      <div class="main-button mt-3">
+        <a href="akce.html">Registrace na akce</a>
       </div>
     </div>
+  </div>
 
-    <!-- Co děláme -->
-    <div class="container mb-5" style="background: #f8f9fa; padding: 4rem 0; border-radius: 10px;">
-      <div class="row">
-        <div class="col-md-12 text-center">
-          <h2>Co děláme</h2>
+  <!-- JAK TO FUNGUJE -->
+  <div class="subscribe-form" id="jak-to-funguje">
+    <div class="container">
+      <div class="ooo-box">
+        <div class="section-heading text-center mb-4">
+          <h1>Jak to funguje</h1>
           <div class="line-dec mx-auto"></div>
-          <p class="lead mt-4">Naše akce jsou rozmanité stejně jako naše komunita. Organizujeme tematické večírky, víkendové retreaty, kreativní setkání, komunitní pikniky i besedy s odborníky. Některé akce mají hravý charakter, jiné se věnují hlubším tématům. Všechny jsou ale vedeny respektem, bezpečím a otevřeností. Část akcí pořádá tým OOO, jiné vznikají iniciativou samotných členů.</p>
-          <div class="main-button mt-3">
-            <a href="akce.html">Registrace na akce</a>
-          </div>
         </div>
-      </div>
-    </div>
-
-    <!-- Jak to funguje -->
-    <div class="subscribe-form" id="jak-to-funguje">
-      <div class="container">
         <div class="row">
-          <div class="col-md-12">
-            <div class="section-heading">
-              <div class="line-dec"></div>
-              <h1>Jak to funguje</h1>
-            </div>
-          </div>
           <div class="col-md-8 offset-md-2">
-            <div class="main-content">
-              <p>Jednoduchý proces od vstupu do komunity až po účast na akci:</p>
-              <ol>
-                <li><strong>Připoj se na Discord</strong> – vyplníš přihlášku do komunity, získáš základní roli a patrona.</li>
-                <li><strong>Vyber si akci</strong> – na webu si vybereš akci, která tě láká.</li>
-                <li><strong>Registrace na webu</strong> – po přihlášení přes Discord klikneš na akci, ověří se role.</li>
-                <li><strong>QR záloha</strong> – vygeneruje se QR platba, po zaplacení dostáváš roli „účastník“.</li>
-                <li><strong>Účast na akci</strong> – info a domluvy přes Discord a organizátory.</li>
-              </ol>
-            </div>
+            <p class="lead mb-4">Jednoduchý proces od vstupu do komunity až po účast na akci:</p>
+            <ol>
+              <li><strong>Připoj se na Discord</strong> – vyplníš přihlášku do komunity, získáš základní roli (např. čekatel) a patrona, který ti pomůže se zorientovat.</li>
+              <li><strong>Vyber si akci</strong> – na webu nebo na Discordu si vybereš akci, která tě láká (večírky, retreaty, komunitní setkání, besedy).</li>
+              <li><strong>Registrace na webu</strong> – po přihlášení přes Discord klikneš na akci, ověří se tvoje role a zapíše se přihláška.</li>
+              <li><strong>Platba zálohy / vstupného</strong> – vygeneruje se QR platba na zálohu nebo celé vstupné. Po zaplacení zálohy dostáváš roli „účastník" pro konkrétní akci.</li>
+              <li><strong>Účast na akci</strong> – všechny důležité informace, domluva a případné doplatky běží přes náš Discord a organizátory akce.</li>
+            </ol>
           </div>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- Footer -->
-    <div class="footer" id="kontakt">
-      <div class="container">
-        <div class="row">
-          <div class="col-md-12">
-            <div class="footer-menu">
-              <ul>
-                <li>Email: <a href="mailto:info@open3.cz">info@open3.cz</a></li>
-                <li>Telefon: <a href="tel:+420735593621">+420 735 593 621</a></li>
-                <li><a href="https://discord.gg/qYCAubmDQc">Discord komunita</a></li>
-                <li><a href="https://www.instagram.com/ooo.community">Instagram @ooo.community</a></li>
-              </ul>
-            </div>
+  <!-- Footer -->
+  <div class="footer" id="kontakt">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <div class="footer-menu">
+            <ul>
+              <li>Email: <a href="mailto:info@open3.cz">info@open3.cz</a></li>
+              <li>Telefon: <a href="tel:+420735593621">+420 735 593 621</a></li>
+              <li><a href="https://discord.gg/qYCAubmDQc">Discord komunita</a></li>
+              <li><a href="https://www.instagram.com/ooo.community">Instagram @ooo.community</a></li>
+            </ul>
           </div>
-          <div class="col-md-12">
-            <div class="social-icons">
-              <ul>
-                <li><a href="https://discord.gg/qYCAubmDQc"><i class="fa fa-comments"></i></a></li>
-                <li><a href="https://www.instagram.com/ooo.community"><i class="fa fa-instagram"></i></a></li>
-              </ul>
-            </div>
+        </div>
+        <div class="col-md-12">
+          <div class="social-icons">
+            <ul>
+              <li><a href="https://discord.gg/qYCAubmDQc"><i class="fa fa-comments"></i></a></li>
+              <li><a href="https://www.instagram.com/ooo.community"><i class="fa fa-instagram"></i></a></li>
+            </ul>
           </div>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- Sub Footer -->
-    <div class="sub-footer">
-      <div class="container">
-        <div class="row">
-          <div class="col-md-12">
-            <div class="copyright-text">
-              <p>Copyright © 2025 OOO Community z.s. - Design: <a href="#">Adam</a></p>
-            </div>
+  <!-- Sub Footer -->
+  <div class="sub-footer">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <div class="copyright-text">
+            <p>Copyright © 2025 OOO Community z.s. - Design: <a rel="nofollow" href="#">Adam</a></p>
           </div>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- Scripts -->
-    <script src="vendor/jquery/jquery.min.js"></script>
-    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="assets/js/custom.js"></script>
+  <!-- Bootstrap core JavaScript -->
+  <script src="vendor/jquery/jquery.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/custom.js"></script>
 
-    <!-- Discord Login -->
-    <script>
-      const DISCORD_AUTH_URL = "https://discord.com/oauth2/authorize?client_id=1452709238601154580&response_type=code&redirect_uri=https%3A%2F%2Fooo-functions-hjajhxe2b4aqgqc5.westeurope-01.azurewebsites.net%2Fapi%2Flogin-callback&scope=identify%20guilds.members.read";
+  <!-- Discord Login -->
+  <script>
+    const DISCORD_AUTH_URL = "https://discord.com/oauth2/authorize?client_id=1452709238601154580&response_type=code&redirect_uri=https%3A%2F%2Fooo-functions-hjajhxe2b4aqgqc5.westeurope-01.azurewebsites.net%2Fapi%2Flogin-callback&scope=identify%20guilds.members.read";
 
-      function setLoggedIn(user) {
-        const userBox = document.getElementById('user-info');
-        const userNameEl = document.getElementById('user-name');
-        const userAvatarEl = document.getElementById('user-avatar');
-        const loginBtn = document.getElementById('login-button');
-        userNameEl.textContent = user.userName;
-        userAvatarEl.src = user.avatarUrl;
-        userBox.style.display = 'flex';
-        loginBtn.textContent = 'Odhlásit';
-        loginBtn.dataset.mode = 'logout';
-      }
+    function setLoggedIn(user) {
+      const userBox = document.getElementById('user-info');
+      const userNameEl = document.getElementById('user-name');
+      const userAvatarEl = document.getElementById('user-avatar');
+      const loginBtn = document.getElementById('login-button');
 
-      function setLoggedOut() {
-        const userBox = document.getElementById('user-info');
-        const loginBtn = document.getElementById('login-button');
-        userBox.style.display = 'none';
-        loginBtn.textContent = 'Přihlásit';
-        loginBtn.dataset.mode = 'login';
-        localStorage.removeItem('oooUser');
-      }
+      userNameEl.textContent = user.userName;
+      userAvatarEl.src = user.avatarUrl;
+      userBox.style.display = 'flex';
+      loginBtn.textContent = 'Odhlásit';
+      loginBtn.dataset.mode = 'logout';
+    }
 
-      let storedUser = null;
-      try {
-        const s = localStorage.getItem('oooUser');
-        if (s) storedUser = JSON.parse(s);
-      } catch (e) {}
+    function setLoggedOut() {
+      const userBox = document.getElementById('user-info');
+      const loginBtn = document.getElementById('login-button');
 
-      if (storedUser && storedUser.userId) {
-        setLoggedIn(storedUser);
-      } else {
+      userBox.style.display = 'none';
+      loginBtn.textContent = 'Přihlásit';
+      loginBtn.dataset.mode = 'login';
+      localStorage.removeItem('oooUser');
+    }
+
+    // načtení uloženého uživatele
+    let storedUser = null;
+    try {
+      const s = localStorage.getItem('oooUser');
+      if (s) storedUser = JSON.parse(s);
+    } catch (e) {}
+
+    if (storedUser && storedUser.userId) {
+      setLoggedIn(storedUser);
+    } else {
+      setLoggedOut();
+    }
+
+    // posluchač zprávy z popupu
+    window.addEventListener('message', function (event) {
+      const data = event.data;
+      if (!data || data.type !== 'ooo-discord-login') return;
+
+      const user = data.user;
+      localStorage.setItem('oooUser', JSON.stringify(user));
+      setLoggedIn(user);
+    });
+
+    // klik na tlačítko
+    document.getElementById('login-button').addEventListener('click', function (e) {
+      e.preventDefault();
+      const mode = this.dataset.mode;
+
+      if (mode === 'logout') {
         setLoggedOut();
+        return;
       }
 
-      window.addEventListener('message', function (event) {
-        const data = event.data;
-        if (!data || data.type !== 'ooo-discord-login') return;
-        const user = data.user;
-        localStorage.setItem('oooUser', JSON.stringify(user));
-        setLoggedIn(user);
-      });
-
-      document.getElementById('login-button').addEventListener('click', function (e) {
-        e.preventDefault();
-        const mode = this.dataset.mode;
-        if (mode === 'logout') {
-          setLoggedOut();
-          return;
-        }
-        window.open(DISCORD_AUTH_URL, 'discordLogin', 'width=500,height=700');
-      });
-    </script>
-  </body>
+      window.open(DISCORD_AUTH_URL, 'discordLogin', 'width=500,height=700');
+    });
+  </script>
+</body>
 </html>
