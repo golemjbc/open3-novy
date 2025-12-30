@@ -460,48 +460,74 @@
             });
         })();
 
-        // ✅ REGISTRACE GET + ZÁLOHA (JAKO NA OBRÁZKU!)
-        regForm.addEventListener('submit', function (e) {
-          e.preventDefault();
+        // ✅ KOMPLETNÍ REGISTRACE S MEMBERS-REGISTER!
+                  regForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            
+            const typUcasti = document.querySelector('input[name="typUcasti"]:checked').value;
+            const partner = document.getElementById('partnerDiscord').value.trim();
+            const selectedPrefs = Array.from(prefListEl.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+            const user = getLoggedUser();
 
-          const typUcasti = document.querySelector('input[name="typUcasti"]:checked').value;
-          const partner = document.getElementById('partnerDiscord').value.trim();
+            console.log('🚀 DEBUG REGISTRACE:', { event_id: event.event_id, userId: user?.userId, role: event.discord_role_zajemce });
 
-          const selectedPrefs = [];
-          prefListEl.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
-            if (cb.checked) selectedPrefs.push(cb.value);
+            // 1. REGISTRACE
+            const registerUrl = `${API_BASE}/api/register-event?` +
+              `event_id=${encodeURIComponent(event.event_id)}&typ_ucasti=${encodeURIComponent(typUcasti)}&` +
+              `user_discord=${encodeURIComponent(user?.userName || 'NEPRIHLASENY_USER')}&` +
+              `partner_discord=${encodeURIComponent(partner || '')}&` +
+              `user_id=${encodeURIComponent(user?.userId || '')}&preference=${encodeURIComponent(JSON.stringify(selectedPrefs))}`;
+
+            fetch(registerUrl).then(r => r.json()).then(data => {
+              console.log('✅ REGISTRACE OK:', data);
+              alert('✅ Přihláška OK!');
+
+              document.getElementById('registrationBlock').style.display = 'none';
+              document.getElementById('registrationInfo').style.display = 'block';
+
+              // 🔥 DEBUG MEMBERS-REGISTER!
+              if (!user?.userId) {
+                console.error('❌ CHYBÍ USER ID!');
+                return;
+              }
+              if (!event.discord_role_zajemce) {
+                console.error('❌ CHYBÍ discord_role_zajemce v datech akce!', event);
+                return;
+              }
+
+              console.log('🟢 VOLÁM MEMBERS-REGISTER:', {
+                user_id: user.userId,
+                role_header: event.discord_role_zajemce
+              });
+
+              // 2. MEMBERS-REGISTER S PLNYM DEBUG!
+              fetch(`${API_BASE}/api/members-register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  user_id: user.userId,
+                  role_header: event.discord_role_zajemce
+                })
+              })
+              .then(r => {
+                console.log('📡 HTTP STATUS:', r.status);
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.json();
+              })
+              .then(data => {
+                console.log('✅ MEMBERS OK:', data);
+                alert(`✅ Role přidána: ${data.cell}`);
+              })
+              .catch(err => {
+                console.error('❌ MEMBERS ERROR:', err);
+                alert('❌ members-register selhal (bot fallback OK!)');
+              });
+
+              // 3. ZÁLOHA
+              if (user?.userId) loadDepositInfo(user.userId, user.userName, typUcasti);
+            });
           });
 
-          const user = getLoggedUser();
-
-          // ✅ GET registrace (bez CORS!)
-          const registerUrl = `${API_BASE}/api/register-event?` +
-            `event_id=${encodeURIComponent(event.event_id)}&` +
-            `typ_ucasti=${encodeURIComponent(typUcasti)}&` +
-            `user_discord=${encodeURIComponent(user?.userName || 'NEPRIHLASENY_USER')}&` +
-            `partner_discord=${encodeURIComponent(partner || '')}&` +
-            `user_id=${encodeURIComponent(user?.userId || '')}&` +
-            `preference=${encodeURIComponent(JSON.stringify(selectedPrefs))}`;
-          
-          fetch(registerUrl)
-            .then(r => r.json())
-            .then(data => {
-              alert('✅ Přihláška úspěšně odeslána!');
-              
-              // ✅ SKRYJ FORM + UKAŽ INFO + ZÁLOHU
-              document.getElementById('registrationBlock').style.display = 'none';
-              document.getElementById('registrationInfo').style.display = 'block';
-              
-              if (user?.userId) {
-                loadDepositInfo(user.userId, user.userName, typUcasti);
-              }
-            })
-            .catch(err => {
-              alert('✅ Přihláška odeslána (kontrola v Sheets)!');
-              document.getElementById('registrationBlock').style.display = 'none';
-              document.getElementById('registrationInfo').style.display = 'block';
-            });
-        });
       })
       .catch(function (err) {
         console.error(err);
