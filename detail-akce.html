@@ -501,27 +501,30 @@
               });
 
               // 2. MEMBERS-REGISTER S PLNYM DEBUG!
-              fetch(`${API_BASE}/api/members-register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+               // ✅ MEMBERS-REGISTER GET (BEZ CORS!)
+                console.log('🟢 VOLÁM MEMBERS-REGISTER GET:', {
                   user_id: user.userId,
                   role_header: event.discord_role_zajemce
-                })
-              })
-              .then(r => {
-                console.log('📡 HTTP STATUS:', r.status);
-                if (!r.ok) throw new Error(`HTTP ${r.status}`);
-                return r.json();
-              })
-              .then(data => {
-                console.log('✅ MEMBERS OK:', data);
-                alert(`✅ Role přidána: ${data.cell}`);
-              })
-              .catch(err => {
-                console.error('❌ MEMBERS ERROR:', err);
-                alert('❌ members-register selhal (bot fallback OK!)');
-              });
+                });
+
+                const membersUrl = `${API_BASE}/api/members-register?` +
+                  `user_id=${encodeURIComponent(user.userId)}&` +
+                  `role_header=${encodeURIComponent(event.discord_role_zajemce)}`;
+
+                fetch(membersUrl)
+                  .then(r => {
+                    console.log('📡 MEMBERS STATUS:', r.status);
+                    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                    return r.json();
+                  })
+                  .then(data => {
+                    console.log('✅ MEMBERS OK:', data);
+                    alert(`✅ Role přidána: ${data.cell}`);
+                  })
+                  .catch(err => {
+                    console.error('members-register GET error (bot OK):', err);
+                  });
+
 
               // 3. ZÁLOHA
               if (user?.userId) loadDepositInfo(user.userId, user.userName, typUcasti);
