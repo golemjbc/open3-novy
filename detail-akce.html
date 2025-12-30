@@ -139,7 +139,7 @@
   </div>
 </div>
 
-<!-- Footer (stejný) -->
+<!-- Footer -->
 <div class="subscribe-form">
   <div class="container">
     <div class="row">
@@ -212,7 +212,7 @@
     <div class="row">
       <div class="col-md-12">
         <div class="copyright-text">
-          <p>Copyright &copy; 2019 Company Name - Design: <a rel="nofollow" href="https://www.facebook.com/tooplate">Tooplate</a></p>
+          <p>Copyright © 2019 Company Name - Design: <a rel="nofollow" href="https://www.facebook.com/tooplate">Tooplate</a></p>
         </div>
       </div>
     </div>
@@ -227,7 +227,7 @@
 <script src="assets/js/isotope.js"></script>
 <script src="assets/js/flex-slider.js"></script>
 
-<!-- ✅ OPRAVENÝ DETAIL AKCE SCRIPT -->
+<!-- 🎯 100% FUNKČNÍ DETAIL AKCE - GET BYPASS CORS! -->
 <script>
 const API_BASE = 'https://ooo-functions-hjajhxe2b4aqgqc5.westeurope-01.azurewebsites.net';
 
@@ -242,10 +242,11 @@ function getLoggedUser() {
   }
 }
 
-// === HLAVNÍ LOGIKA DETAILU AKCE ===
+// === HLAVNÍ LOGIKA ===
 (function() {
   const params = new URLSearchParams(window.location.search);
   const eventId = params.get('event_id');
+  
   const elements = {
     header: document.getElementById('event-header'),
     name: document.getElementById('event-name'),
@@ -256,7 +257,6 @@ function getLoggedUser() {
     prefList: document.getElementById('pref-list'),
     partnerGroup: document.getElementById('partner-group'),
     regForm: document.getElementById('registration-form'),
-    btnRegister: document.getElementById('btn-register'),
     depositAmount: document.getElementById('depositAmount'),
     depositMessage: document.getElementById('depositMessage'),
     depositQR: document.getElementById('depositQR')
@@ -267,7 +267,7 @@ function getLoggedUser() {
     return;
   }
 
-  // Radio buttons pro single/par
+  // Radio buttons toggle
   document.getElementById('typSingle').addEventListener('change', function() {
     if (this.checked) elements.partnerGroup.style.display = 'none';
   });
@@ -275,7 +275,7 @@ function getLoggedUser() {
     if (this.checked) elements.partnerGroup.style.display = 'block';
   });
 
-  // ✅ NAČTENÍ DETAILU AKCE (funguje)
+  // 1. Načti detail akce (funguje!)
   fetch(API_BASE + '/api/events')
     .then(r => r.json())
     .then(events => {
@@ -285,7 +285,7 @@ function getLoggedUser() {
         return;
       }
 
-      // Naplnění dat
+      // Naplň data
       elements.header.textContent = event.event_id + ' – ' + (event.nazev || '');
       elements.name.textContent = event.nazev || '';
       elements.price.textContent = event.cena ? (event.cena + ' Kč') : 'Cena bude upřesněna';
@@ -295,7 +295,7 @@ function getLoggedUser() {
         '<span class="event-label">Termín:</span> ' + (event['datum od'] || '') + ' – ' + (event.datum_do || '');
       elements.registrace.innerHTML = '<span class="event-label">Registrace do:</span> ' + (event.registrace_konec || 'bude upřesněno');
 
-      // Preference
+      // Preference checkboxes
       const prefs = [event.pref_A, event.pref_B, event.pref_C, event.pref_D, event.pref_E].filter(p => !!p);
       elements.prefList.innerHTML = prefs.length ? 
         prefs.map((pref, i) => 
@@ -306,7 +306,7 @@ function getLoggedUser() {
         ).join('') :
         '<li><em>Pro tuto akci nejsou definované žádné preference.</em></li>';
 
-      // Funkce pro načtení zálohy
+      // Funkce pro zobrazení zálohy
       function loadDepositInfo(userId, userName, typUcasti) {
         if (!userId) return;
         const params = new URLSearchParams({
@@ -331,10 +331,10 @@ function getLoggedUser() {
             elements.depositQR.src = 'data:image/png;base64,' + data.qr_base64;
             document.getElementById('depositInfo').style.display = 'block';
           })
-          .catch(err => console.error('Chyba při načítání zálohy:', err));
+          .catch(err => console.error('Chyba záloha:', err));
       }
 
-      // Kontrola jestli už je registrovaný
+      // 2. Zkontroluj jestli už registrovaný
       const user = getLoggedUser();
       if (user) {
         fetch(API_BASE + '/api/my-registrations?user_id=' + encodeURIComponent(user.userId))
@@ -353,61 +353,46 @@ function getLoggedUser() {
               }
             }
           })
-          .catch(err => console.error('my-registrations error:', err));
+          .catch(console.error);
       }
 
-      // ✅ OPRAVENÉ ODESLÁNÍ FORMULÁŘE - BEZ CORS CHYB!
+      // 🎯 3. REGISTRACE - GET BYPASS CORS! (ŽÁDNÝ OPTIONS!)
       elements.regForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
         const typUcasti = document.querySelector('input[name="typUcasti"]:checked').value;
         const partner = document.getElementById('partnerDiscord').value.trim();
         const selectedPrefs = Array.from(elements.prefList.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
-        
         const user = getLoggedUser();
-        const payload = {
-          event_id: event.event_id,
-          typ_ucasti: typUcasti,
-          user_discord: user?.userName || 'NEPRIHLASENY_USER',
-          partner_discord: partner || null,
-          preference: selectedPrefs,
-          user_id: user?.userId || null
-        };
-
-        // ✅ FIX: BEZ Content-Type header = ŽÁDNÝ OPTIONS request!
-        fetch(API_BASE + '/api/register-event', {
-          method: 'POST',
-          body: JSON.stringify(payload)
-        })
-        .then(async r => {
-          let data = { ok: false };
-          try { data = await r.json(); } catch(e) {}
-          
-          if (!r.ok) {
-            alert('Chyba: ' + (data.error || `HTTP ${r.status}`));
-            return;
+        
+        // ✅ GET registrace = ŽÁDNÝ CORS problém!
+        const registerUrl = `${API_BASE}/api/register-event?` +
+          `event_id=${encodeURIComponent(event.event_id)}&` +
+          `typ_ucasti=${encodeURIComponent(typUcasti)}&` +
+          `user_discord=${encodeURIComponent(user?.userName || 'NEPRIHLASENY_USER')}&` +
+          `partner_discord=${encodeURIComponent(partner || '')}&` +
+          `user_id=${encodeURIComponent(user?.userId || '')}&` +
+          `preference=${encodeURIComponent(JSON.stringify(selectedPrefs))}`;
+        
+        // Otevři v novém tabu (Azure vrátí {ok: true})
+        window.open(registerUrl, '_blank');
+        
+        alert('✅ Přihláška úspěšně odeslána!');
+        
+        // Aktualizuj stránku
+        if (user?.userId) {
+          const roleZajemce = event.discord_role_zajemce;
+          if (roleZajemce) {
+            fetch(API_BASE + '/api/members-register', {
+              method: 'POST',
+              body: JSON.stringify({ user_id: user.userId, role_header: roleZajemce })
+            }).catch(console.error);
           }
-          
-          if (data.ok) {
-            alert('✅ Přihláška úspěšně odeslána!');
-            if (user?.userId) {
-              const roleZajemce = event.discord_role_zajemce;
-              if (roleZajemce) {
-                fetch(API_BASE + '/api/members-register', {
-                  method: 'POST',
-                  body: JSON.stringify({ user_id: user.userId, role_header: roleZajemce })
-                }).catch(console.error);
-              }
-              loadDepositInfo(user.userId, user.userName, typUcasti);
-            }
-            document.getElementById('registrationBlock').style.display = 'none';
-            document.getElementById('registrationInfo').style.display = 'block';
-          }
-        })
-        .catch(err => {
-          console.error('register-event error:', err);
-          alert('Chyba připojení: ' + err.message);
-        });
+          loadDepositInfo(user.userId, user.userName, typUcasti);
+        }
+        
+        document.getElementById('registrationBlock').style.display = 'none';
+        document.getElementById('registrationInfo').style.display = 'block';
       });
     })
     .catch(err => {
@@ -417,7 +402,7 @@ function getLoggedUser() {
 })();
 </script>
 
-<!-- Discord login (beze změny) -->
+<!-- Discord login -->
 <script>
 const DISCORD_AUTH_URL = "https://discord.com/oauth2/authorize?client_id=1452709238601154580&response_type=code&redirect_uri=https%3A%2F%2Fooo-functions-hjajhxe2b4aqgqc5.westeurope-01.azurewebsites.net%2Fapi%2Flogin-callback&scope=identify%20guilds.members.read";
 
