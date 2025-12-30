@@ -296,18 +296,18 @@
     const params = new URLSearchParams(window.location.search);
     const eventId = params.get('event_id');
 
-    const headerEl     = document.getElementById('event-header');
-    const nameEl       = document.getElementById('event-name');
-    const priceEl      = document.getElementById('event-price');
-    const popisEl      = document.getElementById('event-popis');
-    const metaEl       = document.getElementById('event-meta');
-    const regEl        = document.getElementById('event-registrace');
-    const prefListEl   = document.getElementById('pref-list');
-    const partnerGroup = document.getElementById('partner-group');
-    const regForm      = document.getElementById('registration-form');
-    const depositAmountEl  = document.getElementById('depositAmount');
-    const depositMessageEl = document.getElementById('depositMessage');
-    const depositQREl      = document.getElementById('depositQR');
+    const headerEl      = document.getElementById('event-header');
+    const nameEl        = document.getElementById('event-name');
+    const priceEl       = document.getElementById('event-price');
+    const popisEl       = document.getElementById('event-popis');
+    const metaEl        = document.getElementById('event-meta');
+    const regEl         = document.getElementById('event-registrace');
+    const prefListEl    = document.getElementById('pref-list');
+    const partnerGroup  = document.getElementById('partner-group');
+    const regForm       = document.getElementById('registration-form');
+    const depositAmountEl   = document.getElementById('depositAmount');
+    const depositMessageEl  = document.getElementById('depositMessage');
+    const depositQREl       = document.getElementById('depositQR');
 
     if (!eventId) {
       headerEl.textContent = 'Akce nenalezena (chybí event_id v URL).';
@@ -390,10 +390,10 @@
               let text;
               if (isPair) {
                 text = '<strong>Částka zálohy:</strong> 2× záloha (' +
-                  baseDeposit + ' Kč) = ' + data.deposit_amount + ' Kč';
+                       baseDeposit + ' Kč) = ' + data.deposit_amount + ' Kč';
               } else {
                 text = '<strong>Částka zálohy:</strong> ' +
-                  data.deposit_amount + ' Kč';
+                       data.deposit_amount + ' Kč';
               }
 
               depositAmountEl.innerHTML = text;
@@ -413,7 +413,7 @@
             });
         }
 
-        // KONTROLA, zda už je přihlášen na tuto akci
+        // ✅ KOMPLETNÍ checkAlreadyRegistered() S LOGIKOU "ZÁLOHA ZAPLACENA"!
         (function checkAlreadyRegistered() {
           const storedUserJson = localStorage.getItem('oooUser');
           if (!storedUserJson) return;
@@ -425,7 +425,7 @@
             userId   = storedUser.userId || null;
             userName = storedUser.userName || '';
           } catch (e) {
-            console.error('Chyba při parsování oooUser z localStorage (checkAlreadyRegistered):', e);
+            console.error('Chyba parsování oooUser:', e);
             return;
           }
 
@@ -448,11 +448,26 @@
               if (info)     info.style.display = 'block';
               if (depositInfoBox) depositInfoBox.style.display = 'block';
 
-              let foundType = 'single';
-              if (found.partner === 'par') {
-                foundType = 'par';
+              // ✅ ZÁLOHA ZAPLACENA = SPECIÁLNÍ TEXT!
+              if (found.deposit_status && found.deposit_status.toUpperCase() === 'OK') {
+                const depositAmountEl = document.getElementById('depositAmount');
+                depositAmountEl.innerHTML = '<strong>✅ Záloha: ZAPLACENA!</strong>';
+                
+                // Skryt QR a údaje
+                const depositMessageEl = document.getElementById('depositMessage');
+                const depositQREl = document.getElementById('depositQR');
+                if (depositMessageEl) depositMessageEl.innerHTML = '';
+                if (depositQREl) {
+                  depositQREl.src = '';
+                  depositQREl.style.display = 'none';
+                }
+                console.log('✅ Záloha zaplacena - speciální zobrazení!');
+                return; // NEDĚLAT loadDepositInfo!
               }
 
+              // Normální případ - načti QR
+              let foundType = 'single';
+              if (found.partner === 'par') foundType = 'par';
               loadDepositInfo(userId, userName, foundType);
             })
             .catch(err => {
@@ -461,76 +476,72 @@
         })();
 
         // ✅ KOMPLETNÍ REGISTRACE S MEMBERS-REGISTER!
-           regForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            
-            const typUcasti = document.querySelector('input[name="typUcasti"]:checked').value;
-            const partner = document.getElementById('partnerDiscord').value.trim();
-            const selectedPrefs = Array.from(prefListEl.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
-            const user = getLoggedUser();
+         regForm.addEventListener('submit', function (e) {
+          e.preventDefault();
+          
+          const typUcasti = document.querySelector('input[name="typUcasti"]:checked').value;
+          const partner = document.getElementById('partnerDiscord').value.trim();
+          const selectedPrefs = Array.from(prefListEl.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+          const user = getLoggedUser();
 
-            console.log('🚀 DEBUG REGISTRACE:', { event_id: event.event_id, userId: user?.userId, role: event.discord_role_zajemce });
+          console.log('🚀 DEBUG REGISTRACE:', { event_id: event.event_id, userId: user?.userId, role: event.discord_role_zajemce });
 
-            // 1. REGISTRACE
-            const registerUrl = `${API_BASE}/api/register-event?` +
-              `event_id=${encodeURIComponent(event.event_id)}&typ_ucasti=${encodeURIComponent(typUcasti)}&` +
-              `user_discord=${encodeURIComponent(user?.userName || 'NEPRIHLASENY_USER')}&` +
-              `partner_discord=${encodeURIComponent(partner || '')}&` +
-              `user_id=${encodeURIComponent(user?.userId || '')}&preference=${encodeURIComponent(JSON.stringify(selectedPrefs))}`;
+          // 1. REGISTRACE
+          const registerUrl = `${API_BASE}/api/register-event?` +
+            `event_id=${encodeURIComponent(event.event_id)}&typ_ucasti=${encodeURIComponent(typUcasti)}&` +
+            `user_discord=${encodeURIComponent(user?.userName || 'NEPRIHLASENY_USER')}&` +
+            `partner_discord=${encodeURIComponent(partner || '')}&` +
+            `user_id=${encodeURIComponent(user?.userId || '')}&preference=${encodeURIComponent(JSON.stringify(selectedPrefs))}`;
 
-            fetch(registerUrl).then(r => r.json()).then(data => {
-              console.log('✅ REGISTRACE OK:', data);
-              //('✅ Přihláška OK!');
+          fetch(registerUrl).then(r => r.json()).then(data => {
+            console.log('✅ REGISTRACE OK:', data);
 
-              document.getElementById('registrationBlock').style.display = 'none';
-              document.getElementById('registrationInfo').style.display = 'block';
+            document.getElementById('registrationBlock').style.display = 'none';
+            document.getElementById('registrationInfo').style.display = 'block';
 
-              // 🔥 DEBUG MEMBERS-REGISTER!
-              if (!user?.userId) {
-                console.error('❌ CHYBÍ USER ID!');
-                return;
-              }
-              if (!event.discord_role_zajemce) {
-                console.error('❌ CHYBÍ discord_role_zajemce v datech akce!', event);
-                return;
-              }
+            // 🔥 DEBUG MEMBERS-REGISTER!
+            if (!user?.userId) {
+              console.error('❌ CHYBÍ USER ID!');
+              return;
+            }
+            if (!event.discord_role_zajemce) {
+              console.error('❌ CHYBÍ discord_role_zajemce v datech akce!', event);
+              return;
+            }
 
-              console.log('🟢 VOLÁM MEMBERS-REGISTER:', {
+            console.log('🟢 VOLÁM MEMBERS-REGISTER:', {
+              user_id: user.userId,
+              role_header: event.discord_role_zajemce
+            });
+
+            // 2. MEMBERS-REGISTER S PLNYM DEBUG!
+             // ✅ MEMBERS-REGISTER GET (BEZ CORS!)
+              console.log('🟢 VOLÁM MEMBERS-REGISTER GET:', {
                 user_id: user.userId,
                 role_header: event.discord_role_zajemce
               });
 
-              // 2. MEMBERS-REGISTER S PLNYM DEBUG!
-               // ✅ MEMBERS-REGISTER GET (BEZ CORS!)
-                console.log('🟢 VOLÁM MEMBERS-REGISTER GET:', {
-                  user_id: user.userId,
-                  role_header: event.discord_role_zajemce
+              const membersUrl = `${API_BASE}/api/members-register?` +
+                `user_id=${encodeURIComponent(user.userId)}&` +
+                `role_header=${encodeURIComponent(event.discord_role_zajemce)}`;
+
+              fetch(membersUrl)
+                .then(r => {
+                  console.log('📡 MEMBERS STATUS:', r.status);
+                  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                  return r.json();
+                })
+                .then(data => {
+                  console.log('✅ MEMBERS OK:', data);
+                })
+                .catch(err => {
+                  console.error('members-register GET error (bot OK):', err);
                 });
 
-                const membersUrl = `${API_BASE}/api/members-register?` +
-                  `user_id=${encodeURIComponent(user.userId)}&` +
-                  `role_header=${encodeURIComponent(event.discord_role_zajemce)}`;
-
-                fetch(membersUrl)
-                  .then(r => {
-                    console.log('📡 MEMBERS STATUS:', r.status);
-                    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-                    return r.json();
-                  })
-                  .then(data => {
-                    console.log('✅ MEMBERS OK:', data);
-                    //alert(`✅ Role přidána: ${data.cell}`);
-                  })
-                  .catch(err => {
-                    console.error('members-register GET error (bot OK):', err);
-                  });
-
-
-              // 3. ZÁLOHA
-              if (user?.userId) loadDepositInfo(user.userId, user.userName, typUcasti);
-            });
+            // 3. ZÁLOHA
+            if (user?.userId) loadDepositInfo(user.userId, user.userName, typUcasti);
           });
-
+        });
 
       })
       .catch(function (err) {
