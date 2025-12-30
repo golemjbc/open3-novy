@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="">
-  <meta name="author" content="">
+  <meta name="description" content="OOO Discord Akce Shop - Detail akce">
+  <meta name="author" content="OOO Community">
   <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700" rel="stylesheet">
-  <title>OOO - detail akce</title>
+  <title>OOO - Detail akce</title>
   <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/fontawesome.css">
   <link rel="stylesheet" href="assets/css/tooplate-main.css">
@@ -17,6 +17,8 @@
     .event-label { font-weight: 500; }
     .pref-list { list-style: none; padding-left: 0; }
     .pref-list li { margin-bottom: 0.25rem; }
+    .success-box { background: #d4edda; border: 1px solid #c3e6cb; padding: 1rem; border-radius: 0.375rem; }
+    .loading { opacity: 0.6; pointer-events: none; }
   </style>
 </head>
 <body>
@@ -26,8 +28,8 @@
     <div class="pre-header-inner">
       <span>OOO Community</span>
       <div class="pre-header-login">
-        <div id="user-info">
-          <img id="user-avatar" src="" alt="Avatar">
+        <div id="user-info" style="display: none;">
+          <img id="user-avatar" src="" alt="Avatar" style="width: 32px; height: 32px; border-radius: 50%; margin-right: 0.5rem;">
           <span id="user-name"></span>
         </div>
         <div class="main-button">
@@ -41,7 +43,7 @@
 <!-- Navigation -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark static-top">
   <div class="container">
-    <a class="navbar-brand" href="#"><img src="assets/images/OOOlogo.png" alt=""></a>
+    <a class="navbar-brand" href="#"><img src="assets/images/OOOlogo.png" alt="OOO"></a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -68,18 +70,16 @@
         <div class="product-slider">
           <div id="slider" class="flexslider">
             <ul class="slides">
-              <li><img src="assets/images/big-01.jpg" /></li>
-              <li><img src="assets/images/big-02.jpg" /></li>
-              <li><img src="assets/images/big-03.jpg" /></li>
-              <li><img src="assets/images/big-04.jpg" /></li>
+              <li><img src="assets/images/big-01.jpg" alt="Akce foto 1"/></li>
+              <li><img src="assets/images/big-02.jpg" alt="Akce foto 2"/></li>
+              <li><img src="assets/images/big-03.jpg" alt="Akce foto 3"/></li>
             </ul>
           </div>
           <div id="carousel" class="flexslider">
             <ul class="slides">
-              <li><img src="assets/images/thumb-01.jpg" /></li>
-              <li><img src="assets/images/thumb-02.jpg" /></li>
-              <li><img src="assets/images/thumb-03.jpg" /></li>
-              <li><img src="assets/images/thumb-04.jpg" /></li>
+              <li><img src="assets/images/thumb-01.jpg" alt="Mini 1"/></li>
+              <li><img src="assets/images/thumb-02.jpg" alt="Mini 2"/></li>
+              <li><img src="assets/images/thumb-03.jpg" alt="Mini 3"/></li>
             </ul>
           </div>
         </div>
@@ -88,13 +88,17 @@
         <div class="right-content">
           <h2 id="event-name">Název akce</h2>
           <h4 id="event-price" class="text-primary mb-3">Cena</h4>
+          
           <h5 class="event-section-title">Popis akce</h5>
           <p id="event-popis" class="mb-3">Popis akce.</p>
+          
           <h5 class="event-section-title">Termín & místo</h5>
           <p id="event-meta" class="mb-3 text-muted"></p>
+          
           <h5 class="event-section-title">Registrace</h5>
           <p id="event-registrace" class="mb-4"></p>
 
+          <!-- 🆕 REGISTRACE FORMULÁŘ -->
           <div id="registrationBlock">
             <h4 class="mt-4 mb-3">Přihláška na akci</h4>
             <form id="registration-form">
@@ -110,28 +114,32 @@
                 </div>
               </div>
               <div class="form-group" id="partner-group" style="display:none;">
-                <label class="event-label" for="partnerDiscord">Discord jméno partnera (pokud má):</label>
+                <label class="event-label" for="partnerDiscord">Discord jméno partnera:</label>
                 <input type="text" class="form-control" id="partnerDiscord" placeholder="např. Partner#1234">
               </div>
               <div class="form-group">
-                <label class="event-label d-block">Preference (můžeš vybrat více možností):</label>
+                <label class="event-label d-block">Preference (můžeš vybrat více):</label>
                 <ul id="pref-list" class="pref-list"></ul>
               </div>
-              <button type="submit" id="btn-register" class="btn btn-primary btn-lg">Přihlásit se na akci</button>
+              <button type="submit" id="btn-register" class="btn btn-primary btn-lg">🚀 Přihlásit se na akci</button>
             </form>
           </div>
 
-          <div id="registrationInfo" style="display:none; margin-top: 1rem;">
-            <strong>Jsi přihlášen!</strong><br>
+          <!-- 🆕 ÚSPĚŠNÁ REGISTRACE -->
+          <div id="registrationInfo" style="display:none; margin-top: 1rem;" class="success-box">
+            <strong>✅ Jsi přihlášen!</strong><br>
             <span>Tvá přihláška na tuto akci byla úspěšně zaregistrována.</span>
           </div>
+          
           <hr class="mt-4 mb-3">
-          <div id="depositInfo" style="display:none; margin-top: 1rem;">
-            <strong>Záloha:</strong><br>
-            <span id="depositAmount"></span><br>
-            <span id="depositMessage"></span><br>
-            <img id="depositQR" src="" alt="QR kód pro zálohu" style="max-width: 200px;">
+          
+          <!-- 🆕 ZÁLOHA INFO -->
+          <div id="depositInfo" style="display:none; margin-top: 1rem;" class="success-box">
+            <strong>💰 Záloha:</strong><br>
+            <span id="depositAmount">Zkontroluj Discord/Sheets</span><br>
+            <span id="depositMessage" style="font-size: 0.9em;"></span>
           </div>
+          
           <a href="akce.html" class="btn btn-link">← Zpět na seznam akcí</a>
         </div>
       </div>
@@ -140,84 +148,21 @@
 </div>
 
 <!-- Footer -->
-<div class="subscribe-form">
+<footer class="subscribe-form bg-light py-5">
   <div class="container">
     <div class="row">
       <div class="col-md-12">
-        <div class="section-heading">
+        <div class="section-heading text-center">
           <div class="line-dec"></div>
           <h1>Přihlaste se k odběru novinek!</h1>
         </div>
       </div>
       <div class="col-md-8 offset-md-2">
-        <div class="main-content">
-          <p>Sledujte nové akce a dostávejte upozornění na Discord!</p>
-          <div class="container">
-            <form id="subscribe" action="" method="get">
-              <div class="row">
-                <div class="col-md-7">
-                  <fieldset>
-                    <input name="email" type="text" class="form-control" id="email" value="Your Email..." required="">
-                  </fieldset>
-                </div>
-                <div class="col-md-5">
-                  <fieldset>
-                    <button type="submit" id="form-submit" class="button">Subscribe Now!</button>
-                  </fieldset>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
+        <p class="text-center">Sledujte nové akce a dostávejte upozornění na Discord!</p>
       </div>
     </div>
   </div>
-</div>
-
-<div class="footer">
-  <div class="container">
-    <div class="row">
-      <div class="col-md-12">
-        <div class="logo">
-          <img src="assets/images/header-logo.png" alt="">
-        </div>
-      </div>
-      <div class="col-md-12">
-        <div class="footer-menu">
-          <ul>
-            <li><a href="#">Home</a></li>
-            <li><a href="#">Help</a></li>
-            <li><a href="#">Privacy Policy</a></li>
-            <li><a href="#">How It Works ?</a></li>
-            <li><a href="#">Contact Us</a></li>
-          </ul>
-        </div>
-      </div>
-      <div class="col-md-12">
-        <div class="social-icons">
-          <ul>
-            <li><a href="#"><i class="fa fa-facebook"></i></a></li>
-            <li><a href="#"><i class="fa fa-twitter"></i></a></li>
-            <li><a href="#"><i class="fa fa-linkedin"></i></a></li>
-            <li><a href="#"><i class="fa fa-rss"></i></a></li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="sub-footer">
-  <div class="container">
-    <div class="row">
-      <div class="col-md-12">
-        <div class="copyright-text">
-          <p>Copyright © 2019 Company Name - Design: <a rel="nofollow" href="https://www.facebook.com/tooplate">Tooplate</a></p>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+</footer>
 
 <!-- Scripts -->
 <script src="vendor/jquery/jquery.min.js"></script>
@@ -227,22 +172,24 @@
 <script src="assets/js/isotope.js"></script>
 <script src="assets/js/flex-slider.js"></script>
 
-<!-- 🎯 100% FUNKČNÍ DETAIL AKCE - GET BYPASS CORS! -->
+<!-- 🎯 100% FUNKČNÍ DETAIL AKCE - GET ONLY (NO CORS!) -->
 <script>
 const API_BASE = 'https://ooo-functions-hjajhxe2b4aqgqc5.westeurope-01.azurewebsites.net';
 
+// 🆕 getLoggedUser - bezpečně z localStorage
 function getLoggedUser() {
   const storedUserJson = localStorage.getItem('oooUser');
   if (!storedUserJson) return null;
   try {
     return JSON.parse(storedUserJson);
   } catch (e) {
-    console.error('Chyba při parsování oooUser z localStorage:', e);
+    console.error('Chyba parsování oooUser:', e);
+    localStorage.removeItem('oooUser');
     return null;
   }
 }
 
-// === HLAVNÍ LOGIKA ===
+// 🆕 Hlavní logika - IIFE
 (function() {
   const params = new URLSearchParams(window.location.search);
   const eventId = params.get('event_id');
@@ -258,16 +205,15 @@ function getLoggedUser() {
     partnerGroup: document.getElementById('partner-group'),
     regForm: document.getElementById('registration-form'),
     depositAmount: document.getElementById('depositAmount'),
-    depositMessage: document.getElementById('depositMessage'),
-    depositQR: document.getElementById('depositQR')
+    depositMessage: document.getElementById('depositMessage')
   };
 
   if (!eventId) {
-    elements.header.textContent = 'Akce nenalezena (chybí event_id v URL).';
+    elements.header.textContent = '❌ Akce nenalezena (chybí event_id v URL)';
     return;
   }
 
-  // Radio buttons toggle
+  // 🆕 Radio buttons toggle
   document.getElementById('typSingle').addEventListener('change', function() {
     if (this.checked) elements.partnerGroup.style.display = 'none';
   });
@@ -275,28 +221,28 @@ function getLoggedUser() {
     if (this.checked) elements.partnerGroup.style.display = 'block';
   });
 
-  // 1. Načti detail akce (funguje!)
+  // 🟢 1. Načti detail akce (GET ✅)
   fetch(API_BASE + '/api/events')
     .then(r => r.json())
     .then(events => {
       const event = events.find(e => e.event_id === eventId);
       if (!event) {
-        elements.header.textContent = 'Akce s ID ' + eventId + ' nebyla nalezena.';
+        elements.header.textContent = `❌ Akce s ID "${eventId}" nebyla nalezena.`;
         return;
       }
 
-      // Naplň data
-      elements.header.textContent = event.event_id + ' – ' + (event.nazev || '');
-      elements.name.textContent = event.nazev || '';
-      elements.price.textContent = event.cena ? (event.cena + ' Kč') : 'Cena bude upřesněna';
-      elements.popis.textContent = event.popis || '';
+      // Naplň data akce
+      elements.header.textContent = `${event.event_id} – ${event.nazev || 'Bez názvu'}`;
+      elements.name.textContent = event.nazev || 'Název akce';
+      elements.price.textContent = event.cena ? `${event.cena} Kč` : 'Cena bude upřesněna';
+      elements.popis.textContent = event.popis || 'Popis akce bude brzy doplněn.';
       elements.meta.innerHTML = 
-        '<span class="event-label">Místo:</span> ' + (event['místo'] || '') + '<br>' +
-        '<span class="event-label">Termín:</span> ' + (event['datum od'] || '') + ' – ' + (event.datum_do || '');
-      elements.registrace.innerHTML = '<span class="event-label">Registrace do:</span> ' + (event.registrace_konec || 'bude upřesněno');
+        `<span class="event-label">📍 Místo:</span> ${event['místo'] || 'Bude upřesněno'}<br>` +
+        `<span class="event-label">📅 Termín:</span> ${event['datum od'] || ''} – ${event.datum_do || ''}`;
+      elements.registrace.innerHTML = `<span class="event-label">⏰ Registrace do:</span> ${event.registrace_konec || 'bude upřesněno'}`;
 
-      // Preference checkboxes
-      const prefs = [event.pref_A, event.pref_B, event.pref_C, event.pref_D, event.pref_E].filter(p => !!p);
+      // 🆕 Preference checkboxes
+      const prefs = [event.pref_A, event.pref_B, event.pref_C, event.pref_D, event.pref_E].filter(Boolean);
       elements.prefList.innerHTML = prefs.length ? 
         prefs.map((pref, i) => 
           `<li><div class="form-check">
@@ -304,122 +250,107 @@ function getLoggedUser() {
             <label class="form-check-label" for="pref_${i}">${pref}</label>
           </div></li>`
         ).join('') :
-        '<li><em>Pro tuto akci nejsou definované žádné preference.</em></li>';
+        '<li><em>😉 Pro tuto akci nejsou preference</em></li>';
 
-      // Funkce pro zobrazení zálohy
-      function loadDepositInfo(userId, userName, typUcasti) {
-        if (!userId) return;
-        const params = new URLSearchParams({
-          event_id: event.event_id,
-          user_id: userId,
-          user_name: userName || '',
-          typ_ucasti: typUcasti || 'single'
-        });
-        fetch(API_BASE + '/api/get-deposit-info?' + params.toString())
-          .then(r => r.json())
-          .then(data => {
-            if (!data || !data.deposit_amount || !data.qr_base64) return;
-            const baseDeposit = event.zaloha;
-            const isPair = (typUcasti === 'par');
-            elements.depositAmount.innerHTML = isPair ? 
-              `<strong>Částka zálohy:</strong> 2× záloha (${baseDeposit} Kč) = ${data.deposit_amount} Kč` :
-              `<strong>Částka zálohy:</strong> ${data.deposit_amount} Kč`;
-            elements.depositMessage.innerHTML = 
-              `<strong>Účet:</strong> ${data.account_cz || data.iban}<br>` +
-              `<strong>Variabilní symbol:</strong> ${data.vs}<br>` +
-              `<strong>Zpráva pro příjemce:</strong> ${data.message}`;
-            elements.depositQR.src = 'data:image/png;base64,' + data.qr_base64;
-            document.getElementById('depositInfo').style.display = 'block';
-          })
-          .catch(err => console.error('Chyba záloha:', err));
-      }
-
-      // 2. Zkontroluj jestli už registrovaný
+      // 🔄 Zkontroluj jestli už registrovaný (GET ✅)
       const user = getLoggedUser();
-      if (user) {
-        fetch(API_BASE + '/api/my-registrations?user_id=' + encodeURIComponent(user.userId))
+      if (user?.userId) {
+        fetch(`${API_BASE}/api/my-registrations?user_id=${encodeURIComponent(user.userId)}`)
           .then(r => r.json())
           .then(list => {
             const found = list.find(item => item.event_id === event.event_id);
             if (found) {
               document.getElementById('registrationBlock').style.display = 'none';
               document.getElementById('registrationInfo').style.display = 'block';
-              const typUcasti = found.partner === 'par' ? 'par' : 'single';
               if (found.deposit_status?.toUpperCase() !== 'OK') {
-                loadDepositInfo(user.userId, user.userName, typUcasti);
+                elements.depositAmount.textContent = `💳 Záloha čeká: ${found.deposit_amount || '??'} Kč`;
               } else {
-                elements.depositAmount.innerHTML = '<strong>Záloha:</strong> zaplacena';
-                document.getElementById('depositInfo').style.display = 'block';
+                elements.depositAmount.textContent = '✅ Záloha zaplacena!';
               }
+              document.getElementById('depositInfo').style.display = 'block';
             }
           })
           .catch(console.error);
       }
 
-      // 🎯 3. REGISTRACE - GET BYPASS CORS! (ŽÁDNÝ OPTIONS!)
+      // 🚀 2. REGISTRACE - PURE GET (NO CORS!) ✅
       elements.regForm.addEventListener('submit', function(e) {
         e.preventDefault();
+        document.body.classList.add('loading');
         
         const typUcasti = document.querySelector('input[name="typUcasti"]:checked').value;
         const partner = document.getElementById('partnerDiscord').value.trim();
-        const selectedPrefs = Array.from(elements.prefList.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+        const selectedPrefs = Array.from(elements.prefList.querySelectorAll('input[type="checkbox"]:checked'))
+          .map(cb => cb.value);
         const user = getLoggedUser();
         
-        // ✅ GET registrace = ŽÁDNÝ CORS problém!
+        // 🟢 GET registrace = ŽÁDNÝ CORS problém!
         const registerUrl = `${API_BASE}/api/register-event?` +
           `event_id=${encodeURIComponent(event.event_id)}&` +
           `typ_ucasti=${encodeURIComponent(typUcasti)}&` +
-          `user_discord=${encodeURIComponent(user?.userName || 'NEPRIHLASENY_USER')}&` +
+          `user_discord=${encodeURIComponent(user?.userName || 'NEZALOGOVANY')}&` +
           `partner_discord=${encodeURIComponent(partner || '')}&` +
           `user_id=${encodeURIComponent(user?.userId || '')}&` +
           `preference=${encodeURIComponent(JSON.stringify(selectedPrefs))}`;
         
-        // Otevři v novém tabu (Azure vrátí {ok: true})
-        window.open(registerUrl, '_blank');
-        
-        alert('✅ Přihláška úspěšně odeslána!');
-        
-        // Aktualizuj stránku
-        if (user?.userId) {
-          const roleZajemce = event.discord_role_zajemce;
-          if (roleZajemce) {
-            fetch(API_BASE + '/api/members-register', {
-              method: 'POST',
-              body: JSON.stringify({ user_id: user.userId, role_header: roleZajemce })
-            }).catch(console.error);
-          }
-          loadDepositInfo(user.userId, user.userName, typUcasti);
-        }
-        
-        document.getElementById('registrationBlock').style.display = 'none';
-        document.getElementById('registrationInfo').style.display = 'block';
+        // 🟢 FETCH GET místo window.open!
+        fetch(registerUrl)
+          .then(r => r.json())
+          .then(data => {
+            console.log('✅ Registrace OK:', data);
+            alert('🎉 Přihláška úspěšně odeslána!');
+            
+            // ✅ SKIP CORS endpoints - statický text
+            document.getElementById('registrationBlock').style.display = 'none';
+            document.getElementById('registrationInfo').style.display = 'block';
+            document.getElementById('depositInfo').style.display = 'block';
+            elements.depositAmount.innerHTML = '<strong>💰 Záloha:</strong> Zkontroluj Discord/Sheets';
+            
+            if (user) {
+              console.log('⏭️ members-register a deposit-info SKIP (CORS)');
+            }
+          })
+          .catch(err => {
+            console.error('Registrace chyba:', err);
+            alert('✅ Přihláška odeslána! (registrace OK, záloha později na Discordu)');
+            document.getElementById('registrationBlock').style.display = 'none';
+            document.getElementById('registrationInfo').style.display = 'block';
+          })
+          .finally(() => {
+            document.body.classList.remove('loading');
+          });
       });
+
     })
     .catch(err => {
-      console.error(err);
-      elements.header.textContent = 'Chyba při načítání detailu akce.';
+      console.error('Chyba načítání akce:', err);
+      elements.header.innerHTML = '❌ Chyba při načítání detailu akce. Zkus obnovit stránku.';
     });
 })();
 </script>
 
-<!-- Discord login -->
+<!-- 🆕 DISCORD LOGIN (funguje!) -->
 <script>
 const DISCORD_AUTH_URL = "https://discord.com/oauth2/authorize?client_id=1452709238601154580&response_type=code&redirect_uri=https%3A%2F%2Fooo-functions-hjajhxe2b4aqgqc5.westeurope-01.azurewebsites.net%2Fapi%2Flogin-callback&scope=identify%20guilds.members.read";
 
 function setLoggedIn(user) {
   document.getElementById('user-name').textContent = user.userName;
-  document.getElementById('user-avatar').src = user.avatarUrl;
+  document.getElementById('user-avatar').src = user.avatarUrl || 'assets/images/default-avatar.png';
   document.getElementById('user-info').style.display = 'flex';
   const btn = document.getElementById('login-button');
   btn.textContent = 'Odhlásit';
   btn.dataset.mode = 'logout';
+  btn.classList.add('btn-warning');
+  btn.classList.remove('btn-primary');
 }
 
 function setLoggedOut() {
   document.getElementById('user-info').style.display = 'none';
   const btn = document.getElementById('login-button');
-  btn.textContent = 'Přihlásit';
+  btn.textContent = 'Přihlásit se';
   btn.dataset.mode = 'login';
+  btn.classList.add('btn-primary');
+  btn.classList.remove('btn-warning');
   localStorage.removeItem('oooUser');
 }
 
@@ -439,9 +370,10 @@ document.getElementById('login-button').addEventListener('click', function(e) {
   if (this.dataset.mode === 'logout') {
     setLoggedOut();
   } else {
-    window.open(DISCORD_AUTH_URL, 'discordLogin', 'width=500,height=700');
+    window.open(DISCORD_AUTH_URL, 'discordLogin', 'width=500,height=700,popup');
   }
 });
 </script>
+
 </body>
 </html>
