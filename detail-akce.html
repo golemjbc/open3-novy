@@ -461,7 +461,7 @@
         })();
 
         // ✅ KOMPLETNÍ REGISTRACE S MEMBERS-REGISTER!
-                  regForm.addEventListener('submit', function (e) {
+           regForm.addEventListener('submit', function (e) {
             e.preventDefault();
             
             const typUcasti = document.querySelector('input[name="typUcasti"]:checked').value;
@@ -527,6 +527,7 @@
               if (user?.userId) loadDepositInfo(user.userId, user.userName, typUcasti);
             });
           });
+
 
       })
       .catch(function (err) {
