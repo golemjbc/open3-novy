@@ -202,7 +202,7 @@
             <div class="main-content">
               <p>Postup přihlášení a plateb na akci</p>
               <ol>
-                <li><strong>Přihlášení</strong> – vyplň informace o tobě a tvých preferencích a tvém partnerovi (ideálně discord jméno).</li>
+                <li><strong>Přihlášení</strong> – vyplň informace o tobě, tvém partnerovi (ideálně discord jméno) a tvých preferencích.</li>
                 <li><strong>Záloha</strong> – po odeslání přihlášky se ti zobrazí tvoje jedinečné platební údaje a přiřadí se ti role na Discordu zájemce o akci.</li>
                 <li><strong>Zpracování zálohy</strong> – po našem ručním zpracování zálohy se zobrazí informace o zalacení zálohy a získáváš roli účastník akce.</li>
                 <li><strong>Doplatek</strong> – po zpracování všech přihlášených zájemců ti přidělíme doplatek a opět se zde zobrazí infomrace o platbě včetně QR kódu.</li>
@@ -392,7 +392,17 @@
         headerEl.textContent = event.event_id + ' – ' + (event.nazev || '');
         nameEl.textContent   = event.nazev || '';
         priceEl.textContent  = event.cena ? (event.cena + ' Kč') : 'Cena bude upřesněna';
-        popisEl.textContent  = event.popis || '';
+        //popisEl.textContent  = event.popis || '';
+        // 🆕 POPIS S DISCORD LINKEM (sloupec Y)
+        let popisHtml = event.popis || '';
+        if (event.discord_info && event.discord_info.trim()) {
+          const discordUrlMatch = event.discord_info.match(/\[https?:\/\/[^\]]+\]/);
+          if (discordUrlMatch) {
+            const discordUrl = discordUrlMatch[0].replace(/[\[\]]/g, '');
+            popisHtml += `<br><br><strong>📢 <a href="${discordUrl}" target="_blank" style="color: #5865F2; font-size: 1.1em; text-decoration: none;">Discord kanál s informacemi</a></strong>`;
+          }
+        }
+        popisEl.innerHTML = popisHtml;
 
         metaEl.innerHTML =
           '<span class="event-label">Místo:</span> ' + (event['místo'] || '') + '<br>' +
