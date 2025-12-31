@@ -588,7 +588,7 @@
         })();
 
         // Partner search autocomplete ✅ KROK 2C
-        // Partner search autocomplete - JMÉNO + USERNAME
+                  // Partner search autocomplete - FORMÁT "JMÉNO | USERNAME | ID"
           const partnerInput = document.getElementById('partnerDiscord');
           const dropdown = document.getElementById('partner-dropdown');
 
@@ -612,7 +612,9 @@
               matches.forEach(member => {
                 html += `
                   <div style="padding: 12px; cursor: pointer; border-bottom: 1px solid #eee;" 
-                      data-user="${member.userId}" 
+                      data-user="${member.userId}"
+                      data-displayName="${member.displayName}"
+                      data-username="${member.username}"
                       onmouseover="this.style.background='#f8f9fa'" 
                       onmouseout="this.style.background='white'">
                     <strong>${member.displayName}</strong> 
@@ -628,7 +630,8 @@
 
             dropdown.addEventListener('click', function(e) {
               if (e.target.dataset.user) {
-                partnerInput.value = e.target.dataset.user;  // Do inputu ID
+                // 🆕 FORMÁT: "Adam | adam.be | 689893036444090476"
+                partnerInput.value = `${e.target.dataset.displayName} | ${e.target.dataset.username} | ${e.target.dataset.user}`;
                 this.style.display = 'none';
               }
             });
@@ -639,7 +642,6 @@
               }
             });
           }
-
 
         // ✅ KOMPLETNÍ REGISTRACE S MEMBERS-REGISTER!
         regForm.addEventListener('submit', function (e) {
