@@ -312,24 +312,22 @@
   // 🆕 PARTNER AUTOCOMPLETE Z /api/members ✅ KROK 2A
   let discordMembers = [];
 
-      async function loadMembers() {
+     async function loadMembers() {
         try {
           const response = await fetch(`${API_BASE}/api/members`);
           const members = await response.json();
-          
-          // 🔥 DEBUG - UKAŽ RAW DATUM!
-          console.log('🔥 RAW MEMBERS DATA:', members[0]);  // První člen
-          
           discordMembers = members.map(m => ({
             userId: m.user_id,
-            displayName: m.user_name || m.username || m.nick || m.name || 'Neznámý',
-            roles: Object.keys(m.roles || {})
+            displayName: m.roles['Zobrazované jméno'] || m.roles['Uživatelské jméno'] || 'Neznámý',
+            username: m.roles['Uživatelské jméno'] || 'Neznámý',
+            roles: Object.keys(m.roles || {}).filter(r => !r.includes('jméno'))  // Vyloučí jména z rolí
           }));
-          console.log('✅ Načteno', discordMembers.length, 'members');
+          console.log('✅ Načteno', discordMembers.length, 'members s jmény');
         } catch (err) {
           console.error('Members load error:', err);
         }
       }
+
 
   (function () {
     const params = new URLSearchParams(window.location.search);
@@ -590,51 +588,58 @@
         })();
 
         // Partner search autocomplete ✅ KROK 2C
-        const partnerInput = document.getElementById('partnerDiscord');
-        const dropdown = document.getElementById('partner-dropdown');
+        // Partner search autocomplete - JMÉNO + USERNAME
+          const partnerInput = document.getElementById('partnerDiscord');
+          const dropdown = document.getElementById('partner-dropdown');
 
-        if (partnerInput && dropdown) {
-          partnerInput.addEventListener('input', function() {
-            const query = this.value.toLowerCase();
-            if (query.length < 2) {
-              dropdown.style.display = 'none';
-              return;
-            }
-            
-            const matches = discordMembers
-              .filter(m => m.userId.toLowerCase().includes(query))
-              .slice(0, 8);
-            
-            let html = '';
-            matches.forEach(member => {
-              html += `
-                <div style="padding: 12px; cursor: pointer; border-bottom: 1px solid #eee;" 
-                     data-user="${member.userId}" 
-                     onmouseover="this.style.background='#f8f9fa'" 
-                     onmouseout="this.style.background='white'">
-                  ${member.userId}
-                  ${member.roles.length ? `<br><small style="color:#666;">Roly: ${member.roles.join(', ')}</small>` : ''}
-                </div>
-              `;
+          if (partnerInput && dropdown) {
+            partnerInput.addEventListener('input', function() {
+              const query = this.value.toLowerCase();
+              if (query.length < 2) {
+                dropdown.style.display = 'none';
+                return;
+              }
+              
+              const matches = discordMembers
+                .filter(m => 
+                  m.userId.toLowerCase().includes(query) || 
+                  m.displayName.toLowerCase().includes(query) ||
+                  m.username.toLowerCase().includes(query)
+                )
+                .slice(0, 8);
+              
+              let html = '';
+              matches.forEach(member => {
+                html += `
+                  <div style="padding: 12px; cursor: pointer; border-bottom: 1px solid #eee;" 
+                      data-user="${member.userId}" 
+                      onmouseover="this.style.background='#f8f9fa'" 
+                      onmouseout="this.style.background='white'">
+                    <strong>${member.displayName}</strong> 
+                    <br><small style="color:#666;">${member.username}</small>
+                    ${member.roles.length ? `<br><small>Roly: ${member.roles.slice(0,3).join(', ')}${member.roles.length > 3 ? '...' : ''}</small>` : ''}
+                  </div>
+                `;
+              });
+              
+              dropdown.innerHTML = html;
+              dropdown.style.display = matches.length ? 'block' : 'none';
             });
-            
-            dropdown.innerHTML = html;
-            dropdown.style.display = matches.length ? 'block' : 'none';
-          });
 
-          dropdown.addEventListener('click', function(e) {
-            if (e.target.dataset.user) {
-              partnerInput.value = e.target.dataset.user;
-              this.style.display = 'none';
-            }
-          });
+            dropdown.addEventListener('click', function(e) {
+              if (e.target.dataset.user) {
+                partnerInput.value = e.target.dataset.user;  // Do inputu ID
+                this.style.display = 'none';
+              }
+            });
 
-          document.addEventListener('click', function(e) {
-            if (!e.target.closest('input#partnerDiscord')) {
-              dropdown.style.display = 'none';
-            }
-          });
-        }
+            document.addEventListener('click', function(e) {
+              if (!e.target.closest('input#partnerDiscord')) {
+                dropdown.style.display = 'none';
+              }
+            });
+          }
+
 
         // ✅ KOMPLETNÍ REGISTRACE S MEMBERS-REGISTER!
         regForm.addEventListener('submit', function (e) {
