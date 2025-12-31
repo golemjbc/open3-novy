@@ -600,61 +600,73 @@
         })();
 
         // Partner search autocomplete ✅ KROK 2C
-         // Partner search autocomplete - FORMÁT "JMÉNO | USERNAME | ID" ✅ HTML ESCAPING!
-          const partnerInput = document.getElementById('partnerDiscord');
-          const dropdown = document.getElementById('partner-dropdown');
+        // Partner search autocomplete - 100% SPOLEHLIVÉ řešení!
+            const partnerInput = document.getElementById('partnerDiscord');
+            const dropdown = document.getElementById('partner-dropdown');
 
-          if (partnerInput && dropdown) {
-            partnerInput.addEventListener('input', function() {
-              const query = this.value.toLowerCase();
-              if (query.length < 2) {
-                dropdown.style.display = 'none';
-                return;
-              }
-              
-              const matches = discordMembers
-                .filter(m => 
-                  m.userId.toLowerCase().includes(query) || 
-                  m.displayName.toLowerCase().includes(query) ||
-                  m.username.toLowerCase().includes(query)
-                )
-                .slice(0, 8);
-              
-              let html = '';
-              matches.forEach(member => {
-                html += `
-                  <div style="padding: 12px; cursor: pointer; border-bottom: 1px solid #eee;" 
-                      data-user="${member.userId}"
-                      data-displayName="${member.displayName.replace(/"/g, '&quot;')}"
-                      data-username="${member.username.replace(/"/g, '&quot;')}"
-                      onmouseover="this.style.background='#f8f9fa'" 
-                      onmouseout="this.style.background='white'">
-                    <strong>${member.displayName}</strong> 
-                    <br><small style="color:#666;">${member.username}</small>
-                    ${member.roles.length ? `<br><small>Roly: ${member.roles.slice(0,3).join(', ')}${member.roles.length > 3 ? '...' : ''}</small>` : ''}
-                  </div>
-                `;
+            if (partnerInput && dropdown) {
+              partnerInput.addEventListener('input', function() {
+                const query = this.value.toLowerCase();
+                if (query.length < 2) {
+                  dropdown.style.display = 'none';
+                  return;
+                }
+                
+                const matches = discordMembers
+                  .filter(m => 
+                    m.userId.toLowerCase().includes(query) || 
+                    m.displayName.toLowerCase().includes(query) ||
+                    m.username.toLowerCase().includes(query)
+                  )
+                  .slice(0, 8);
+                
+                let html = '';
+                matches.forEach((member, index) => {
+                  html += `
+                    <div class="partner-item" style="padding: 12px; cursor: pointer; border-bottom: 1px solid #eee;" 
+                        data-index="${index}"
+                        onmouseover="this.style.background='#f8f9fa'" 
+                        onmouseout="this.style.background='white'">
+                      <strong>${member.displayName}</strong> 
+                      <br><small style="color:#666;">${member.username}</small>
+                      ${member.roles.length ? `<br><small>Roly: ${member.roles.slice(0,3).join(', ')}${member.roles.length > 3 ? '...' : ''}</small>` : ''}
+                    </div>
+                  `;
+                });
+                
+                dropdown.innerHTML = html;
+                dropdown.style.display = matches.length ? 'block' : 'none';
+                
+                // 🆕 NAŘÍDÍME DATA DO DATASET PO VYTVOŘENÍ!
+                document.querySelectorAll('.partner-item').forEach((item, index) => {
+                  const member = matches[index];
+                  if (member) {
+                    item.dataset.userId = member.userId;
+                    item.dataset.displayName = member.displayName;
+                    item.dataset.username = member.username;
+                  }
+                });
               });
-              
-              dropdown.innerHTML = html;
-              dropdown.style.display = matches.length ? 'block' : 'none';
-            });
 
-            dropdown.addEventListener('click', function(e) {
-              const clickedDiv = e.target.closest('div[data-user]');
-              if (clickedDiv && clickedDiv.dataset.user) {
-                partnerInput.value = `${clickedDiv.dataset.displayName} | ${clickedDiv.dataset.username} | ${clickedDiv.dataset.user}`;
-                console.log('✅ PARTNER VYBRÁN:', partnerInput.value);
-                this.style.display = 'none';
-              }
-            });
+              dropdown.addEventListener('click', function(e) {
+                const clickedDiv = e.target.closest('.partner-item');
+                if (clickedDiv) {
+                  const displayName = clickedDiv.dataset.displayName;
+                  const username = clickedDiv.dataset.username;
+                  const userId = clickedDiv.dataset.userId;
+                  
+                  partnerInput.value = `${displayName} | ${username} | ${userId}`;
+                  console.log('✅ PARTNER VYBRÁN:', partnerInput.value);
+                  this.style.display = 'none';
+                }
+              });
 
-            document.addEventListener('click', function(e) {
-              if (!e.target.closest('input#partnerDiscord')) {
-                dropdown.style.display = 'none';
-              }
-            });
-          }
+              document.addEventListener('click', function(e) {
+                if (!e.target.closest('input#partnerDiscord')) {
+                  dropdown.style.display = 'none';
+                }
+              });
+            }
 
 
 
