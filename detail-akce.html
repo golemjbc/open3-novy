@@ -669,14 +669,12 @@
             }
 
 
-
-        // ✅ KOMPLETNÍ REGISTRACE S MEMBERS-REGISTER!
         // ✅ KOMPLETNÍ REGISTRACE - "NÁZEV | JMÉNO | DISCORD ID" !
           regForm.addEventListener('submit', function (e) {
             e.preventDefault();
             
             const typUcasti = document.querySelector('input[name="typUcasti"]:checked').value;
-            const partner = document.getElementById('partnerDiscord').value.trim();
+           // const partner = document.getElementById('partnerDiscord').value.trim();
             const selectedPrefs = Array.from(prefListEl.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
             const user = getLoggedUser();
 
