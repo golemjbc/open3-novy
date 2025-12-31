@@ -312,19 +312,24 @@
   // 🆕 PARTNER AUTOCOMPLETE Z /api/members ✅ KROK 2A
   let discordMembers = [];
 
-  async function loadMembers() {
-    try {
-      const response = await fetch(`${API_BASE}/api/members`);
-      const members = await response.json();
-      discordMembers = members.map(m => ({
-        userId: m.user_id,
-        roles: Object.keys(m.roles || {})
-      }));
-      console.log('✅ Načteno', discordMembers.length, 'members');
-    } catch (err) {
-      console.error('Members load error:', err);
-    }
-  }
+      async function loadMembers() {
+        try {
+          const response = await fetch(`${API_BASE}/api/members`);
+          const members = await response.json();
+          
+          // 🔥 DEBUG - UKAŽ RAW DATUM!
+          console.log('🔥 RAW MEMBERS DATA:', members[0]);  // První člen
+          
+          discordMembers = members.map(m => ({
+            userId: m.user_id,
+            displayName: m.user_name || m.username || m.nick || m.name || 'Neznámý',
+            roles: Object.keys(m.roles || {})
+          }));
+          console.log('✅ Načteno', discordMembers.length, 'members');
+        } catch (err) {
+          console.error('Members load error:', err);
+        }
+      }
 
   (function () {
     const params = new URLSearchParams(window.location.search);
