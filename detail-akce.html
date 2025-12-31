@@ -150,7 +150,11 @@
               <!-- Discord jméno partnera -->
               <div class="form-group" id="partner-group" style="display:none;">
                 <label class="event-label" for="partnerDiscord">Discord jméno partnera (pokud má):</label>
-                <input type="text" class="form-control" id="partnerDiscord" placeholder="např. Partner#1234">
+                <div style="position: relative;">
+                  <input type="text" class="form-control" id="partnerDiscord" placeholder="Začni psát Discord ID nebo napiš ručně...">
+                  <div id="partner-dropdown" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 6px; max-height: 200px; overflow-y: auto; z-index: 1000; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></div>
+                </div>
+                <small class="form-text text-muted">Vyber z dropdownu nebo napiš ručně (bez Discordu OK).</small>
               </div>
 
               <!-- Preference -->
@@ -189,69 +193,69 @@
 </div>
 
 <!-- Jak na to! -->
-    <div class="subscribe-form" id="jak-na-to">
-      <div class="container">
-        <div class="row">
-          <div class="col-md-12">
-            <div class="section-heading">
-              <div class="line-dec"></div>
-              <h1>Jak na to!</h1>
-            </div>
-          </div>
-          <div class="col-md-8 offset-md-2">
-            <div class="main-content">
-              <p>Postup přihlášení a plateb na akci</p>
-              <ol>
-                <li><strong>Přihlášení</strong> – vyplň informace o tobě, tvém partnerovi (ideálně discord jméno) a tvých preferencích.</li>
-                <li><strong>Záloha</strong> – po odeslání přihlášky se ti zobrazí tvoje jedinečné platební údaje a přiřadí se ti role na Discordu zájemce o akci.</li>
-                <li><strong>Zpracování zálohy</strong> – po našem ručním zpracování zálohy se zobrazí informace o zalacení zálohy a získáváš roli účastník akce.</li>
-                <li><strong>Doplatek</strong> – po zpracování všech přihlášených zájemců ti přidělíme doplatek a opět se zde zobrazí infomrace o platbě včetně QR kódu.</li>
-                <li><strong>Zpracování doplatku</strong> – po našem ručním zpracováním doplatku se ti zobrazí informace o zplaceném doplatku.</li>
-              </ol>
-            </div>
-          </div>
+<div class="subscribe-form" id="jak-na-to">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="section-heading">
+          <div class="line-dec"></div>
+          <h1>Jak na to!</h1>
+        </div>
+      </div>
+      <div class="col-md-8 offset-md-2">
+        <div class="main-content">
+          <p>Postup přihlášení a plateb na akci</p>
+          <ol>
+            <li><strong>Přihlášení</strong> – vyplň informace o tobě, tvém partnerovi (ideálně discord jméno) a tvých preferencích.</li>
+            <li><strong>Záloha</strong> – po odeslání přihlášky se ti zobrazí tvoje jedinečné platební údaje a přiřadí se ti role na Discordu zájemce o akci.</li>
+            <li><strong>Zpracování zálohy</strong> – po našem ručním zpracování zálohy se zobrazí informace o zalacení zálohy a získáváš roli účastník akce.</li>
+            <li><strong>Doplatek</strong> – po zpracování všech přihlášených zájemců ti přidělíme doplatek a opět se zde zobrazí infomrace o platbě včetně QR kódu.</li>
+            <li><strong>Zpracování doplatku</strong> – po našem ručním zpracováním doplatku se ti zobrazí informace o zplaceném doplatku.</li>
+          </ol>
         </div>
       </div>
     </div>
+  </div>
+</div>
 
 <!-- Footer -->
-    <div class="footer" id="kontakt">
-      <div class="container">
-        <div class="row">
-          <div class="col-md-12">
-            <div class="footer-menu">
-              <ul>
-                <li>Email: <a href="mailto:info@open3.cz">info@open3.cz</a></li>
-                <li>Telefon: <a href="tel:+420735593621">+420 735 593 621</a></li>
-                <li><a href="https://discord.gg/qYCAubmDQc">Discord komunita</a></li>
-                <li><a href="https://www.instagram.com/ooo.community">Instagram @ooo.community</a></li>
-              </ul>
-            </div>
-          </div>
-          <div class="col-md-12">
-            <div class="social-icons">
-              <ul>
-                <li><a href="https://discord.gg/qYCAubmDQc"><i class="fa fa-comments"></i></a></li>
-                <li><a href="https://www.instagram.com/ooo.community"><i class="fa fa-instagram"></i></a></li>
-              </ul>
-            </div>
-          </div>
+<div class="footer" id="kontakt">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="footer-menu">
+          <ul>
+            <li>Email: <a href="mailto:info@open3.cz">info@open3.cz</a></li>
+            <li>Telefon: <a href="tel:+420735593621">+420 735 593 621</a></li>
+            <li><a href="https://discord.gg/qYCAubmDQc">Discord komunita</a></li>
+            <li><a href="https://www.instagram.com/ooo.community">Instagram @ooo.community</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-md-12">
+        <div class="social-icons">
+          <ul>
+            <li><a href="https://discord.gg/qYCAubmDQc"><i class="fa fa-comments"></i></a></li>
+            <li><a href="https://www.instagram.com/ooo.community"><i class="fa fa-instagram"></i></a></li>
+          </ul>
         </div>
       </div>
     </div>
+  </div>
+</div>
 
-    <!-- Sub Footer -->
-    <div class="sub-footer">
-      <div class="container">
-        <div class="row">
-          <div class="col-md-12">
-            <div class="copyright-text">
-              <p>Copyright © 2026 OOO Community z.s. - Design: <a href="#">Adam</a></p>
-            </div>
-          </div>
+<!-- Sub Footer -->
+<div class="sub-footer">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="copyright-text">
+          <p>Copyright © 2026 OOO Community z.s. - Design: <a href="#">Adam</a></p>
         </div>
       </div>
     </div>
+  </div>
+</div>
 
 <!-- Scripts -->
 <script src="vendor/jquery/jquery.min.js"></script>
@@ -261,7 +265,7 @@
 <script src="assets/js/isotope.js"></script>
 <script src="assets/js/flex-slider.js"></script>
 
-<!-- DETAIL AKCE + ROLE + ZÁLOHA + OPRAVENÝ SLIDER! -->
+<!-- DETAIL AKCE + PARTNER AUTOCOMPLETE ✅ KROK 2 OK! -->
 <script>
   const API_BASE = 'https://ooo-functions-hjajhxe2b4aqgqc5.westeurope-01.azurewebsites.net';
 
@@ -305,6 +309,23 @@
     return cellValue.split(';').map(url => url.trim()).filter(Boolean);
   }
 
+  // 🆕 PARTNER AUTOCOMPLETE Z /api/members ✅ KROK 2A
+  let discordMembers = [];
+
+  async function loadMembers() {
+    try {
+      const response = await fetch(`${API_BASE}/api/members`);
+      const members = await response.json();
+      discordMembers = members.map(m => ({
+        userId: m.user_id,
+        roles: Object.keys(m.roles || {})
+      }));
+      console.log('✅ Načteno', discordMembers.length, 'members');
+    } catch (err) {
+      console.error('Members load error:', err);
+    }
+  }
+
   (function () {
     const params = new URLSearchParams(window.location.search);
     const eventId = params.get('event_id');
@@ -341,6 +362,10 @@
       })
       .then(function (events) {
         const event = events.find(function (ev) { return ev.event_id === eventId; });
+        
+        // Načti members pro partner search ✅ KROK 2B
+        loadMembers();
+        
         if (!event) {
           headerEl.textContent = 'Akce s ID ' + eventId + ' nebyla nalezena.';
           return;
@@ -392,32 +417,30 @@
         headerEl.textContent = event.event_id + ' – ' + (event.nazev || '');
         nameEl.textContent   = event.nazev || '';
         priceEl.textContent  = event.cena ? (event.cena + ' Kč') : 'Cena bude upřesněna';
-        //popisEl.textContent  = event.popis || '';
         
         // 🧪 DEBUG - co má event?
-          console.log('🔍 CELÝ EVENT:', event);
+        console.log('🔍 CELÝ EVENT:', event);
 
-          // 🆕 POPIS S DISCORD LINKEM
-          let popisHtml = event.popis || '';
+        // 🆕 POPIS S DISCORD LINKEM
+        let popisHtml = event.popis || '';
 
-         if (event.discord_info) {
-            console.log('✅ discord_info NAŠEL:', event.discord_info);
-            
-            // Najdi URL kdekoliv v textu
-            const urlMatch = event.discord_info.match(/https?:\/\/[^\s\[\]]+/);
-            if (urlMatch) {
-              popisHtml += `<br><br><strong><a href="${urlMatch[0]}" target="_blank" style="color: #007bff !important; font-size: 1.1em; font-weight: 600; text-decoration: none;">Discord kanál s informacemi, diskusí a dotazy!</a></strong>`;
-              console.log('✅ Discord link přidán!');
-            }
+        if (event.discord_info) {
+          console.log('✅ discord_info NAŠEL:', event.discord_info);
+          
+          // Najdi URL kdekoliv v textu
+          const urlMatch = event.discord_info.match(/https?:\/\/[^\s\[\]]+/);
+          if (urlMatch) {
+            popisHtml += `<br><br><strong><a href="${urlMatch[0]}" target="_blank" style="color: #007bff !important; font-size: 1.1em; font-weight: 600; text-decoration: none;">Discord kanál s informacemi, diskusí a dotazy!</a></strong>`;
+            console.log('✅ Discord link přidán!');
           }
+        }
 
+        popisEl.innerHTML = popisHtml;
 
-          popisEl.innerHTML = popisHtml;
-
-          metaEl.innerHTML =
-            '<span class="event-label">Místo:</span> ' + (event['místo'] || '') + '<br>' +
-            '<span class="event-label">Termín:</span> ' +
-            (event['datum od'] || '') + ' – ' + (event.datum_do || '');
+        metaEl.innerHTML =
+          '<span class="event-label">Místo:</span> ' + (event['místo'] || '') + '<br>' +
+          '<span class="event-label">Termín:</span> ' +
+          (event['datum od'] || '') + ' – ' + (event.datum_do || '');
 
         regEl.innerHTML =
           '<span class="event-label">Registrace do:</span> ' +
@@ -561,9 +584,55 @@
             });
         })();
 
+        // Partner search autocomplete ✅ KROK 2C
+        const partnerInput = document.getElementById('partnerDiscord');
+        const dropdown = document.getElementById('partner-dropdown');
+
+        if (partnerInput && dropdown) {
+          partnerInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            if (query.length < 2) {
+              dropdown.style.display = 'none';
+              return;
+            }
+            
+            const matches = discordMembers
+              .filter(m => m.userId.toLowerCase().includes(query))
+              .slice(0, 8);
+            
+            let html = '';
+            matches.forEach(member => {
+              html += `
+                <div style="padding: 12px; cursor: pointer; border-bottom: 1px solid #eee;" 
+                     data-user="${member.userId}" 
+                     onmouseover="this.style.background='#f8f9fa'" 
+                     onmouseout="this.style.background='white'">
+                  ${member.userId}
+                  ${member.roles.length ? `<br><small style="color:#666;">Roly: ${member.roles.join(', ')}</small>` : ''}
+                </div>
+              `;
+            });
+            
+            dropdown.innerHTML = html;
+            dropdown.style.display = matches.length ? 'block' : 'none';
+          });
+
+          dropdown.addEventListener('click', function(e) {
+            if (e.target.dataset.user) {
+              partnerInput.value = e.target.dataset.user;
+              this.style.display = 'none';
+            }
+          });
+
+          document.addEventListener('click', function(e) {
+            if (!e.target.closest('input#partnerDiscord')) {
+              dropdown.style.display = 'none';
+            }
+          });
+        }
 
         // ✅ KOMPLETNÍ REGISTRACE S MEMBERS-REGISTER!
-         regForm.addEventListener('submit', function (e) {
+        regForm.addEventListener('submit', function (e) {
           e.preventDefault();
           
           const typUcasti = document.querySelector('input[name="typUcasti"]:checked').value;
@@ -602,28 +671,27 @@
             });
 
             // 2. MEMBERS-REGISTER S PLNYM DEBUG!
-             // ✅ MEMBERS-REGISTER GET (BEZ CORS!)
-              console.log('🟢 VOLÁM MEMBERS-REGISTER GET:', {
-                user_id: user.userId,
-                role_header: event.discord_role_zajemce
+            console.log('🟢 VOLÁM MEMBERS-REGISTER GET:', {
+              user_id: user.userId,
+              role_header: event.discord_role_zajemce
+            });
+
+            const membersUrl = `${API_BASE}/api/members-register?` +
+              `user_id=${encodeURIComponent(user.userId)}&` +
+              `role_header=${encodeURIComponent(event.discord_role_zajemce)}`;
+
+            fetch(membersUrl)
+              .then(r => {
+                console.log('📡 MEMBERS STATUS:', r.status);
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.json();
+              })
+              .then(data => {
+                console.log('✅ MEMBERS OK:', data);
+              })
+              .catch(err => {
+                console.error('members-register GET error (bot OK):', err);
               });
-
-              const membersUrl = `${API_BASE}/api/members-register?` +
-                `user_id=${encodeURIComponent(user.userId)}&` +
-                `role_header=${encodeURIComponent(event.discord_role_zajemce)}`;
-
-              fetch(membersUrl)
-                .then(r => {
-                  console.log('📡 MEMBERS STATUS:', r.status);
-                  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-                  return r.json();
-                })
-                .then(data => {
-                  console.log('✅ MEMBERS OK:', data);
-                })
-                .catch(err => {
-                  console.error('members-register GET error (bot OK):', err);
-                });
 
             // 3. ZÁLOHA
             if (user?.userId) loadDepositInfo(user.userId, user.userName, typUcasti);
