@@ -393,16 +393,30 @@
         nameEl.textContent   = event.nazev || '';
         priceEl.textContent  = event.cena ? (event.cena + ' Kč') : 'Cena bude upřesněna';
         //popisEl.textContent  = event.popis || '';
-        // 🆕 POPIS S DISCORD LINKEM (sloupec Y)
-        let popisHtml = event.popis || '';
-        if (event.discord_info && event.discord_info.trim()) {
-          const discordUrlMatch = event.discord_info.match(/\[https?:\/\/[^\]]+\]/);
-          if (discordUrlMatch) {
-            const discordUrl = discordUrlMatch[0].replace(/[\[\]]/g, '');
-            popisHtml += `<br><br><strong>📢 <a href="${discordUrl}" target="_blank" style="color: #5865F2; font-size: 1.1em; text-decoration: none;">Discord kanál s informacemi</a></strong>`;
+        
+        // 🧪 DEBUG - co má event?
+          console.log('🔍 CELÝ EVENT:', event);
+
+          // 🆕 POPIS S DISCORD LINKEM
+          let popisHtml = event.popis || '';
+
+          if (event.discord_info) {
+            console.log('✅ discord_info NAŠEL:', event.discord_info);
+            
+            // Najdi URL kdekoliv v textu
+            const urlMatch = event.discord_info.match(/https?:\/\/[^\s\[\]]+/);
+            if (urlMatch) {
+              popisHtml += `<br><br><strong>📢 <a href="${urlMatch[0]}" target="_blank" style="color: #5865F2; font-size: 1.1em;">Discord kanál s informacemi</a></strong>`;
+            }
           }
-        }
-        popisEl.innerHTML = popisHtml;
+
+          popisEl.innerHTML = popisHtml;
+
+          metaEl.innerHTML =
+            '<span class="event-label">Místo:</span> ' + (event['místo'] || '') + '<br>' +
+            '<span class="event-label">Termín:</span> ' +
+            (event['datum od'] || '') + ' – ' + (event.datum_do || '');
+
 
         metaEl.innerHTML =
           '<span class="event-label">Místo:</span> ' + (event['místo'] || '') + '<br>' +
