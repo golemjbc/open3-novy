@@ -313,20 +313,32 @@
   let discordMembers = [];
 
      async function loadMembers() {
-        try {
-          const response = await fetch(`${API_BASE}/api/members`);
-          const members = await response.json();
-          discordMembers = members.map(m => ({
-            userId: m.user_id,
-            displayName: m.roles['Zobrazované jméno'] || m.roles['Uživatelské jméno'] || 'Neznámý',
-            username: m.roles['Uživatelské jméno'] || 'Neznámý',
-            roles: Object.keys(m.roles || {}).filter(r => !r.includes('jméno'))  // Vyloučí jména z rolí
-          }));
-          console.log('✅ Načteno', discordMembers.length, 'members s jmény');
-        } catch (err) {
-          console.error('Members load error:', err);
+          try {
+            const response = await fetch(`${API_BASE}/api/members`);
+            const members = await response.json();
+            
+            // 🔥 DEBUG - první 2 members
+            console.log('🔥 PRVNI 2 MEMBERS:', members.slice(0,2));
+            
+            discordMembers = members.map(m => {
+              const displayName = m.roles['Zobrazované jméno'] || m.roles['Uživatelské jméno'] || 'Neznámý';
+              const username = m.roles['Uživatelské jméno'] || 'Neznámý';
+              
+              console.log(`DEBUG ${m.user_id}: display="${displayName}", user="${username}"`); // DEBUG
+              
+              return {
+                userId: m.user_id,
+                displayName: displayName,
+                username: username,
+                roles: Object.keys(m.roles || {}).filter(r => !r.includes('jméno'))
+              };
+            });
+            console.log('✅ Načteno', discordMembers.length, 'members s jmény');
+          } catch (err) {
+            console.error('Members load error:', err);
+          }
         }
-      }
+
 
 
   (function () {
