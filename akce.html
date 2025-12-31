@@ -306,13 +306,32 @@
   return ''; // jinak žádný speciální tag
 }
 
+              // 🧠 SMART THUMBNAIL FUNKCE - vlož PŘED events.forEach
+              function getSmartImageUrl(url) {
+                if (!url) return 'assets/images/OOOlogo.png';
+                
+                // Google Drive: /file/d/FILEID/ → thumbnail
+                const driveMatch = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+                if (driveMatch) {
+                  return `https://drive.google.com/thumbnail?id=${driveMatch[1]}&sz=w800`;
+                }
+                
+                // Google Photos → weserv proxy
+                if (url.includes('photos.app.goo.gl') || url.includes('photos.google.com')) {
+                  return 'https://images.weserv.nl/?url=' + encodeURIComponent(url);
+                }
+                
+                // Přímé Google Photos
+                if (url.includes('lh3.googleusercontent.com') || url.includes('photos.fife.usercontent')) {
+                  return url;
+                }
+                
+                return url;
+              }
+
 
           events.forEach(function (e, index) {
-            const imgSrc = e.obrazek 
-            ? (e.obrazek.includes('photos.app.goo.gl') 
-              ? 'https://images.weserv.nl/?url=' + encodeURIComponent(e.obrazek) 
-              : e.obrazek)
-            : 'assets/images/OOOlogo.png';
+            const imgSrc = getSmartImageUrl(e.obrazek);
             const cssClass = getEventClass(e);
 
             const requiredRolesString = e.discord_role_required || '';
