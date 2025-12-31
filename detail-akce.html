@@ -34,6 +34,12 @@
     .pref-list li {
       margin-bottom: 0.25rem;
     }
+    .product-slider img {
+  width: 100%;
+  height: 400px;
+  object-fit: contain;
+  background: #f8f9fa;
+}
   </style>
 </head>
 
@@ -88,27 +94,25 @@
         </div>
       </div>
 
-      <!-- levý sloupec – obrázky -->
-      <div class="col-md-6">
-        <div class="product-slider">
-          <div id="slider" class="flexslider">
-            <ul class="slides">
-              <li><img src="assets/images/big-01.jpg" /></li>
-              <li><img src="assets/images/big-02.jpg" /></li>
-              <li><img src="assets/images/big-03.jpg" /></li>
-              <li><img src="assets/images/big-04.jpg" /></li>
-            </ul>
+          <!-- levý sloupec – obrázky -->
+          <div class="col-md-6">
+            <div class="product-slider">
+              <!-- HLAVNÍ SLIDER -->
+              <div id="slider" class="flexslider">
+                <ul class="slides" id="main-slider">
+                  <!-- Obrázky načte JS ze sloupce R="obrazky" -->
+                </ul>
+              </div>
+              
+              <!-- MINI THUMBNAILS DŮLEŽITÉ PRO NAVIGACI -->
+              <div id="carousel" class="flexslider">
+                <ul class="slides" id="thumb-slider">
+                  <!-- Thumbnails načte JS -->
+                </ul>
+              </div>
+            </div>
           </div>
-          <div id="carousel" class="flexslider">
-            <ul class="slides">
-              <li><img src="assets/images/thumb-01.jpg" /></li>
-              <li><img src="assets/images/thumb-02.jpg" /></li>
-              <li><img src="assets/images/thumb-03.jpg" /></li>
-              <li><img src="assets/images/thumb-04.jpg" /></li>
-            </ul>
-          </div>
-        </div>
-      </div>
+
 
       <!-- pravý sloupec – informace a formulář -->
       <div class="col-md-6">
@@ -321,6 +325,36 @@
       if (this.checked) partnerGroup.style.display = 'block';
     });
 
+          // 🧠 SMART THUMBNAIL (Google Drive → thumbnail)
+      function getSmartImageUrl(url) {
+        if (!url) return 'assets/images/OOOlogo.png';
+        
+        // Google Drive: /file/d/FILEID/ → thumbnail
+        const driveMatch = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+        if (driveMatch) {
+          return `https://drive.google.com/thumbnail?id=${driveMatch[1]}&sz=w800`;
+        }
+        
+        // Google Photos → weserv proxy
+        if (url.includes('photos.app.goo.gl') || url.includes('photos.google.com')) {
+          return 'https://images.weserv.nl/?url=' + encodeURIComponent(url);
+        }
+        
+        // Přímé Google Photos
+        if (url.includes('lh3.googleusercontent.com') || url.includes('photos.fife.usercontent')) {
+          return url;
+        }
+        
+        return url;
+      }
+
+      // 🧠 MULTI-IMAGE PARSER (středník ;)
+      function parseImageUrls(cellValue) {
+        if (!cellValue) return [];
+        return cellValue.split(';').map(url => url.trim()).filter(Boolean);
+      }
+
+
     fetch(API_BASE + '/api/events')
       .then(function (response) {
         if (!response.ok) throw new Error('HTTP ' + response.status);
@@ -332,6 +366,41 @@
           headerEl.textContent = 'Akce s ID ' + eventId + ' nebyla nalezena.';
           return;
         }
+
+        // 🖼️ NAČTI OBRÁZKY Z SLOUPCE R="obrazky"
+        const rawImageUrls = event.obrazky || event.obrazek || '';  // R nebo Q fallback
+        const imageUrls = parseImageUrls(rawImageUrls);
+        const images = imageUrls.map(getSmartImageUrl);
+
+        // VYPLŇ SLIDER
+        const mainSlider = document.getElementById('main-slider');
+        const thumbSlider = document.getElementById('thumb-slider');
+        mainSlider.innerHTML = '';
+        thumbSlider.innerHTML = '';
+
+        if (images.length === 0) {
+          // Fallback OOOlogo.png
+          const fallback = getSmartImageUrl(null);
+          const liMain = document.createElement('li');
+          liMain.innerHTML = `<img src="${fallback}" alt="${event.nazev || 'Akce'}">`;
+          mainSlider.appendChild(liMain);
+          
+          const liThumb = document.createElement('li');
+          liThumb.innerHTML = `<img src="${fallback}" alt="${event.nazev || 'Akce'}">`;
+          thumbSlider.appendChild(liThumb);
+        } else {
+          // Naplň slider obrázky z Sheets R
+          images.forEach((imgSrc) => {
+            const liMain = document.createElement('li');
+            liMain.innerHTML = `<img src="${imgSrc}" alt="${event.nazev || 'Akce'}">`;
+            mainSlider.appendChild(liMain);
+            
+            const liThumb = document.createElement('li');
+            liThumb.innerHTML = `<img src="${imgSrc}" alt="${event.nazev || 'Akce'}">`;
+            thumbSlider.appendChild(liThumb);
+          });
+        }
+
 
         headerEl.textContent = event.event_id + ' – ' + (event.nazev || '');
         nameEl.textContent   = event.nazev || '';
