@@ -600,7 +600,7 @@
         })();
 
         // Partner search autocomplete ✅ KROK 2C
-          // Partner search autocomplete - FORMÁT "JMÉNO | USERNAME | ID" ✅ OPRAVENÝ!
+         // Partner search autocomplete - FORMÁT "JMÉNO | USERNAME | ID" ✅ HTML ESCAPING!
           const partnerInput = document.getElementById('partnerDiscord');
           const dropdown = document.getElementById('partner-dropdown');
 
@@ -625,8 +625,8 @@
                 html += `
                   <div style="padding: 12px; cursor: pointer; border-bottom: 1px solid #eee;" 
                       data-user="${member.userId}"
-                      data-displayName="${member.displayName}"
-                      data-username="${member.username}"
+                      data-displayName="${member.displayName.replace(/"/g, '&quot;')}"
+                      data-username="${member.username.replace(/"/g, '&quot;')}"
                       onmouseover="this.style.background='#f8f9fa'" 
                       onmouseout="this.style.background='white'">
                     <strong>${member.displayName}</strong> 
@@ -640,12 +640,11 @@
               dropdown.style.display = matches.length ? 'block' : 'none';
             });
 
-            // 🆕 OPRAVA: event delegation funguje na všech vnořených elementech!
             dropdown.addEventListener('click', function(e) {
               const clickedDiv = e.target.closest('div[data-user]');
               if (clickedDiv && clickedDiv.dataset.user) {
                 partnerInput.value = `${clickedDiv.dataset.displayName} | ${clickedDiv.dataset.username} | ${clickedDiv.dataset.user}`;
-                console.log('✅ PARTNER VYBRÁN:', partnerInput.value);  // DEBUG
+                console.log('✅ PARTNER VYBRÁN:', partnerInput.value);
                 this.style.display = 'none';
               }
             });
@@ -656,6 +655,7 @@
               }
             });
           }
+
 
 
         // ✅ KOMPLETNÍ REGISTRACE S MEMBERS-REGISTER!
