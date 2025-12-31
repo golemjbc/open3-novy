@@ -669,73 +669,73 @@
             }
 
 
-        // ✅ KOMPLETNÍ REGISTRACE - "NÁZEV | JMÉNO | DISCORD ID" !
-          regForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            
-            const typUcasti = document.querySelector('input[name="typUcasti"]:checked').value;
-           // const partner = document.getElementById('partnerDiscord').value.trim();
-            const selectedPrefs = Array.from(prefListEl.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
-            const user = getLoggedUser();
 
-            console.log('🚀 DEBUG REGISTRACE:', { event_id: event.event_id, userId: user?.userId, role: event.discord_role_zajemce, partner });
+        // ✅ KOMPLETNÍ REGISTRACE S MEMBERS-REGISTER!
+        regForm.addEventListener('submit', function (e) {
+          e.preventDefault();
+          
+          const typUcasti = document.querySelector('input[name="typUcasti"]:checked').value;
+          const partner = document.getElementById('partnerDiscord').value.trim();
+          const selectedPrefs = Array.from(prefListEl.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+          const user = getLoggedUser();
 
-            // 1. REGISTRACE - FORMÁT "NÁZEV AKCE | JMÉNO | DISCORD ID"!
-            const registerUrl = `${API_BASE}/api/register-event?` +
-              `event_id=${encodeURIComponent(event.event_id)}&` +
-              `typ_ucasti=${encodeURIComponent(typUcasti)}&` +
-              `user_discord=${encodeURIComponent(user?.userName || 'NEPRIHLASENY_USER')}&` +
-              `partner_discord=${encodeURIComponent(partner || '')}&` +
-              `user_id=${encodeURIComponent(user?.userId || '')}&` +
-              `user_message=${encodeURIComponent(`${event.nazev} | ${user?.userName || 'NEPRIHLASENY'} | ${user?.userId || 'NEPRIHLASENY'}`)}&` +  // 🆕 PŘIDÁNO ZDE!
-              `preference=${encodeURIComponent(JSON.stringify(selectedPrefs))}`;
+          console.log('🚀 DEBUG REGISTRACE:', { event_id: event.event_id, userId: user?.userId, role: event.discord_role_zajemce });
 
+          // 1. REGISTRACE
+          const registerUrl = `${API_BASE}/api/register-event?` +
+            `event_id=${encodeURIComponent(event.event_id)}&typ_ucasti=${encodeURIComponent(typUcasti)}&` +
+            `user_discord=${encodeURIComponent(user?.userName || 'NEPRIHLASENY_USER')}&` +
+            `partner_discord=${encodeURIComponent(partner || '')}&` +
+            `user_id=${encodeURIComponent(user?.userId || '')}&preference=${encodeURIComponent(JSON.stringify(selectedPrefs))}`;
 
-            fetch(registerUrl).then(r => r.json()).then(data => {
-              console.log('✅ REGISTRACE OK:', data);
-              console.log('📄 QR ZPRÁVA:', `${event.nazev} | ${user?.userName} | ${user?.userId}`);  // DEBUG
+          fetch(registerUrl).then(r => r.json()).then(data => {
+            console.log('✅ REGISTRACE OK:', data);
 
-              document.getElementById('registrationBlock').style.display = 'none';
-              document.getElementById('registrationInfo').style.display = 'block';
+            document.getElementById('registrationBlock').style.display = 'none';
+            document.getElementById('registrationInfo').style.display = 'block';
 
-              // 🔥 DEBUG MEMBERS-REGISTER!
-              if (!user?.userId) {
-                console.error('❌ CHYBÍ USER ID!');
-                return;
-              }
-              if (!event.discord_role_zajemce) {
-                console.error('❌ CHYBÍ discord_role_zajemce v datech akce!', event);
-                return;
-              }
+            // 🔥 DEBUG MEMBERS-REGISTER!
+            if (!user?.userId) {
+              console.error('❌ CHYBÍ USER ID!');
+              return;
+            }
+            if (!event.discord_role_zajemce) {
+              console.error('❌ CHYBÍ discord_role_zajemce v datech akce!', event);
+              return;
+            }
 
-              console.log('🟢 VOLÁM MEMBERS-REGISTER:', {
-                user_id: user.userId,
-                role_header: event.discord_role_zajemce
+            console.log('🟢 VOLÁM MEMBERS-REGISTER:', {
+              user_id: user.userId,
+              role_header: event.discord_role_zajemce
+            });
+
+            // 2. MEMBERS-REGISTER S PLNYM DEBUG!
+            console.log('🟢 VOLÁM MEMBERS-REGISTER GET:', {
+              user_id: user.userId,
+              role_header: event.discord_role_zajemce
+            });
+
+            const membersUrl = `${API_BASE}/api/members-register?` +
+              `user_id=${encodeURIComponent(user.userId)}&` +
+              `role_header=${encodeURIComponent(event.discord_role_zajemce)}`;
+
+            fetch(membersUrl)
+              .then(r => {
+                console.log('📡 MEMBERS STATUS:', r.status);
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.json();
+              })
+              .then(data => {
+                console.log('✅ MEMBERS OK:', data);
+              })
+              .catch(err => {
+                console.error('members-register GET error (bot OK):', err);
               });
 
-              // 2. MEMBERS-REGISTER
-              const membersUrl = `${API_BASE}/api/members-register?` +
-                `user_id=${encodeURIComponent(user.userId)}&` +
-                `role_header=${encodeURIComponent(event.discord_role_zajemce)}`;
-
-              fetch(membersUrl)
-                .then(r => {
-                  console.log('📡 MEMBERS STATUS:', r.status);
-                  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-                  return r.json();
-                })
-                .then(data => {
-                  console.log('✅ MEMBERS OK:', data);
-                })
-                .catch(err => {
-                  console.error('members-register GET error (bot OK):', err);
-                });
-
-              // 3. ZÁLOHA
-              if (user?.userId) loadDepositInfo(user.userId, user.userName, typUcasti);
-            });
+            // 3. ZÁLOHA
+            if (user?.userId) loadDepositInfo(user.userId, user.userName, typUcasti);
           });
-
+        });
 
       })
       .catch(function (err) {
