@@ -308,7 +308,11 @@
 
 
           events.forEach(function (e, index) {
-            const imgSrc = e.obrazek || 'assets/images/product-01.jpg';
+            const imgSrc = e.obrazek 
+            ? (e.obrazek.includes('photos.app.goo.gl') 
+              ? 'https://images.weserv.nl/?url=' + encodeURIComponent(e.obrazek) 
+              : e.obrazek)
+            : 'assets/images/product-01.jpg';
             const cssClass = getEventClass(e);
 
             const requiredRolesString = e.discord_role_required || '';
