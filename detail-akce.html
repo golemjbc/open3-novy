@@ -419,12 +419,6 @@
             '<span class="event-label">Termín:</span> ' +
             (event['datum od'] || '') + ' – ' + (event.datum_do || '');
 
-
-        metaEl.innerHTML =
-          '<span class="event-label">Místo:</span> ' + (event['místo'] || '') + '<br>' +
-          '<span class="event-label">Termín:</span> ' +
-          (event['datum od'] || '') + ' – ' + (event.datum_do || '');
-
         regEl.innerHTML =
           '<span class="event-label">Registrace do:</span> ' +
           (event.registrace_konec || 'bude upřesněno');
@@ -530,10 +524,20 @@
               if (info)     info.style.display = 'block';
               if (depositInfoBox) depositInfoBox.style.display = 'block';
 
-              // ✅ ZÁLOHA ZAPLACENA = SPECIÁLNÍ TEXT!
+              // ✅ ZÁLOHA ZAPLACENA = SPECIÁLNÍ TEXT + ÚČASTNÍCKÝ KANÁL!
               if (found.deposit_status && found.deposit_status.toUpperCase() === 'OK') {
                 const depositAmountEl = document.getElementById('depositAmount');
-                depositAmountEl.innerHTML = '<strong>✅ Záloha: ZAPLACENA!</strong>';
+                
+                // 🆕 PŘIDÁME ÚČASTNÍCKÝ KANÁL (sloupec Z)
+                let ucastHtml = '<strong>✅ Záloha: ZAPLACENA!</strong>';
+                if (event.discord_ucast) {
+                  const ucastUrlMatch = event.discord_ucast.match(/https?:\/\/[^\s\[\]]+/);
+                  if (ucastUrlMatch) {
+                    ucastHtml += `<br><br><strong>🎉 <a href="${ucastUrlMatch[0]}" target="_blank" style="color: #00D4AA !important; font-size: 1.1em; font-weight: 600; text-decoration: none;">Kanál pro účastníky</a></strong>`;
+                  }
+                }
+                
+                depositAmountEl.innerHTML = ucastHtml;
                 
                 // Skryt QR a údaje
                 const depositMessageEl = document.getElementById('depositMessage');
@@ -543,7 +547,7 @@
                   depositQREl.src = '';
                   depositQREl.style.display = 'none';
                 }
-                console.log('✅ Záloha zaplacena - speciální zobrazení!');
+                console.log('✅ Záloha zaplacena + účastnický kanál!');
                 return; // NEDĚLAT loadDepositInfo!
               }
 
@@ -556,6 +560,7 @@
               console.error('my-registrations error:', err);
             });
         })();
+
 
         // ✅ KOMPLETNÍ REGISTRACE S MEMBERS-REGISTER!
          regForm.addEventListener('submit', function (e) {
