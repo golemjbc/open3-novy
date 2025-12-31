@@ -406,7 +406,7 @@
             // Najdi URL kdekoliv v textu
             const urlMatch = event.discord_info.match(/https?:\/\/[^\s\[\]]+/);
             if (urlMatch) {
-              popisHtml += `<br><br><strong>📢 <a href="${urlMatch[0]}" target="_blank" style="color: #007bff !important; font-size: 1.1em; font-weight: 600; text-decoration: none;">Discord kanál s informacemi</a></strong>`;
+              popisHtml += `<br><br><strong><a href="${urlMatch[0]}" target="_blank" style="color: #007bff !important; font-size: 1.1em; font-weight: 600; text-decoration: none;">Discord kanál s informacemi</a></strong>`;
               console.log('✅ Discord link přidán!');
             }
           }
