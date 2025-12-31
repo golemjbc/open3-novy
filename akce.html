@@ -370,7 +370,8 @@
             const html =
               '<div class="item ' + itemClasses + ' col-md-4">' +
               '  <div class="featured-item">' +
-              '<img src="' + imgSrc + '" alt="' + (e.nazev || '') + '" style="width:100%; height:250px; object-fit:cover;">' +
+              xml
+'<img src="' + imgSrc + '" alt="' + (e.nazev || '') + '" style="width:100%; height:250px; object-fit:contain; background:#f8f9fa;">' +
               '    <h4>' + titleHtml + '</h4>' +
               '    <h6>' + (e.cena ? e.cena + ' Kč' : '—') + '</h6>' +
               '    <p class="event-date">' + (e["datum od"] || '') + ' – ' + (e.datum_do || '') + '</p>' +
