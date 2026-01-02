@@ -402,6 +402,10 @@
           return;
         }
 
+        // 🆕 PŘIDEJ TADY - hned po if (!event)
+        const isFreeEvent = !event.cena || event.cena.trim() === '' || parseFloat(event.cena) === 0;
+        console.log('🆓 Akce zdarma?', isFreeEvent);
+
         // 🖼️ NAČTI OBRÁZKY Z SLOUPCE R="obrazky" (TESTOVANÉ!)
         const rawImageUrls = event.obrazky || event.obrazek || '';
         const imageUrls = parseImageUrls(rawImageUrls);
@@ -543,93 +547,6 @@
             });
         }
         
-        //6D: checkAlreadyRegistered - KOMPLETNÍ VŠECHNY STAVY
-       //6D: checkAlreadyRegistered - KOMPLETNÍ VŠECHNY STAVY
-          (function checkAlreadyRegistered() {
-            const storedUserJson = localStorage.getItem('oooUser');
-            if (!storedUserJson) return;
-
-            let userId = null;
-            let userName = '';
-            try {
-              const storedUser = JSON.parse(storedUserJson);
-              userId = storedUser.userId || null;
-              userName = storedUser.userName || '';
-            } catch (e) {
-              console.error('Chyba při parsování oooUser:', e);
-              return;
-            }
-
-            if (!userId || !event) return;
-
-            fetch(`${API_BASE}/api/my-registrations?user_id=${encodeURIComponent(userId)}`)
-              .then(r => r.json())
-              .then(list => {
-                console.log('📊 my-registrations:', list);
-                if (!Array.isArray(list)) return;
-
-                const found = list.find(item => item.event_id === event.event_id);
-                if (!found) return;
-                // SKRYJ TLAČÍTKO
-                  const submitBtn = document.querySelector('#registration-form button[type="submit"]');
-                  if (submitBtn) submitBtn.style.display = 'none';
-                
-                // 🆕 ZDARMA AKCE
-                if (!event.cena || event.cena.trim() === '' || parseFloat(event.cena) === 0) {
-                  const regInfo = document.getElementById('registrationInfo');
-                  regInfo.innerHTML = '<strong>🎉 Jsi přihlášený na akci zdarma!</strong>';
-                  regInfo.style.display = 'block';
-                  return;
-                }
-
-                // SKRYJ VŠE
-                const regBlock = document.getElementById('registrationBlock');
-                const regInfo = document.getElementById('registrationInfo');
-                const depositInfo = document.getElementById('depositInfo');
-                const finalPayment = document.getElementById('finalPaymentInfo');
-                const paymentComplete = document.getElementById('paymentComplete');
-                
-              [regBlock, regInfo, depositInfo, finalPayment, paymentComplete, 
-                document.querySelector('#registration-form button[type="submit"]') // ✅ TLAČÍTKO!
-                ].forEach(el => {
-                  if (el) el.style.display = 'none';
-                });
-                // 3. ROZDĚLENÁ PLATBA
-                if (event.jednorazova !== 'ano') {
-                  if (found.deposit_status?.toUpperCase() === 'OK' && 
-                      (found.doplatek_status || found.balance_status)?.toUpperCase() === 'OK') {
-                    // c) VŠE ZAPLACENO
-                    paymentComplete.style.display = 'block';
-                    return;
-                  } else if (found.deposit_status?.toUpperCase() === 'OK') {
-                    // b) ZÁLOHA OK + DOPLATEK
-                    let html = '<strong>✅ Záloha zaplacena!</strong><br><br>';
-
-                    // Discord link
-                    if (event.discord_ucast) {
-                      const urlMatch = event.discord_ucast.match(/https?:\/\/[^\s\[\]]+/);
-                      if (urlMatch) html += `<a href="${urlMatch[0]}" target="_blank">Discord účastníci</a><br><br>`;
-                    }
-
-                    // Doplatek
-                    const doplatek = found.doplatek || event.doplatek || 'bude upřesněno';
-                    html += `<strong>Doplatek:</strong> ${doplatek}`;
-
-                    regInfo.innerHTML = html;
-                    regInfo.style.display = 'block';
-                    return;
-                  }
-                }
-
-                // a) POTŘEBUJE ZÁLOHU
-                loadDepositInfo(userId, userName, found.partner === 'par' ? 'par' : 'single');
-                
-              })
-              .catch(err => {
-                console.error('my-registrations error:', err);
-              });
-          })();
-          //setTimeout(checkAlreadyRegistered, 1000);
 
         // Partner search autocomplete ✅ KROK 2C
         // Partner search autocomplete - 100% SPOLEHLIVÉ řešení!
@@ -700,74 +617,180 @@
               });
             }
 
+        //6D: checkAlreadyRegistered - KOMPLETNÍ VŠECHNY STAVY
+       (function checkAlreadyRegistered() {
+          const storedUserJson = localStorage.getItem('oooUser');
+          if (!storedUserJson) return;
+
+          let userId = null;
+          let userName = '';
+          try {
+            const storedUser = JSON.parse(storedUserJson);
+            userId = storedUser.userId || null;
+            userName = storedUser.userName || '';
+          } catch (e) {
+            console.error('Chyba při parsování oooUser:', e);
+            return;
+          }
+
+          if (!userId || !event) return;
+
+          fetch(`${API_BASE}/api/my-registrations?user_id=${encodeURIComponent(userId)}`)
+            .then(r => r.json())
+            .then(list => {
+              console.log('📊 my-registrations:', list);
+              if (!Array.isArray(list)) return;
+
+              const found = list.find(item => item.event_id === event.event_id);
+              if (!found) return;
+              
+              // 🎉 ZDARMA AKCE - SKRYJ VŠE A UKAŽ INFO (nejdřív!)
+              //const isFreeEvent = !event.cena || event.cena.trim() === '' || parseFloat(event.cena) === 0;
+              if (isFreeEvent) {
+                const regInfo = document.getElementById('registrationInfo');
+                regInfo.innerHTML = '<strong>🎉 Jsi přihlášený na akci zdarma!</strong>';
+                regInfo.style.display = 'block';
+                
+                // SKRYJ VŠE ZBYTEČNÉ BLOKY + TLAČÍTKO
+                const elementsToHide = [
+                  'registrationBlock',
+                  'depositInfo', 
+                  'finalPaymentInfo',
+                  'paymentComplete'
+                ];
+                elementsToHide.forEach(id => {
+                  const el = document.getElementById(id);
+                  if (el) el.style.display = 'none';
+                });
+                const submitBtn = document.querySelector('#registration-form button[type="submit"]');
+                if (submitBtn) submitBtn.style.display = 'none';
+                
+                console.log('✅ Zdarma akce - vše skryto!');
+                return; // ← DŮLEŽITÉ! ŽÁDNÁ ZÁLOHA!
+              }
+
+              // PLATBA - SKRYJ VŠE NEJDŘÍV
+              const regBlock = document.getElementById('registrationBlock');
+              const regInfo = document.getElementById('registrationInfo');
+              const depositInfo = document.getElementById('depositInfo');
+              const finalPayment = document.getElementById('finalPaymentInfo');
+              const paymentComplete = document.getElementById('paymentComplete');
+              
+              [regBlock, regInfo, depositInfo, finalPayment, paymentComplete, 
+              document.querySelector('#registration-form button[type="submit"]')]
+                .forEach(el => { if (el) el.style.display = 'none'; });
+
+              // 3. ROZDĚLENÁ PLATBA
+              if (event.jednorazova !== 'ano') {
+                if (found.deposit_status?.toUpperCase() === 'OK' && 
+                    (found.doplatek_status || found.balance_status)?.toUpperCase() === 'OK') {
+                  paymentComplete.style.display = 'block';
+                  return;
+                } else if (found.deposit_status?.toUpperCase() === 'OK') {
+                  let html = '<strong>✅ Záloha zaplacena!</strong><br><br>';
+                  if (event.discord_ucast) {
+                    const urlMatch = event.discord_ucast.match(/https?:\/\/[^\s\[\]]+/);
+                    if (urlMatch) html += `<a href="${urlMatch[0]}" target="_blank">Discord účastníci</a><br><br>`;
+                  }
+                  const doplatek = found.doplatek || event.doplatek || 'bude upřesněno';
+                  html += `<strong>Doplatek:</strong> ${doplatek}`;
+                  regInfo.innerHTML = html;
+                  regInfo.style.display = 'block';
+                  return;
+                }
+              }
+
+              // a) POTŘEBUJE ZÁLOHU - TEPRVE ZDE!
+              loadDepositInfo(userId, userName, found.partner === 'par' ? 'par' : 'single');
+            })
+            .catch(err => {
+              console.error('my-registrations error:', err);
+            });
+        })();
+
+
+        
 
 
         // ✅ KOMPLETNÍ REGISTRACE S MEMBERS-REGISTER!
-        regForm.addEventListener('submit', function (e) {
-          e.preventDefault();
-          
-          const typUcasti = document.querySelector('input[name="typUcasti"]:checked').value;
-          const partner = document.getElementById('partnerDiscord').value.trim();
-          const selectedPrefs = Array.from(prefListEl.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
-          const user = getLoggedUser();
+        // ✅ KOMPLETNÍ REGISTRACE S MEMBERS-REGISTER!
+          regForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            
+            const typUcasti = document.querySelector('input[name="typUcasti"]:checked').value;
+            const partner = document.getElementById('partnerDiscord').value.trim();
+            const selectedPrefs = Array.from(prefListEl.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+            const user = getLoggedUser();
 
-          console.log('🚀 DEBUG REGISTRACE:', { event_id: event.event_id, userId: user?.userId, role: event.discord_role_zajemce });
+            console.log('🚀 DEBUG REGISTRACE:', { event_id: event.event_id, userId: user?.userId, role: event.discord_role_zajemce });
 
-          // 1. REGISTRACE
-          const registerUrl = `${API_BASE}/api/register-event?` +
-            `event_id=${encodeURIComponent(event.event_id)}&typ_ucasti=${encodeURIComponent(typUcasti)}&` +
-            `user_discord=${encodeURIComponent(user?.userName || 'NEPRIHLASENY_USER')}&` +
-            `partner_discord=${encodeURIComponent(partner || '')}&` +
-            `user_id=${encodeURIComponent(user?.userId || '')}&preference=${encodeURIComponent(JSON.stringify(selectedPrefs))}`;
+            // 1. REGISTRACE
+            const registerUrl = `${API_BASE}/api/register-event?` +
+              `event_id=${encodeURIComponent(event.event_id)}&typ_ucasti=${encodeURIComponent(typUcasti)}&` +
+              `user_discord=${encodeURIComponent(user?.userName || 'NEPRIHLASENY_USER')}&` +
+              `partner_discord=${encodeURIComponent(partner || '')}&` +
+              `user_id=${encodeURIComponent(user?.userId || '')}&preference=${encodeURIComponent(JSON.stringify(selectedPrefs))}`;
 
-          fetch(registerUrl).then(r => r.json()).then(data => {
-            console.log('✅ REGISTRACE OK:', data);
+            fetch(registerUrl).then(r => r.json()).then(data => {
+              console.log('✅ REGISTRACE OK:', data);
 
-            document.getElementById('registrationBlock').style.display = 'none';
-            document.getElementById('registrationInfo').style.display = 'block';
+              // SKRYJ FORMULÁŘ
+              document.getElementById('registrationBlock').style.display = 'none';
+              
+              // UKAŽ INFO - ZDRAVA/PLATBA
+              const regInfo = document.getElementById('registrationInfo');
+              if (isFreeEvent) {
+                regInfo.innerHTML = '<strong>🎉 Jsi přihlášený na akci zdarma!</strong>';
+              } else {
+                regInfo.innerHTML = '<strong>Jsi přihlášen!</strong><br><span>Tvá přihláška na tuto akci byla úspěšně zaregistrována.</span>';
+              }
+              regInfo.style.display = 'block';
 
-            // 🔥 DEBUG MEMBERS-REGISTER!
-            if (!user?.userId) {
-              console.error('❌ CHYBÍ USER ID!');
-              return;
-            }
-            if (!event.discord_role_zajemce) {
-              console.error('❌ CHYBÍ discord_role_zajemce v datech akce!', event);
-              return;
-            }
+              // 🔥 DEBUG MEMBERS-REGISTER!
+              if (!user?.userId) {
+                console.error('❌ CHYBÍ USER ID!');
+                return;
+              }
+              if (!event.discord_role_zajemce) {
+                console.error('❌ CHYBÍ discord_role_zajemce v datech akce!', event);
+                return;
+              }
 
-            console.log('🟢 VOLÁM MEMBERS-REGISTER:', {
-              user_id: user.userId,
-              role_header: event.discord_role_zajemce
-            });
-
-            // 2. MEMBERS-REGISTER S PLNYM DEBUG!
-            console.log('🟢 VOLÁM MEMBERS-REGISTER GET:', {
-              user_id: user.userId,
-              role_header: event.discord_role_zajemce
-            });
-
-            const membersUrl = `${API_BASE}/api/members-register?` +
-              `user_id=${encodeURIComponent(user.userId)}&` +
-              `role_header=${encodeURIComponent(event.discord_role_zajemce)}`;
-
-            fetch(membersUrl)
-              .then(r => {
-                console.log('📡 MEMBERS STATUS:', r.status);
-                if (!r.ok) throw new Error(`HTTP ${r.status}`);
-                return r.json();
-              })
-              .then(data => {
-                console.log('✅ MEMBERS OK:', data);
-              })
-              .catch(err => {
-                console.error('members-register GET error (bot OK):', err);
+              console.log('🟢 VOLÁM MEMBERS-REGISTER:', {
+                user_id: user.userId,
+                role_header: event.discord_role_zajemce
               });
 
-            // 3. ZÁLOHA
-            if (user?.userId) loadDepositInfo(user.userId, user.userName, typUcasti);
+              // 2. MEMBERS-REGISTER
+              const membersUrl = `${API_BASE}/api/members-register?` +
+                `user_id=${encodeURIComponent(user.userId)}&` +
+                `role_header=${encodeURIComponent(event.discord_role_zajemce)}`;
+
+              fetch(membersUrl)
+                .then(r => {
+                  console.log('📡 MEMBERS STATUS:', r.status);
+                  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                  return r.json();
+                })
+                .then(data => {
+                  console.log('✅ MEMBERS OK:', data);
+                })
+                .catch(err => {
+                  console.error('members-register GET error (bot OK):', err);
+                });
+
+              // 3. ZÁLOHA - POUZE PRO PLATBA! (🆕 OPRAVA)
+              if (user?.userId && !isFreeEvent) {
+                loadDepositInfo(user.userId, user.userName, typUcasti);
+              } else if (isFreeEvent) {
+                console.log('🆓 Zdarma akce - žádná záloha!');
+              }
+            }).catch(err => {
+              console.error('Registrace error:', err);
+              alert('Chyba při registraci: ' + err.message);
+            });
           });
-        });
+
 
       })
       .catch(function (err) {
