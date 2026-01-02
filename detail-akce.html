@@ -570,6 +570,9 @@
 
                 const found = list.find(item => item.event_id === event.event_id);
                 if (!found) return;
+                // SKRYJ TLAČÍTKO
+                  const submitBtn = document.querySelector('#registration-form button[type="submit"]');
+                  if (submitBtn) submitBtn.style.display = 'none';
                 
                 // 🆕 ZDARMA AKCE
                 if (!event.cena || event.cena.trim() === '' || parseFloat(event.cena) === 0) {
@@ -626,6 +629,7 @@
                 console.error('my-registrations error:', err);
               });
           })();
+          setTimeout(checkAlreadyRegistered, 1000);
 
         // Partner search autocomplete ✅ KROK 2C
         // Partner search autocomplete - 100% SPOLEHLIVÉ řešení!
