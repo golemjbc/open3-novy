@@ -547,23 +547,19 @@
         
         //6D: checkAlreadyRegistered
         // ✅ KOMPLETNÍ checkAlreadyRegistered() S LOGIKOU "ZÁLOHA ZAPLACENA"!
-        // 🆕 6D: checkAlreadyRegistered - 5 STAVŮ PLACENÍ
-        async function checkAlreadyRegistered() {
+                async function checkAlreadyRegistered() {
           const user = getLoggedUser();
           if (!user?.userId) return;
 
           try {
-            // 1. Status Prihlasky
             const statusResp = await fetch(`${API_BASE}/api/my-registrations?user_id=${user.userId}&eventId=${event.event_id}`);
             const statusList = await statusResp.json();
             const status = statusList.find(s => s.event_id === event.event_id) || {};
 
-            // 2. Data akce
             const cenaNum = parseFloat(event.cena || 0);
             const isZdarma = cenaNum === 0;
-            const isJednorazova = event.jednorazova === 'ano';
 
-            console.log('🧠 DECIZE:', {status, cena: event.cena, isZdarma, isJednorazova});
+            console.log('🧠 DECIZE:', {status, cena: event.cena, isZdarma});
 
             // ELEMENTS
             const regBlock = document.getElementById('registrationBlock');
@@ -577,28 +573,8 @@
               if (el) el.style.display = 'none';
             });
 
-            // 🆕 LOGIKA 5 STAVŮ
-            if (!status.event_id) {
-              // Nová přihláška
-              if (regBlock) regBlock.style.display = 'block';
-            } else if (isZdarma) {
-              // Zdarma
-              regInfo.innerHTML = '<strong>🎉 Akce zdarma!</strong><br>Přihlaš se a máš roli.';
-              regInfo.style.display = 'block';
-            } else if (status.deposit_status !== 'OK') {
-              // QR záloha/jednorázová
-              const typ = status.partner === 'par' ? 'par' : 'single';
-              loadDepositInfo(user.userId, user.userName, typ);
-              depositInfo.style.display = 'block';
-            } else if (status.doplatek_status === 'OK') {
-              // ✅ Dokončeno
-              paymentComplete.style.display = 'block';
-            } else if (status.doplatek) {
-              // Doplatek ready
-              loadFinalPayment(user.userId, user.userName, status.doplatek);
-              finalPayment.style.display = 'block';
-            } else {
-              // Záloha OK, čekej doplatek (tvůj původní kód)
+            // 🆕 TVOJE DATA: deposit_status="OK" → ZOBRAZ "Záloha zaplacena!"
+            if (status.deposit_status === 'OK') {
               regInfo.innerHTML = '<strong>✅ Záloha zaplacena!</strong>';
               if (event.discord_ucast) {
                 const urlMatch = event.discord_ucast.match(/https?:\/\/[^\s\[\]]+/);
@@ -607,12 +583,25 @@
                 }
               }
               regInfo.style.display = 'block';
+              return;  // ← TO ZDE CHYBELO!
             }
+
+            // Jiné stavy...
+            if (!status.event_id) {
+              if (regBlock) regBlock.style.display = 'block';
+            } else if (isZdarma) {
+              regInfo.innerHTML = '<strong>🎉 Akce zdarma!</strong><br>Přihlaš se a máš roli.';
+              regInfo.style.display = 'block';
+            } else if (status.deposit_status !== 'OK') {
+              const typ = status.partner === 'par' ? 'par' : 'single';
+              loadDepositInfo(user.userId, user.userName, typ);
+              depositInfo.style.display = 'block';
+            }
+
           } catch (err) {
             console.error('Status error:', err);
           }
         }
-
 
         // Partner search autocomplete ✅ KROK 2C
         // Partner search autocomplete - 100% SPOLEHLIVÉ řešení!
