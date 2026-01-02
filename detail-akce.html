@@ -593,12 +593,12 @@
                 // Discord link
                 if (event.discord_ucast) {
                   const urlMatch = event.discord_ucast.match(/https?:\/\/[^\s\[\]]+/);
-                  if (urlMatch) html += `<br><a href="${urlMatch[0]}" target="_blank">Discord účastníci</a>`;
+                  if (urlMatch) html += `<br<br><a href="${urlMatch[0]}" target="_blank">Discord účastníci</a>`;
                 }
                 
                 // Doplatek
                 const doplatek = found.doplatek || event.doplatek || 'bude upřesněno';
-                html += `<br><strong>Doplatek:</strong> ${doplatek}`;
+                html += `<br><br><strong>Doplatek:</strong> ${doplatek}`;
                 
                 regInfo.innerHTML = html;
                 regInfo.style.display = 'block';
