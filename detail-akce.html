@@ -544,87 +544,87 @@
         }
         
         //6D: checkAlreadyRegistered - KOMPLETNÍ VŠECHNY STAVY
-         //6D: checkAlreadyRegistered - KOMPLETNÍ VŠECHNY STAVY
-        (function checkAlreadyRegistered() {
-          const storedUserJson = localStorage.getItem('oooUser');
-          if (!storedUserJson) return;
+       //6D: checkAlreadyRegistered - KOMPLETNÍ VŠECHNY STAVY
+          (function checkAlreadyRegistered() {
+            const storedUserJson = localStorage.getItem('oooUser');
+            if (!storedUserJson) return;
 
-          let userId = null;
-          let userName = '';
-          try {
-            const storedUser = JSON.parse(storedUserJson);
-            userId = storedUser.userId || null;
-            userName = storedUser.userName || '';
-          } catch (e) {
-            console.error('Chyba při parsování oooUser:', e);
-            return;
-          }
+            let userId = null;
+            let userName = '';
+            try {
+              const storedUser = JSON.parse(storedUserJson);
+              userId = storedUser.userId || null;
+              userName = storedUser.userName || '';
+            } catch (e) {
+              console.error('Chyba při parsování oooUser:', e);
+              return;
+            }
 
-          if (!userId || !event) return;
+            if (!userId || !event) return;
 
-          fetch(`${API_BASE}/api/my-registrations?user_id=${encodeURIComponent(userId)}`)
-            .then(r => r.json())
-            .then(list => {
-              console.log('📊 my-registrations:', list);
-              if (!Array.isArray(list)) return;
+            fetch(`${API_BASE}/api/my-registrations?user_id=${encodeURIComponent(userId)}`)
+              .then(r => r.json())
+              .then(list => {
+                console.log('📊 my-registrations:', list);
+                if (!Array.isArray(list)) return;
 
-              const found = list.find(item => item.event_id === event.event_id);
-              if (!found) return;
-              
-              // 🆕 ZDARMA AKCE = jen info, žádná platba!
+                const found = list.find(item => item.event_id === event.event_id);
+                if (!found) return;
+                
+                // 🆕 ZDARMA AKCE
                 if (!event.cena || event.cena.trim() === '' || parseFloat(event.cena) === 0) {
+                  const regInfo = document.getElementById('registrationInfo');
                   regInfo.innerHTML = '<strong>🎉 Jsi přihlášený na akci zdarma!</strong>';
                   regInfo.style.display = 'block';
                   return;
                 }
 
-              // SKRYJ VŠE
-              const regBlock = document.getElementById('registrationBlock');
-              const regInfo = document.getElementById('registrationInfo');
-              const depositInfo = document.getElementById('depositInfo');
-              const finalPayment = document.getElementById('finalPaymentInfo');
-              const paymentComplete = document.getElementById('paymentComplete');
-              
-              [regBlock, regInfo, depositInfo, finalPayment, paymentComplete].forEach(el => {
-                if (el) el.style.display = 'none';
-              });
-
-             // 3. ROZDĚLENÁ PLATBA
-              if (event.jednorazova !== 'ano') {  // Jen rozdělená platba
-                if (found.deposit_status?.toUpperCase() === 'OK' && 
-                    (found.doplatek_status || found.balance_status)?.toUpperCase() === 'OK') {
-                  // c) VŠE ZAPLACENO
-                  document.getElementById('paymentComplete').style.display = 'block';
-                  return;}
-              } else if (found.deposit_status?.toUpperCase() === 'OK') {
-                // b) ZÁLOHA OK + DOPLATEK
-                let html = '<strong>✅ Záloha zaplacena!</strong>';
+                // SKRYJ VŠE
+                const regBlock = document.getElementById('registrationBlock');
+                const regInfo = document.getElementById('registrationInfo');
+                const depositInfo = document.getElementById('depositInfo');
+                const finalPayment = document.getElementById('finalPaymentInfo');
+                const paymentComplete = document.getElementById('paymentComplete');
                 
-                // Discord link
-                if (event.discord_ucast) {
-                  const urlMatch = event.discord_ucast.match(/https?:\/\/[^\s\[\]]+/);
-                  if (urlMatch) html += `<br><br><br><strong><a href="${urlMatch[0]}" target="_blank">Discord účastníci</a></strong>`;
+                [regBlock, regInfo, depositInfo, finalPayment, paymentComplete].forEach(el => {
+                  if (el) el.style.display = 'none';
+                });
+
+                // 3. ROZDĚLENÁ PLATBA
+                if (event.jednorazova !== 'ano') {
+                  if (found.deposit_status?.toUpperCase() === 'OK' && 
+                      (found.doplatek_status || found.balance_status)?.toUpperCase() === 'OK') {
+                    // c) VŠE ZAPLACENO
+                    paymentComplete.style.display = 'block';
+                    return;
+                  } else if (found.deposit_status?.toUpperCase() === 'OK') {
+                    // b) ZÁLOHA OK + DOPLATEK
+                    let html = '<strong>✅ Záloha zaplacena!</strong><br><br>';
+
+                    // Discord link
+                    if (event.discord_ucast) {
+                      const urlMatch = event.discord_ucast.match(/https?:\/\/[^\s\[\]]+/);
+                      if (urlMatch) html += `<a href="${urlMatch[0]}" target="_blank">Discord účastníci</a><br><br>`;
+                    }
+
+                    // Doplatek
+                    const doplatek = found.doplatek || event.doplatek || 'bude upřesněno';
+                    html += `<strong>Doplatek:</strong> ${doplatek}`;
+
+                    regInfo.innerHTML = html;
+                    regInfo.style.display = 'block';
+                    return;
+                  }
                 }
-                
-                // Doplatek
-                const doplatek = found.doplatek || event.doplatek || 'bude upřesněno';
-                html += `<br><br><strong>Doplatek:</strong> ${doplatek}`;
-                
-                regInfo.innerHTML = html;
-                regInfo.style.display = 'block';
-                return;
-              }
-              
-              // a) POTŘEBUJE ZÁLOHU
-              loadDepositInfo(userId, userName, found.partner === 'par' ? 'par' : 'single');
-              
-            })
-            .catch(err => {
-              console.error('my-registrations error:', err);
-            });
-        })();
 
-
+                // a) POTŘEBUJE ZÁLOHU
+                loadDepositInfo(userId, userName, found.partner === 'par' ? 'par' : 'single');
+                
+              })
+              .catch(err => {
+                console.error('my-registrations error:', err);
+              });
+          })();
 
         // Partner search autocomplete ✅ KROK 2C
         // Partner search autocomplete - 100% SPOLEHLIVÉ řešení!
