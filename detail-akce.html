@@ -509,43 +509,44 @@
             event_id: event.event_id,
             user_id: userId,
             user_name: userName || '',
-            typ_ucasti: typUcasti || 'single'
+            typ_ucasti: typUcasti || 'single',
+            jednorazova: event.jednorazova || 'ne'  // ← NOVÉ!
           });
 
           fetch(API_BASE + '/api/get-deposit-info?' + params.toString())
             .then(r => r.json())
             .then(data => {
-              console.log('deposit-info:', data);
-              if (!data || !data.deposit_amount || !data.qr_base64) return;
+              console.log('💰 deposit-info:', data);
+              if (!data || !data.deposit_amount || data.deposit_amount === '0') {
+                console.log('ℹ️ Žádná platba potřebná (zdarma/jednorázovka)');
+                return;
+              }
 
-              const baseDeposit = event.zaloha;
-              const isPair = (typUcasti === 'par');
-
+              // Text podle typu
               let text;
-              if (isPair) {
-                text = '<strong>Částka zálohy:</strong> 2× záloha (' +
-                       baseDeposit + ' Kč) = ' + data.deposit_amount + ' Kč';
+              if (event.jednorazova === 'ano') {
+                text = `<strong>Doplatek (jednorázovka):</strong> ${data.deposit_amount} Kč`;
               } else {
-                text = '<strong>Částka zálohy:</strong> ' +
-                       data.deposit_amount + ' Kč';
+                const baseDeposit = event.zaloha || 'neznámá';
+                const isPair = (typUcasti === 'par');
+                text = isPair 
+                  ? `<strong>Záloha:</strong> 2× ${baseDeposit} = ${data.deposit_amount} Kč`
+                  : `<strong>Záloha:</strong> ${data.deposit_amount} Kč`;
               }
 
               depositAmountEl.innerHTML = text;
-              depositMessageEl.innerHTML =
-                '<strong>Účet:</strong> ' + (data.account_cz || data.iban) + '<br>' +
-                '<strong>Variabilní symbol:</strong> ' + data.vs + '<br>' +
-                '<strong>Zpráva pro příjemce:</strong> ' + data.message;
-              depositQREl.src = 'data:image/png;base64,' + data.qr_base64;
+              depositMessageEl.innerHTML = `
+        <strong>Účet:</strong> ${data.account_cz || data.iban}<br>
+        <strong>VS:</strong> ${data.vs}<br>
+        <strong>Zpráva:</strong> ${data.message}
+      `;
+      depositQREl.src = 'data:image/png;base64,' + data.qr_base64;
 
-              const depositInfo = document.getElementById('depositInfo');
-              if (depositInfo) {
-                depositInfo.style.display = 'block';
-              }
-            })
-            .catch(err => {
-              console.error('Chyba při načítání informací o záloze:', err);
-            });
-        }
+      document.getElementById('depositInfo').style.display = 'block';
+    })
+    .catch(err => console.error('Deposit info error:', err));
+}
+
         
 
         // Partner search autocomplete ✅ KROK 2C
