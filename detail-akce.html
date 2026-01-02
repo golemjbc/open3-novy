@@ -702,7 +702,13 @@
               }
 
               // a) POTŘEBUJE ZÁLOHU - TEPRVE ZDE!
-              loadDepositInfo(userId, userName, found.partner === 'par' ? 'par' : 'single');
+              // JEDNORÁZOVKA = DOPLATEK BLOK, ZÁLOHA = ZÁLOHA
+                if (event.jednorazova === 'ano') {
+                  // Už má přihlášku → ukaz doplatek info
+                  document.getElementById('finalPaymentInfo').style.display = 'block';
+                } else {
+                  loadDepositInfo(userId, userName, found.partner === 'par' ? 'par' : 'single');
+                }
             })
             .catch(err => {
               console.error('my-registrations error:', err);
@@ -799,11 +805,22 @@
                 });
 
               // 3. ZÁLOHA/DOPLATEK - POUZE PRO PLATBA!
-              if (user?.userId && !isFreeEvent) {
-                loadDepositInfo(user.userId, user.userName, typUcasti);
-              } else if (isFreeEvent) {
-                console.log('🆓 Zdarma akce - žádná záloha!');
-              }
+              // 3. PLATBA - JEDNORÁZOVKA = DOPLATEK, ZÁLOHA = ZÁLOHA!
+                if (user?.userId && !isFreeEvent) {
+                  if (event.jednorazova === 'ano') {
+                    // JEDNORÁZOVKA → UKAŽ DOPLATEK (finalPaymentInfo)
+                    document.getElementById('finalPaymentInfo').style.display = 'block';
+                    document.getElementById('finalAmount').textContent = doplatekAmount + ' Kč';
+                    // QR vygeneruje organizátor později
+                    console.log('💰 JEDNORÁZOVKA: Doplatek ' + doplatekAmount + ' Kč (organizátor QR)');
+                  } else {
+                    // ZÁLOHOVÁ → normální záloha
+                    loadDepositInfo(user.userId, user.userName, typUcasti);
+                  }
+                } else if (isFreeEvent) {
+                  console.log('🆓 Zdarma akce - žádná záloha!');
+                }
+
             }).catch(err => {
               console.error('Registrace error:', err);
               alert('Chyba při registraci: ' + err.message);
