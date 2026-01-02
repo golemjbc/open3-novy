@@ -396,9 +396,7 @@
         
         // Načti members pro partner search ✅ KROK 2B
         loadMembers();
-
-        checkAlreadyRegistered();
-        
+      
         if (!event) {
           headerEl.textContent = 'Akce s ID ' + eventId + ' nebyla nalezena.';
           return;
@@ -546,85 +544,83 @@
         }
         
         //6D: checkAlreadyRegistered
-        // ✅ KOMPLETNÍ checkAlreadyRegistered() S LOGIKOU "ZÁLOHA ZAPLACENA"!
-        // 🆕 6D: checkAlreadyRegistered - FIKSNUTÁ VERZE PRO TVOJE DATA C26-4
-        async function checkAlreadyRegistered() {
-          const user = getLoggedUser();
-          if (!user?.userId) {
-            console.log('❌ No user');
+              async function checkAlreadyRegistered() {
+        console.log('🔍 checkAlreadyRegistered START');
+        
+        const user = getLoggedUser();
+        if (!user?.userId) return console.log('❌ No user');
+
+        // 🔒 POČKEJ NA EVENT + DOM (TOHLE ŘEŠÍ SEKÁNÍ!)
+        if (!event || !document.getElementById('registrationInfo')) {
+          console.log('⏳ Čekám na DOM/event...');
+          setTimeout(checkAlreadyRegistered, 200);
+          return;
+        }
+
+        try {
+          const statusResp = await fetch(`${API_BASE}/api/my-registrations?user_id=${user.userId}&eventId=${event.event_id}`);
+          const statusList = await statusResp.json();
+          const status = statusList.find(s => s.event_id === event.event_id) || {};
+
+          console.log('🧠 DECIZE:', status);
+
+          const regInfo = document.getElementById('registrationInfo');
+          const regBlock = document.getElementById('registrationBlock');
+          const depositInfo = document.getElementById('depositInfo');
+          const finalPayment = document.getElementById('finalPaymentInfo');
+          const paymentComplete = document.getElementById('paymentComplete');
+
+          // Skryj všechno
+          [regInfo, regBlock, depositInfo, finalPayment, paymentComplete].forEach(el => {
+            if (el) el.style.display = 'none';
+          });
+
+          // ✅ ZÁLOHA OK
+          if (status.deposit_status === 'OK') {
+            regInfo.innerHTML = '<strong>✅ Záloha zaplacena!</strong>';
+            if (event.discord_ucast) {
+              const urlMatch = event.discord_ucast.match(/https?:\/\/[^\s\[\]]+/);
+              if (urlMatch) regInfo.innerHTML += `<br><a href="${urlMatch[0]}" target="_blank">Discord účastníci</a>`;
+            }
+            regInfo.style.display = 'block';
+            console.log('✅ ZOBRAZENO ZÁLOHA OK');
             return;
           }
 
-          try {
-            console.log('🔍 Loading status for', user.userId, event.event_id);
-            const statusResp = await fetch(`${API_BASE}/api/my-registrations?user_id=${user.userId}&eventId=${event.event_id}`);
-            const statusList = await statusResp.json();
-            const status = statusList.find(s => s.event_id === event.event_id) || {};
-
-            const cenaNum = parseFloat(event.cena || 0);
-            const isZdarma = cenaNum === 0;
-
-            console.log('🧠 DECIZE:', {status, cena: event.cena, isZdarma});
-
-            // ELEMENTS
-            const regBlock = document.getElementById('registrationBlock');
-            const regInfo = document.getElementById('registrationInfo');
-            const depositInfo = document.getElementById('depositInfo');
-            const finalPayment = document.getElementById('finalPaymentInfo');
-            const paymentComplete = document.getElementById('paymentComplete');
-
-            console.log('🔍 ELEMENTS:', {regInfo: !!regInfo, regBlock: !!regBlock});
-
-            // Skryj vše
-            [regBlock, regInfo, depositInfo, finalPayment, paymentComplete].forEach(el => {
-              if (el) el.style.display = 'none';
-            });
-
-            // STAV 1: ZÁLOHA OK (TVOJE C26-4)
-            if (status.deposit_status === 'OK') {
-              regInfo.innerHTML = '<strong>✅ Záloha zaplacena!</strong>';
-              
-              // BEZPEČNÝ Discord link
-              if (event && event.discord_ucast) {
-                const urlMatch = event.discord_ucast.match(/https?:\/\/[^\s\[\]]+/);
-                if (urlMatch) {
-                  regInfo.innerHTML += `<br><a href="${urlMatch[0]}" target="_blank">Discord účastníci</a>`;
-                }
-              }
-              
-              console.log('✅ ZOBRAZUJEM ZÁLOHA OK');
-              regInfo.style.display = 'block';
-              return;
-            }
-
-            // STAV 2: Nová přihláška
-            if (!status.event_id) {
-              console.log('🆕 Nová přihláška');
-              if (regBlock) regBlock.style.display = 'block';
-              return;
-            }
-
-            // STAV 3: Zdarma
-            if (isZdarma) {
-              regInfo.innerHTML = '<strong>🎉 Akce zdarma!</strong><br>Přihlaš se a máš roli.';
-              regInfo.style.display = 'block';
-              return;
-            }
-
-            // STAV 4: Potřebuje zálohu
-            if (status.deposit_status !== 'OK') {
-              console.log('💰 Potřebuje zálohu');
-              const typ = status.partner === 'par' ? 'par' : 'single';
-              loadDepositInfo(user.userId, user.userName, typ);
-              depositInfo.style.display = 'block';
-              return;
-            }
-
-          } catch (err) {
-            console.error('🚨 Status error:', err);
+          // 🆕 DOPLATEK potřebný
+          if (status.balance_status === 'waiting') {
+            // TODO: Načti doplatek podobně jako zálohu
+            finalPayment.style.display = 'block';
+            return;
           }
+
+          // 🥳 Vše zaplaceno
+          if (status.balance_status === 'OK') {
+            paymentComplete.style.display = 'block';
+            return;
+          }
+
+          // 💰 Nová přihláška nebo potřebuje zálohu
+          if (!status.event_id || status.deposit_status !== 'OK') {
+            const typ = status.partner === 'par' ? 'par' : 'single';
+            loadDepositInfo(user.userId, user.userName, typ);
+            depositInfo.style.display = 'block';
+            return;
+          }
+
+          // 🆕 Nic - ukaz formulář
+          if (regBlock) regBlock.style.display = 'block';
+
+        } catch (err) {
+          console.error('🚨 Error:', err);
         }
-     
+      }
+      
+         setTimeout(() => {
+          console.log('🚀 FINAL CHECK STATUS');
+          checkAlreadyRegistered();
+        }, 500);
+
 
         // Partner search autocomplete ✅ KROK 2C
         // Partner search autocomplete - 100% SPOLEHLIVÉ řešení!
