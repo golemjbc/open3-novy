@@ -396,6 +396,8 @@
         
         // Načti members pro partner search ✅ KROK 2B
         loadMembers();
+
+        checkAlreadyRegistered();
         
         if (!event) {
           headerEl.textContent = 'Akce s ID ' + eventId + ' nebyla nalezena.';
@@ -542,78 +544,75 @@
               console.error('Chyba při načítání informací o záloze:', err);
             });
         }
-
+        
+        //6D: checkAlreadyRegistered
         // ✅ KOMPLETNÍ checkAlreadyRegistered() S LOGIKOU "ZÁLOHA ZAPLACENA"!
-        (function checkAlreadyRegistered() {
-          const storedUserJson = localStorage.getItem('oooUser');
-          if (!storedUserJson) return;
+        // 🆕 6D: checkAlreadyRegistered - 5 STAVŮ PLACENÍ
+        async function checkAlreadyRegistered() {
+          const user = getLoggedUser();
+          if (!user?.userId) return;
 
-          let userId = null;
-          let userName = '';
           try {
-            const storedUser = JSON.parse(storedUserJson);
-            userId   = storedUser.userId || null;
-            userName = storedUser.userName || '';
-          } catch (e) {
-            console.error('Chyba parsování oooUser:', e);
-            return;
-          }
+            // 1. Status Prihlasky
+            const statusResp = await fetch(`${API_BASE}/api/my-registrations?user_id=${user.userId}&eventId=${event.event_id}`);
+            const statusList = await statusResp.json();
+            const status = statusList.find(s => s.event_id === event.event_id) || {};
 
-          if (!userId) return;
+            // 2. Data akce
+            const cenaNum = parseFloat(event.cena || 0);
+            const isZdarma = cenaNum === 0;
+            const isJednorazova = event.jednorazova === 'ano';
 
-          fetch(API_BASE + '/api/my-registrations?user_id=' + encodeURIComponent(userId))
-            .then(r => r.json())
-            .then(list => {
-              console.log('my-registrations:', list);
-              if (!Array.isArray(list)) return;
+            console.log('🧠 DECIZE:', {status, cena: event.cena, isZdarma, isJednorazova});
 
-              const found = list.find(item => item.event_id === event.event_id);
-              if (!found) return;
+            // ELEMENTS
+            const regBlock = document.getElementById('registrationBlock');
+            const regInfo = document.getElementById('registrationInfo');
+            const depositInfo = document.getElementById('depositInfo');
+            const finalPayment = document.getElementById('finalPaymentInfo');
+            const paymentComplete = document.getElementById('paymentComplete');
 
-              const regBlock = document.getElementById('registrationBlock');
-              const info     = document.getElementById('registrationInfo');
-              const depositInfoBox = document.getElementById('depositInfo');
-
-              if (regBlock) regBlock.style.display = 'none';
-              if (info)     info.style.display = 'block';
-              if (depositInfoBox) depositInfoBox.style.display = 'block';
-
-              // ✅ ZÁLOHA ZAPLACENA = SPECIÁLNÍ TEXT + ÚČASTNÍCKÝ KANÁL!
-              if (found.deposit_status && found.deposit_status.toUpperCase() === 'OK') {
-                const depositAmountEl = document.getElementById('depositAmount');
-                
-                // 🆕 PŘIDÁME ÚČASTNÍCKÝ KANÁL (sloupec Z)
-                let ucastHtml = '<strong>✅ Záloha: ZAPLACENA!</strong>';
-                if (event.discord_ucast) {
-                  const ucastUrlMatch = event.discord_ucast.match(/https?:\/\/[^\s\[\]]+/);
-                  if (ucastUrlMatch) {
-                    ucastHtml += `<br><br><strong><a href="${ucastUrlMatch[0]}" target="_blank" style="color: #007bff !important; font-size: 1.3em !important; font-weight: 700 !important; text-decoration: none !important; display: block; padding: 10px 0;">❗Discord pro účastníky</a></strong>`;
-                  }
-                }
-                
-                depositAmountEl.innerHTML = ucastHtml;
-                
-                // Skryt QR a údaje
-                const depositMessageEl = document.getElementById('depositMessage');
-                const depositQREl = document.getElementById('depositQR');
-                if (depositMessageEl) depositMessageEl.innerHTML = '';
-                if (depositQREl) {
-                  depositQREl.src = '';
-                  depositQREl.style.display = 'none';
-                }
-                console.log('✅ Záloha zaplacena + účastnický kanál!');
-                return; // NEDĚLAT loadDepositInfo!
-              }
-
-              // Normální případ - načti QR
-              let foundType = 'single';
-              if (found.partner === 'par') foundType = 'par';
-              loadDepositInfo(userId, userName, foundType);
-            })
-            .catch(err => {
-              console.error('my-registrations error:', err);
+            // Skryj vše
+            [regBlock, regInfo, depositInfo, finalPayment, paymentComplete].forEach(el => {
+              if (el) el.style.display = 'none';
             });
-        })();
+
+            // 🆕 LOGIKA 5 STAVŮ
+            if (!status.event_id) {
+              // Nová přihláška
+              if (regBlock) regBlock.style.display = 'block';
+            } else if (isZdarma) {
+              // Zdarma
+              regInfo.innerHTML = '<strong>🎉 Akce zdarma!</strong><br>Přihlaš se a máš roli.';
+              regInfo.style.display = 'block';
+            } else if (status.deposit_status !== 'OK') {
+              // QR záloha/jednorázová
+              const typ = status.partner === 'par' ? 'par' : 'single';
+              loadDepositInfo(user.userId, user.userName, typ);
+              depositInfo.style.display = 'block';
+            } else if (status.doplatek_status === 'OK') {
+              // ✅ Dokončeno
+              paymentComplete.style.display = 'block';
+            } else if (status.doplatek) {
+              // Doplatek ready
+              loadFinalPayment(user.userId, user.userName, status.doplatek);
+              finalPayment.style.display = 'block';
+            } else {
+              // Záloha OK, čekej doplatek (tvůj původní kód)
+              regInfo.innerHTML = '<strong>✅ Záloha zaplacena!</strong>';
+              if (event.discord_ucast) {
+                const urlMatch = event.discord_ucast.match(/https?:\/\/[^\s\[\]]+/);
+                if (urlMatch) {
+                  regInfo.innerHTML += `<br><a href="${urlMatch[0]}" target="_blank">Discord účastníci</a>`;
+                }
+              }
+              regInfo.style.display = 'block';
+            }
+          } catch (err) {
+            console.error('Status error:', err);
+          }
+        }
+
 
         // Partner search autocomplete ✅ KROK 2C
         // Partner search autocomplete - 100% SPOLEHLIVÉ řešení!
