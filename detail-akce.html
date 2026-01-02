@@ -570,6 +570,13 @@
 
               const found = list.find(item => item.event_id === event.event_id);
               if (!found) return;
+              
+              // 🆕 ZDARMA AKCE = jen info, žádná platba!
+                if (!event.cena || event.cena.trim() === '' || parseFloat(event.cena) === 0) {
+                  regInfo.innerHTML = '<strong>🎉 Jsi přihlášený na akci zdarma!</strong>';
+                  regInfo.style.display = 'block';
+                  return;
+                }
 
               // SKRYJ VŠE
               const regBlock = document.getElementById('registrationBlock');
