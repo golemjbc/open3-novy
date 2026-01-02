@@ -714,7 +714,7 @@
 
         // ✅ KOMPLETNÍ REGISTRACE S MEMBERS-REGISTER!
         // ✅ KOMPLETNÍ REGISTRACE S MEMBERS-REGISTER!
-          regForm.addEventListener('submit', function (e) {
+         regForm.addEventListener('submit', function (e) {
             e.preventDefault();
             
             const typUcasti = document.querySelector('input[name="typUcasti"]:checked').value;
@@ -724,12 +724,30 @@
 
             console.log('🚀 DEBUG REGISTRACE:', { event_id: event.event_id, userId: user?.userId, role: event.discord_role_zajemce });
 
-            // 1. REGISTRACE
-            const registerUrl = `${API_BASE}/api/register-event?` +
-              `event_id=${encodeURIComponent(event.event_id)}&typ_ucasti=${encodeURIComponent(typUcasti)}&` +
-              `user_discord=${encodeURIComponent(user?.userName || 'NEPRIHLASENY_USER')}&` +
-              `partner_discord=${encodeURIComponent(partner || '')}&` +
-              `user_id=${encodeURIComponent(user?.userId || '')}&preference=${encodeURIComponent(JSON.stringify(selectedPrefs))}`;
+            // 🔥 FIX JEDNORÁZOVKY: deposit=0 + doplatek=cena
+            let depositAmount = event.zaloha || '0';
+            let doplatekAmount = '';
+            if (event.jednorazova === 'ano' && event.cena) {
+              const cenaNum = parseFloat(event.cena.replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+              doplatekAmount = (cenaNum * (typUcasti === 'par' ? 2 : 1)).toFixed(0);
+              depositAmount = '0';  // Jednorázovka = žádná záloha!
+            }
+
+            // 1. REGISTRACE s deposit/doplatek
+            const params = new URLSearchParams({
+              event_id: event.event_id,
+              typ_ucasti: typUcasti,
+              user_discord: user?.userName || 'NEPRIHLASENY_USER',
+              partner_discord: partner || '',
+              user_id: user?.userId || '',
+              preference: JSON.stringify(selectedPrefs),
+              deposit_amount: depositAmount,
+              doplatek_amount: doplatekAmount,
+              jednorazova: event.jednorazova || 'ne'
+            });
+            
+            const registerUrl = `${API_BASE}/api/register-event?${params}`;
+            console.log('📤 POSÍLÁM:', params.toString());
 
             fetch(registerUrl).then(r => r.json()).then(data => {
               console.log('✅ REGISTRACE OK:', data);
@@ -737,7 +755,7 @@
               // SKRYJ FORMULÁŘ
               document.getElementById('registrationBlock').style.display = 'none';
               
-              // UKAŽ INFO - ZDRAVA/PLATBA
+              // UKAŽ INFO
               const regInfo = document.getElementById('registrationInfo');
               if (isFreeEvent) {
                 regInfo.innerHTML = '<strong>🎉 Jsi přihlášený na akci zdarma!</strong>';
@@ -779,7 +797,7 @@
                   console.error('members-register GET error (bot OK):', err);
                 });
 
-              // 3. ZÁLOHA - POUZE PRO PLATBA! (🆕 OPRAVA)
+              // 3. ZÁLOHA/DOPLATEK - POUZE PRO PLATBA!
               if (user?.userId && !isFreeEvent) {
                 loadDepositInfo(user.userId, user.userName, typUcasti);
               } else if (isFreeEvent) {
@@ -790,7 +808,6 @@
               alert('Chyba při registraci: ' + err.message);
             });
           });
-
 
       })
       .catch(function (err) {
