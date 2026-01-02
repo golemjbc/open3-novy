@@ -582,10 +582,13 @@
                 if (el) el.style.display = 'none';
               });
 
-              // 3. ROZDĚLENÁ PLATBA (jednorazova="ne")
-              if (found.deposit_status?.toUpperCase() === 'OK' && found.balance_status?.toUpperCase() === 'OK') {
-                // c) VŠE ZAPLACENO
-                paymentComplete.style.display = 'block';
+             // 3. ROZDĚLENÁ PLATBA
+              if (event.jednorazova !== 'ano') {  // Jen rozdělená platba
+                if (found.deposit_status?.toUpperCase() === 'OK' && 
+                    (found.doplatek_status || found.balance_status)?.toUpperCase() === 'OK') {
+                  // c) VŠE ZAPLACENO
+                  document.getElementById('paymentComplete').style.display = 'block';
+                  return;}
               } else if (found.deposit_status?.toUpperCase() === 'OK') {
                 // b) ZÁLOHA OK + DOPLATEK
                 let html = '<strong>✅ Záloha zaplacena!</strong>';
