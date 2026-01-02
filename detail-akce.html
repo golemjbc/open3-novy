@@ -586,10 +586,11 @@
                 const finalPayment = document.getElementById('finalPaymentInfo');
                 const paymentComplete = document.getElementById('paymentComplete');
                 
-                [regBlock, regInfo, depositInfo, finalPayment, paymentComplete].forEach(el => {
+              [regBlock, regInfo, depositInfo, finalPayment, paymentComplete, 
+                document.querySelector('#registration-form button[type="submit"]') // ✅ TLAČÍTKO!
+                ].forEach(el => {
                   if (el) el.style.display = 'none';
                 });
-
                 // 3. ROZDĚLENÁ PLATBA
                 if (event.jednorazova !== 'ano') {
                   if (found.deposit_status?.toUpperCase() === 'OK' && 
