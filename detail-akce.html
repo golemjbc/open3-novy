@@ -185,23 +185,21 @@
             <img id="depositQR" src="" alt="QR kód pro zálohu" style="max-width: 200px;">
           </div>
 
-          <!-- 🆕 S4: DOPLATEK QR (SKRYTÝ) -->
-          <div id="finalPaymentInfo" style="display:none; margin-top: 1rem; padding: 1rem; border: 2px solid #28a745; border-radius: 8px; background: #d4edda;">
-            <h5 class="text-success mb-3">💰 Doplatek připraven</h5>
-            <div id="finalAmount"></div>
-            <div id="finalMessage" class="mt-2"></div>
-            <img id="finalQR" src="" alt="QR doplatek" style="max-width: 200px; margin-top: 1rem;">
-          </div>
-
-          <!-- 🆕 S5: CELKOVĚ ZAPLACENO (SKRYTÝ) -->
-          <div id="paymentComplete" style="display:none; margin-top: 1rem; padding: 1.5rem; border: 3px solid #28a745; border-radius: 12px; background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); text-align: center;">
-            <h3 class="text-success mb-4">✅ <strong>Akce zaplacena!</strong></h3>
-            <p>Máš všechny platby v pořádku. Uvidíme se na akci!</p>
-            <div class="mt-3">
-              <a href="akce.html" class="btn btn-success btn-lg">← Zpět na akce</a>
+          <!-- 🆕 S4: DOPLATEK (stejný styl jako záloha) -->
+            <div id="finalPaymentInfo" style="display:none; margin-top: 1rem;">
+              <strong>Doplatek:</strong><br>
+              <span id="finalAmount"></span><br>
+              <span id="finalMessage"></span><br>
+              <img id="finalQR" src="" alt="QR kód pro doplatek" style="max-width: 200px;">
             </div>
-          </div>
 
+            <!-- 🆕 S5: ZAPLACENO (stejný styl) -->
+            <div id="paymentComplete" style="display:none; margin-top: 1rem;">
+              <strong>Akce zaplacena! ✅</strong><br>
+              <span>Máš všechny platby v pořádku. Uvidíme se na akci!</span><br>
+              
+            </div>
+s
           <hr class="mt-4 mb-3">
          
           <a href="akce.html" class="btn btn-link">← Zpět na seznam akcí</a>
