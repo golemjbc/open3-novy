@@ -681,11 +681,25 @@
               document.querySelector('#registration-form button[type="submit"]')]
                 .forEach(el => { if (el) el.style.display = 'none'; });
 
+              const depositOK = found.deposit_status?.toUpperCase() === 'OK';
+              const doplatekOK = found.doplatek_status?.toUpperCase() === 'OK';
+              const balanceOK = found.balance_status?.toUpperCase() === 'OK';
+
+             // 🆕 FIX: + jednorázovka (depositOK stačí)
+              if ((depositOK && balanceOK || doplatekOK) || (event.jednorazova === 'ano' && depositOK)) {
+                paymentComplete.style.display = 'block';
+                console.log('✅ Akce zaplacena!');
+                return;
+              }
+
+
+
               // 3. ROZDĚLENÁ PLATBA
               if (event.jednorazova !== 'ano') {
-                if (found.deposit_status?.toUpperCase() === 'OK' && 
-                    (found.doplatek_status || found.balance_status)?.toUpperCase() === 'OK') {
-                  paymentComplete.style.display = 'block';
+                const allOK = (found.deposit_status?.toUpperCase() === 'OK' || found.doplatek_status?.toUpperCase() === 'OK') &&
+                              (found.doplatek_status?.toUpperCase() === 'OK' || found.balance_status?.toUpperCase() === 'OK');
+                if (allOK) {
+                  document.getElementById('paymentComplete').style.display = 'block';
                   return;
                 } else if (found.deposit_status?.toUpperCase() === 'OK') {
                   let html = '<strong>✅ Záloha zaplacena!</strong><br><br>';
