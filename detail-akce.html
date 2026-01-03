@@ -716,15 +716,22 @@
 
               // 🆕 JEDNORÁZOVKA + DĚLENÉ = stejný doplatek QR
               if (found.doplatek && found.doplatek !== '') {
-                // Backend neumí → frontend naplní částku z přihlášky
-                const finalAmountEl = document.getElementById('finalAmount');
-                const finalMessageEl = document.getElementById('finalMessage');
-                finalAmountEl.innerHTML = `<strong>Doplatek:</strong> ${found.doplatek} Kč`;
-                finalMessageEl.innerHTML = `
-                  <strong>Účet:</strong> ${event.ucet || '2003263980/2013'}<br>
-                  <strong>VS:</strong> ${eventId.replace(/[^0-9]/g, '').slice(0,10)}<br>
-                  <strong>Zpráva:</strong> ${event.nazev} | ${userName} | ${userId}
-                `;
+              // 🆕 FIX: Zkus načíst QR z backendu i pro doplatek!
+              loadPaymentInfo(userId, userName, found.typ_ucasti || 'single', 'final');
+              
+              // Fallback pokud backend nevrátí (manuální bez QR)
+              setTimeout(() => {
+                if (!document.getElementById('finalQR').src) {
+                  const finalAmountEl = document.getElementById('finalAmount');
+                  const finalMessageEl = document.getElementById('finalMessage');
+                  finalAmountEl.innerHTML = `<strong>Doplatek:</strong> ${found.doplatek} Kč`;
+                  finalMessageEl.innerHTML = `
+                    <strong>Účet:</strong> ${event.ucet || '2003263980/2013'}<br>
+                    <strong>VS:</strong> ${eventId.replace(/[^0-9]/g, '').slice(0,10)}<br>
+                    <strong>Zpráva:</strong> ${event.nazev} | ${userName} | ${userId}
+                  `;
+                }
+              }, 1000);
                 document.getElementById('finalPaymentInfo').style.display = 'block';
                 } else {
                   loadPaymentInfo(userId, userName, found.typ_ucasti || 'single', 'deposit');
