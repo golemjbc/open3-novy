@@ -836,10 +836,10 @@
                 if (user?.userId && !isFreeEvent) {
                   if (event.jednorazova === 'ano') {
                     // JEDNORÁZOVKA → UKAŽ DOPLATEK (finalPaymentInfo)
-                    document.getElementById('finalPaymentInfo').style.display = 'block';
-                    document.getElementById('finalAmount').textContent = doplatekAmount + ' Kč';
-                    // QR vygeneruje organizátor později
-                    console.log('💰 JEDNORÁZOVKA: Doplatek ' + doplatekAmount + ' Kč (organizátor QR)');
+                    //document.getElementById('finalPaymentInfo').style.display = 'block';  Fix Adam
+                    //document.getElementById('finalAmount').textContent = doplatekAmount + ' Kč';
+                    loadPaymentInfo(user.userId, user.userName, typUcasti, 'final');
+                  console.log('💰 JEDNORÁZOVKA: Doplatek ' + doplatekAmount + ' Kč (organizátor QR)');
                   } else {
                     // ZÁLOHOVÁ → normální záloha
                     loadPaymentInfo(user.userId, user.userName, typUcasti, 'deposit');
