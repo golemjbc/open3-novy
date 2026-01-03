@@ -502,7 +502,7 @@
         }
 
         // ✅ FUNKCE ZÁLOHY (JAKO NA OBRÁZKU!)
-        function loadDepositInfo(userId, userName, typUcasti) {
+        function loadPaymentInfo(userId, userName, typUcasti, paymentType = 'deposit') {
           if (!userId) return;
 
           const params = new URLSearchParams({
@@ -510,43 +510,40 @@
             user_id: userId,
             user_name: userName || '',
             typ_ucasti: typUcasti || 'single',
-            jednorazova: event.jednorazova || 'ne'  // ← NOVÉ!
+            payment_type: paymentType,  // 🆕 deposit nebo final
+            jednorazova: event.jednorazova || 'ne'
           });
 
           fetch(API_BASE + '/api/get-deposit-info?' + params.toString())
             .then(r => r.json())
             .then(data => {
-              console.log('💰 deposit-info:', data);
-              if (!data || !data.deposit_amount || data.deposit_amount === '0') {
-                console.log('ℹ️ Žádná platba potřebná (zdarma/jednorázovka)');
+              console.log('💰 payment-info:', data);
+              if (!data || !data.amount || data.amount === '0') {
+                console.log('ℹ️ Žádná platba potřebná');
                 return;
               }
 
-              // Text podle typu
-              let text;
-              if (event.jednorazova === 'ano') {
-                text = `<strong>Doplatek (jednorázovka):</strong> ${data.deposit_amount} Kč`;
-              } else {
-                const baseDeposit = event.zaloha || 'neznámá';
-                const isPair = (typUcasti === 'par');
-                text = isPair 
-                  ? `<strong>Záloha:</strong> 2× ${baseDeposit} = ${data.deposit_amount} Kč`
-                  : `<strong>Záloha:</strong> ${data.deposit_amount} Kč`;
-              }
+              // Vyber správný HTML blok
+              const isFinal = paymentType === 'final';
+              const blockId = isFinal ? 'finalPaymentInfo' : 'depositInfo';
+              const blockEl = document.getElementById(blockId);
+              const amountEl = document.getElementById(isFinal ? 'finalAmount' : 'depositAmount');
+              const messageEl = document.getElementById(isFinal ? 'finalMessage' : 'depositMessage');
+              const qrEl = document.getElementById(isFinal ? 'finalQR' : 'depositQR');
 
-              depositAmountEl.innerHTML = text;
-              depositMessageEl.innerHTML = `
-        <strong>Účet:</strong> ${data.account_cz || data.iban}<br>
-        <strong>VS:</strong> ${data.vs}<br>
-        <strong>Zpráva:</strong> ${data.message}
-      `;
-      depositQREl.src = 'data:image/png;base64,' + data.qr_base64;
-
-      document.getElementById('depositInfo').style.display = 'block';
-    })
-    .catch(err => console.error('Deposit info error:', err));
-}
-
+              // Text pro blok
+              const label = isFinal ? 'Doplatek' : 'Záloha';
+              amountEl.innerHTML = `<strong>${label}:</strong> ${data.amount} Kč`;
+              messageEl.innerHTML = `
+                <strong>Účet:</strong> ${data.account_cz || data.iban}<br>
+                <strong>VS:</strong> ${data.vs}<br>
+                <strong>Zpráva:</strong> ${data.message}
+              `;
+              qrEl.src = 'data:image/png;base64,' + data.qr_base64;
+              blockEl.style.display = 'block';
+            })
+            .catch(err => console.error('Payment info error:', err));
+        }
         
 
         // Partner search autocomplete ✅ KROK 2C
@@ -711,6 +708,8 @@
                   html += `<strong>Doplatek:</strong> ${doplatek}`;
                   regInfo.innerHTML = html;
                   regInfo.style.display = 'block';
+                  loadPaymentInfo(userId, userName, found.typ_ucasti || 'single', 'final'); //oprava asi mohu vrátit
+
                   return;
                 }
               }
@@ -721,7 +720,7 @@
                   // Už má přihlášku → ukaz doplatek info
                   document.getElementById('finalPaymentInfo').style.display = 'block';
                 } else {
-                  loadDepositInfo(userId, userName, found.partner === 'par' ? 'par' : 'single');
+                  loadPaymentInfo(userId, userName, found.typ_ucasti || 'single', 'deposit');
                 }
             })
             .catch(err => {
@@ -829,7 +828,7 @@
                     console.log('💰 JEDNORÁZOVKA: Doplatek ' + doplatekAmount + ' Kč (organizátor QR)');
                   } else {
                     // ZÁLOHOVÁ → normální záloha
-                    loadDepositInfo(user.userId, user.userName, typUcasti);
+                    loadPaymentInfo(user.userId, user.userName, typUcasti, 'deposit');
                   }
                 } else if (isFreeEvent) {
                   console.log('🆓 Zdarma akce - žádná záloha!');
