@@ -518,7 +518,7 @@
             .then(r => r.json())
             .then(data => {
               console.log('💰 payment-info:', data);
-              if (!data || !data.amount || data.amount === '0') {
+              if (!data || !data.deposit_amount || data.deposit_amount === '0') {
                 console.log('ℹ️ Žádná platba potřebná');
                 return;
               }
@@ -533,7 +533,7 @@
 
               // Text pro blok
               const label = isFinal ? 'Doplatek' : 'Záloha';
-              amountEl.innerHTML = `<strong>${label}:</strong> ${data.amount} Kč`;
+              amountEl.innerHTML = `<strong>${label}:</strong> ${data.deposit_amount} Kč`;
               messageEl.innerHTML = `
                 <strong>Účet:</strong> ${data.account_cz || data.iban}<br>
                 <strong>VS:</strong> ${data.vs}<br>
