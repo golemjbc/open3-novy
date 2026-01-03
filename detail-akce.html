@@ -616,17 +616,19 @@
             }
 
           
-            function parsePrihlaskaRow(row) {
-              if (!row || !Array.isArray(row)) return {};
+          function parsePrihlaskaRow(row) {
+              // ✅ FIX: row je OBJEKT z API, ne array!
+              if (!row) return {};
               return {
-                deposit: row[6] || '0',        // G: deposit
-                deposit_status: row[7] || '',  // H
-                doplatek: row[8] || '0',       // I
-                doplatek_status: row[9] || '', // J
-                balance_status: row[10] || '', // K? (pokud existuje)
-                typ_ucasti: row[4] || 'single' // E: partner/single
+                deposit: row.deposit || '0',        // API pole
+                deposit_status: row.deposit_status || '',  
+                doplatek: row.doplatek || '0',      
+                doplatek_status: row.doplatek_status || '', 
+                balance_status: row.balance_status || '', 
+                typ_ucasti: row.typ_ucasti || 'single'  // z registrace!
               };
             }
+
 
 
         //6D: checkAlreadyRegistered - KOMPLETNÍ VŠECHNY STAVY
@@ -858,7 +860,7 @@
                     console.log('💰 JEDNORÁZOVKA: Doplatek ' + doplatekAmount + ' Kč (organizátor QR)');
                   } else {
                     // ZÁLOHOVÁ → normální záloha
-                    loadPaymentInfo(user.userId, user.userName, typ_ucasti, 'deposit');
+                    loadPaymentInfo(user.userId, user.userName, typucasti, 'deposit');
                   }
                 } else if (isFreeEvent) {
                   console.log('🆓 Zdarma akce - žádná záloha!');
