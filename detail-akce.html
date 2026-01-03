@@ -630,9 +630,8 @@
             }
 
 
-
-        //6D: checkAlreadyRegistered - KOMPLETNÍ VŠECHNY STAVY
-       (function checkAlreadyRegistered() {
+        // 6D checkAlreadyRegistered - kontrola přihlášky uživatele
+        (function checkAlreadyRegistered() {
           const storedUserJson = localStorage.getItem('oooUser');
           if (!storedUserJson) return;
 
@@ -657,114 +656,77 @@
 
               const found = list.find(item => item.event_id === event.event_id);
               console.log('🔍 PRIHLASKA:', parsePrihlaskaRow(found));
-              if (!found) return;
+              if (!found) return; // Nová přihláška - zobraz formulář
               
-              // 🎉 ZDARMA AKCE - SKRYJ VŠE A UKAŽ INFO (nejdřív!)
-              //const isFreeEvent = !event.cena || event.cena.trim() === '' || parseFloat(event.cena) === 0;
-              if (isFreeEvent) {
-                const regInfo = document.getElementById('registrationInfo');
-                regInfo.innerHTML = '<strong>🎉 Jsi přihlášený na akci zdarma!</strong>';
-                regInfo.style.display = 'block';
-                
-                // SKRYJ VŠE ZBYTEČNÉ BLOKY + TLAČÍTKO
-                const elementsToHide = [
-                  'registrationBlock',
-                  'depositInfo', 
-                  'finalPaymentInfo',
-                  'paymentComplete'
-                ];
-                elementsToHide.forEach(id => {
-                  const el = document.getElementById(id);
-                  if (el) el.style.display = 'none';
-                });
-                const submitBtn = document.querySelector('#registration-form button[type="submit"]');
-                if (submitBtn) submitBtn.style.display = 'none';
-                
-                console.log('✅ Zdarma akce - vše skryto!');
-                return; // ← DŮLEŽITÉ! ŽÁDNÁ ZÁLOHA!
-              }
-
-              // PLATBA - SKRYJ VŠE NEJDŘÍV
-              const regBlock = document.getElementById('registrationBlock');
-              const regInfo = document.getElementById('registrationInfo');
-              const depositInfo = document.getElementById('depositInfo');
-              const finalPayment = document.getElementById('finalPaymentInfo');
-              const paymentComplete = document.getElementById('paymentComplete');
-              
-              [regBlock, regInfo, depositInfo, finalPayment, paymentComplete, 
-              document.querySelector('#registration-form button[type="submit"]')]
-                .forEach(el => { if (el) el.style.display = 'none'; });
-
               const prihlaska = parsePrihlaskaRow(found);
               const depositOK = prihlaska.deposit_status?.toUpperCase() === 'OK';
               const doplatekOK = prihlaska.doplatek_status?.toUpperCase() === 'OK';
               const balanceOK = prihlaska.balance_status?.toUpperCase() === 'OK';
 
-             // 🆕 FIX: + jednorázovka (depositOK stačí)
-              if ((depositOK && balanceOK || doplatekOK) || (event.jednorazova === 'ano' && depositOK)) {
-                paymentComplete.style.display = 'block';
+              // SKRYJ VŠE NEJDŘÍV
+              const elementsToHide = [
+                'registrationBlock', 'depositInfo', 'finalPaymentInfo', 'paymentComplete'
+              ];
+              elementsToHide.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+              });
+              const submitBtn = document.querySelector('#registration-form button[type="submit"]');
+              if (submitBtn) submitBtn.style.display = 'none';
+
+              // 🎉 ZDARMA AKCE
+              if (isFreeEvent) {
+                const regInfo = document.getElementById('registrationInfo');
+                regInfo.innerHTML = '<strong>🎉 Jsi přihlášený na akci zdarma!</strong>';
+                regInfo.style.display = 'block';
+                console.log('✅ Zdarma akce - vše skryto!');
+                return;
+              }
+
+              // 1. ✅ PLATBA DOKONČENA (všechny varianty)
+              if (depositOK && (balanceOK || doplatekOK) || 
+                  (event.jednorazova === 'ano' && depositOK)) {
+                document.getElementById('paymentComplete').style.display = 'block';
                 console.log('✅ Akce zaplacena!');
                 return;
               }
 
-
-
-              // 3. ROZDĚLENÁ PLATBA
-              if (event.jednorazova !== 'ano') {
-                const allOK = (prihlaska.deposit_status?.toUpperCase() === 'OK' || prihlaska.doplatek_status?.toUpperCase() === 'OK') &&
-                              (prihlaska.doplatek_status?.toUpperCase() === 'OK' || prihlaska.balance_status?.toUpperCase() === 'OK');
-                if (allOK) {
-                  document.getElementById('paymentComplete').style.display = 'block';
-                  return;
-                } else if (prihlaska.deposit_status?.toUpperCase() === 'OK') {
-                  let html = '<strong>✅ Záloha zaplacena!</strong><br><br>';
-                  if (event.discord_ucast) {
-                    const urlMatch = event.discord_ucast.match(/https?:\/\/[^\s\[\]]+/);
-                    if (urlMatch) html += `<a href="${urlMatch[0]}" target="_blank">Discord účastníci</a><br><br>`;
-                  }
-                  const doplatek = prihlaska.doplatek || event.doplatek || 'bude upřesněno';
-                  html += `<strong>Doplatek:</strong> ${doplatek}`;
-                  regInfo.innerHTML = html;
-                  regInfo.style.display = 'block';
-                  loadPaymentInfo(userId, userName, prihlaska.typ_ucasti, 'final'); //oprava asi mohu vrátit
-
-                  return;
+              // 2. ✅ ZÁLOHA OK → DOPLATEK (pouze dělené platby)
+              if (event.jednorazova !== 'ano' && depositOK && !doplatekOK) {
+                let html = '<strong>✅ Záloha zaplacena!</strong><br><br>';
+                if (event.discord_ucast) {
+                  const urlMatch = event.discord_ucast.match(/https?:\/\/[^\s\[\]]+/);
+                  if (urlMatch) html += `<a href="${urlMatch[0]}" target="_blank">Discord účastníci</a><br><br>`;
                 }
+                const doplatek = prihlaska.doplatek || event.doplatek || 'bude upřesněno';
+                html += `<strong>Doplatek:</strong> ${doplatek}`;
+                
+                const regInfo = document.getElementById('registrationInfo');
+                regInfo.innerHTML = html;
+                regInfo.style.display = 'block';
+                
+                loadPaymentInfo(userId, userName, prihlaska.typ_ucasti || 'single', 'final');
+                return;
               }
 
-              // 🆕 JEDNORÁZOVKA + DĚLENÉ = stejný doplatek QR
-              if (prihlaska.doplatek && prihlaska.doplatek !== '') {
-              // 🆕 FIX: Zkus načíst QR z backendu i pro doplatek!
-              loadPaymentInfo(userId, userName, prihlaska.typ_ucasti || 'single', 'final');
-              
-              // Fallback pokud backend nevrátí (manuální bez QR)
-              setTimeout(() => {
-                if (!document.getElementById('finalQR').src) {
-                  const finalAmountEl = document.getElementById('finalAmount');
-                  const finalMessageEl = document.getElementById('finalMessage');
-                  finalAmountEl.innerHTML = `<strong>Doplatek:</strong> ${prihlaska.doplatek} Kč`;
-                  finalMessageEl.innerHTML = `
-                    <strong>Účet:</strong> ${event.ucet || '2003263980/2013'}<br>
-                    <strong>VS:</strong> ${event.eventId.replace(/[^0-9]/g, '').slice(0,10)}<br>
-                    <strong>Zpráva:</strong> ${event.nazev} | ${userName} | ${userId}
-                  `;
-                }
-              }, 1000);
+              // 3. 🆕 JEDNORÁZOVKA S DOPLATKEM (pokud existuje v přihlášce)
+              if (prihlaska.doplatek && prihlaska.doplatek !== '0' && prihlaska.doplatek !== '') {
                 document.getElementById('finalPaymentInfo').style.display = 'block';
-                } else {
-                  loadPaymentInfo(userId, userName, prihlaska.typ_ucasti || 'single', 'deposit');
-                }
-                // 🆕 FIX DĚLENÝCH: VŽDY ZÁLOHA PRVNÍ!
+                loadPaymentInfo(userId, userName, prihlaska.typ_ucasti || 'single', 'final');
+                return;
+              }
+
+              // 4. DEFAULT: ZÁLOHA (nová přihláška nebo chybí doplatek)
               const paymentType = (event.jednorazova === 'ano') ? 'final' : 'deposit';
+              console.log('💰 ZOBRAZUJÚ ZÁLOHU/DOPLATEK:', paymentType);
               loadPaymentInfo(userId, userName, prihlaska.typ_ucasti || 'single', paymentType);
+              
             })
             .catch(err => {
               console.error('my-registrations error:', err);
             });
         })();
-
-
-        
+       
 
 
         // ✅ KOMPLETNÍ REGISTRACE S MEMBERS-REGISTER!
