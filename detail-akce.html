@@ -754,6 +754,9 @@
                 } else {
                   loadPaymentInfo(userId, userName, prihlaska.typ_ucasti || 'single', 'deposit');
                 }
+                // 🆕 FIX DĚLENÝCH: VŽDY ZÁLOHA PRVNÍ!
+              const paymentType = (event.jednorazova === 'ano') ? 'final' : 'deposit';
+              loadPaymentInfo(userId, userName, prihlaska.typ_ucasti || 'single', paymentType);
             })
             .catch(err => {
               console.error('my-registrations error:', err);
