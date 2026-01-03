@@ -683,6 +683,13 @@
                 return;
               }
 
+              // 🆕 FIX: DOPLATEK OK = DOKONČENO (i bez deposit!) X1
+                if (doplatekOK && (event.jednorazova === 'ano' || event.jednorazova !== 'ano')) {
+                  document.getElementById('paymentComplete').style.display = 'block';
+                  console.log('✅ Doplatek OK = dokončeno!');
+                  return;
+                }
+
               // 1. ✅ PLATBA DOKONČENA (všechny varianty)
               if (depositOK && (balanceOK || doplatekOK) || 
                   (event.jednorazova === 'ano' && depositOK)) {
