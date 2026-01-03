@@ -789,6 +789,11 @@
               // SKRYJ FORMULÁŘ
               document.getElementById('registrationBlock').style.display = 'none';
               
+                // 🆕 PŘIDEJ SEM:
+                setTimeout(() => {
+                  window.location.reload();
+                }, 1000);  // 1s na zápis do Sheets
+
               // UKAŽ INFO
               const regInfo = document.getElementById('registrationInfo');
               if (isFreeEvent) {
@@ -836,10 +841,10 @@
                 if (user?.userId && !isFreeEvent) {
                   if (event.jednorazova === 'ano') {
                     // JEDNORÁZOVKA → UKAŽ DOPLATEK (finalPaymentInfo)
-                    document.getElementById('finalPaymentInfo').style.display = 'block'; 
+                    document.getElementById('finalPaymentInfo').style.display = 'block';
                     document.getElementById('finalAmount').textContent = doplatekAmount + ' Kč';
-                    
-                  console.log('💰 JEDNORÁZOVKA: Doplatek ' + doplatekAmount + ' Kč (organizátor QR)');
+                    // QR vygeneruje organizátor později
+                    console.log('💰 JEDNORÁZOVKA: Doplatek ' + doplatekAmount + ' Kč (organizátor QR)');
                   } else {
                     // ZÁLOHOVÁ → normální záloha
                     loadPaymentInfo(user.userId, user.userName, typUcasti, 'deposit');
