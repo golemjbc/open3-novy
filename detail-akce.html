@@ -670,6 +670,25 @@
               const doplatekOK = prihlaska.doplatek_status?.toUpperCase() === 'OK';
               const balanceOK = prihlaska.balance_status?.toUpperCase() === 'OK';
 
+              // 🆕 KANÁL - JEDNO MÍSTO NAZAČÁTEK!
+              const ukazKanal = depositOK || doplatekOK || balanceOK;
+              if (ukazKanal && event.discord_ucast) {
+                console.log('🆕 KANÁL BY SE MĚL UKAZAT!');
+                }
+
+              if (ukazKanal && event.discord_ucast) {
+                const targetEl = document.querySelector('.right-content'); // Nejbezpečnější
+                let kanalEl = document.getElementById('ucastnikyKanal');
+                if (!kanalEl) {
+                  kanalEl = document.createElement('div');
+                  kanalEl.id = 'ucastnikyKanal';
+                  kanalEl.style.cssText = 'display:block; margin:1rem 0; padding:1rem; background:#d4edda; border-radius:8px; border-left:4px solid #28a745;';
+                  kanalEl.innerHTML = `<strong>🔗 Kanál pro účastníky:</strong> <a href="${event.discord_ucast}" target="_blank" class="btn btn-success btn-sm">Přejít do kanálu</a>`;
+                  targetEl.appendChild(kanalEl); // Přidá na konec right-content
+                }
+                console.log('✅ KANÁL ZOBRAZEN!');
+              }
+  
               // SKRYJ VŠE NEJDŘÍV
               const elementsToHide = [
                 'registrationBlock', 'depositInfo', 'finalPaymentInfo', 'paymentComplete'
@@ -698,12 +717,33 @@
                 }
 
               // 1. ✅ PLATBA DOKONČENA (všechny varianty)
-              if (depositOK && (balanceOK || doplatekOK) || 
-                  (event.jednorazova === 'ano' && depositOK)) {
-                document.getElementById('paymentComplete').style.display = 'block';
-                console.log('✅ Akce zaplacena!');
-                return;
-              }
+                  if (depositOK && (balanceOK || doplatekOK) || 
+                      (event.jednorazova === 'ano' && depositOK)) {
+                    document.getElementById('paymentComplete').style.display = 'block';
+                    console.log('✅ Akce zaplacena!');
+                    
+                    // 🆕 KANÁL ÚČASTNÍKŮ
+                    if (event.discord_ucast) {
+                      const completeEl = document.getElementById('paymentComplete');
+                      let kanalEl = document.getElementById('ucastnikyKanal');
+                      if (!kanalEl) {
+                        kanalEl = document.createElement('div');
+                        kanalEl.id = 'ucastnikyKanal';
+                        kanalEl.style.cssText = 'display:block; margin-top:1rem;';
+                        kanalEl.innerHTML = `
+                          <strong>🔗 Kanál pro účastníky:</strong><br>
+                          <a href="${event.discord_ucast}" target="_blank" class="btn btn-success btn-sm mt-2">Přejít do kanálu "${event.nazev}"</a>
+                        `;
+                        completeEl.parentNode.insertBefore(kanalEl, completeEl.nextSibling);
+                      } else {
+                        kanalEl.style.display = 'block';
+                      }
+                      console.log('✅ KANÁL ZOBRAZEN:', event.discord_ucast);
+                    }
+                    
+                    return;
+                  }
+
 
               // 2. ✅ ZÁLOHA OK → DOPLATEK (pouze dělené platby)
               if (event.jednorazova !== 'ano' && depositOK && !doplatekOK) {
