@@ -539,15 +539,24 @@
               const qrEl = document.getElementById(isFinal ? 'finalQR' : 'depositQR');
 
               // Text pro blok
-              const label = isFinal ? 'Doplatek' : 'Záloha';
-              amountEl.innerHTML = `<strong>${label}:</strong> ${data.deposit_amount} Kč`;
-              messageEl.innerHTML = `
-                <strong>Účet:</strong> ${data.account_cz || data.iban}<br>
-                <strong>VS:</strong> ${data.vs}<br>
-                <strong>Zpráva:</strong> ${data.message}
-              `;
-              qrEl.src = 'data:image/png;base64,' + data.qr_base64;
-              blockEl.style.display = 'block';
+              // Text pro blok - UPRACENO PRO PÁR/SINGLE
+                const label = isFinal ? 'Doplatek' : 'Záloha';
+                const fullAmount = parseFloat(data.deposit_amount);  // 4200 z API (pro pár)
+                const singleAmount = (fullAmount / 2).toFixed(0);    // 2100
+                const isPar = typUcasti === 'par';
+                const displayText = isPar 
+                  ? `2 × ${singleAmount} Kč = ${fullAmount} Kč` 
+                  : `${singleAmount} Kč`;
+                amountEl.innerHTML = `<strong>${label}:</strong> ${displayText}`;
+
+                messageEl.innerHTML = `
+                  <strong>Účet:</strong> ${data.account_cz || data.iban}<br>
+                  <strong>VS:</strong> ${data.vs}<br>
+                  <strong>Zpráva:</strong> ${data.message}
+                `;
+                qrEl.src = 'data:image/png;base64,' + data.qr_base64;
+                blockEl.style.display = 'block';
+
             })
             .catch(err => console.error('Payment info error:', err));
         }
