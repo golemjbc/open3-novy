@@ -683,7 +683,12 @@
                   kanalEl = document.createElement('div');
                   kanalEl.id = 'ucastnikyKanal';
                   kanalEl.style.cssText = 'display:block; margin:1rem 0; padding:1rem; background:#0a1045; border-radius:8px; border-left:4px solid #0a1045; color:white;';  // color:white!
-                  kanalEl.innerHTML = `<div class="main-button"> <strong style="color:white; float:left;">Discord kanál pro účastníky: <a href="${event.discord_ucast}" target="_blank" class="main-button" style="float:right;">Přejít do kanálu</a></strong></div>`;
+                  kanalEl.innerHTML = `
+                      <div style="overflow:hidden;">
+                        <strong style="color:white; float:left;">Discord kanál pro účastníky:</strong>
+                        <a href="${event.discord_ucast}" target="_blank" class="main-button" style="float:right;">Přejít do kanálu</a>
+                      </div>
+                    `;
                   targetEl.appendChild(kanalEl); // Přidá na konec right-content
                 }
                 console.log('✅ KANÁL ZOBRAZEN!');
