@@ -539,14 +539,13 @@
               const qrEl = document.getElementById(isFinal ? 'finalQR' : 'depositQR');
 
               // Text pro blok
-              // Text pro blok - UPRACENO PRO PÁR/SINGLE
+              // Text pro blok - Backend už počítá správně!
                 const label = isFinal ? 'Doplatek' : 'Záloha';
-                const fullAmount = parseFloat(data.deposit_amount);  // 4200 z API (pro pár)
-                const singleAmount = (fullAmount / 2).toFixed(0);    // 2100
+                const amount = parseFloat(data.deposit_amount);  // Správná částka z backendu
                 const isPar = typUcasti === 'par';
                 const displayText = isPar 
-                  ? `2 × ${singleAmount} Kč = ${fullAmount} Kč` 
-                  : `${singleAmount} Kč`;
+                  ? `2 × ${(amount / 2).toFixed(0)} Kč = ${amount} Kč` 
+                  : `${amount} Kč`;
                 amountEl.innerHTML = `<strong>${label}:</strong> ${displayText}`;
 
                 messageEl.innerHTML = `
@@ -556,7 +555,6 @@
                 `;
                 qrEl.src = 'data:image/png;base64,' + data.qr_base64;
                 blockEl.style.display = 'block';
-
             })
             .catch(err => console.error('Payment info error:', err));
         }
