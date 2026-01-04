@@ -682,21 +682,8 @@
                 if (!kanalEl) {
                   kanalEl = document.createElement('div');
                   kanalEl.id = 'ucastnikyKanal';
-                  kanalEl.style.cssText = `
-                    display:block; 
-                    margin:1rem 0; 
-                    padding:1.5rem; 
-                    background:linear-gradient(135deg, #d4a9c8 0%, #af3b6e 100%); 
-                    border-radius:5px; 
-                    color:#fff; 
-                    box-shadow:0 4px 8px rgba(175,59,110,0.3);
-                    font-weight:300;
-                  `;
-                  kanalEl.innerHTML = `
-                    <strong style="font-size:1.1em; letter-spacing:0.4px;">🔗 Kanál pro účastníky</strong>
-                    <a href="${event.discord_ucast}" target="_blank" class="main-button" style="float:right; margin-left:1rem; padding:12px 20px; font-size:14px;">Přejít do kanálu</a>
-                    <div style="clear:both;"></div>
-                  `;
+                  kanalEl.style.cssText = 'display:block; margin:1rem 0; padding:1rem; background:#e8d9f3; border-radius:8px; border-left:4px solid #af3b6e; color:#333;';
+                  kanalEl.innerHTML = `<strong>🔗 Kanál pro účastníky:</strong> <a href="${event.discord_ucast}" target="_blank" class="main-button">Přejít do kanálu</a>`;
                   targetEl.appendChild(kanalEl); // Přidá na konec right-content
                 }
                 console.log('✅ KANÁL ZOBRAZEN!');
