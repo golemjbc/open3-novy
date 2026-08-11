@@ -1,144 +1,81 @@
 <!DOCTYPE html>
 <html lang="cs">
-  <head>
-      <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-9387YV40M7"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OOO Community - Otevři se. Poznej se. Propoj se.">
+  <meta property="og:title" content="Kontakt — OOO Community">
+  <meta property="og:description" content="Eventy, Seznamování, Umění, Výzkum, ... Přidej se do komunity!">
+  <meta property="og:image" content="https://open3.cz/assets/images/LogoMETA.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://open3.cz/contact.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="OOO Community">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://open3.cz/assets/images/LogoMETA.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="favicon.ico">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <title>Kontakt — OOO Community</title>
+</head>
+<body>
 
-    gtag('config', 'G-9387YV40M7');
-  </script>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="OOO Community - Otevři se. Poznej se. Propoj se.">
-    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700" rel="stylesheet">
-    <title>OOO Kontakt</title>
-    <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/fontawesome.css">
-    <link rel="stylesheet" href="assets/css/tooplate-main.css">
-    <link rel="icon" href="/open3-novy/favicon.ico" type="image/x-icon">
-    <link rel="shortcut icon" href="/open3-novy/favicon.ico">
-  </head>
+  <header class="site-header">
+    <div class="container">
+      <button class="nav-toggle" id="nav-toggle" aria-label="Menu">☰</button>
+      <a class="brand" href="index.html"><img src="assets/images/OOOlogo.png" alt="OOO logo"> <span>OOO Community</span></a>
+      <nav>
+        <ul class="nav-links" id="nav-links">
+          <li><a href="index.html">Domů</a></li>
+          <li><a href="akce.html">Akce</a></li>
+          <li><a href="pravidla.html">Pravidla</a></li>
+          <li><a href="contact.html" class="active">Kontakt</a></li>
+        </ul>
+      </nav>
+      <div class="header-actions">
+        <div id="user-info"><img id="user-avatar" src="" alt=""><span id="user-name"></span></div>
+        <a id="login-button" href="#" class="btn btn-primary btn-sm">Přihlásit</a>
+      </div>
+    </div>
+  </header>
 
-  <body>
-    <!-- Pre Header -->
-    <div id="pre-header">
-      <div class="container">
-        <div class="row">
-          <div class="col-md-12">
-            <span>KONTAKT | OOO Community</span>
-          </div>
+  <section class="section">
+    <div class="container">
+      <span class="eyebrow">Ozvi se nám</span>
+      <h1>Kontakt</h1>
+      <div class="contact-grid mt-lg">
+        <div class="contact-card">
+          <h3>Káča</h3>
+          <a href="mailto:info@open3.cz">info@open3.cz</a>
+          <a href="tel:+420735593621">+420 735 593 621</a>
+          <p style="margin:8px 0 0;">telefon, SMS, WhatsApp</p>
+        </div>
+        <div class="contact-card">
+          <h3>Sociální sítě</h3>
+          <a href="https://www.instagram.com/ooo.community" target="_blank">Instagram @ooo.community</a>
+          <a href="https://discord.gg/qYCAubmDQc" target="_blank">Discord komunita</a>
         </div>
       </div>
     </div>
+  </section>
 
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark static-top">
-      <div class="container">
-        <a class="navbar-brand" href="#home">
-          <img src="assets/images/OOOlogo.png" alt="OOO community logo">
-        </a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarResponsive">
-          <ul class="navbar-nav ml-auto">
-            <li class="nav-item">
-              <a class="nav-link" href="index.html">Domů</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="akce.html">Akce</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="pravidla.html">Pravidla</a>
-            </li>
-            <li class="nav-item active">
-              <a class="nav-link" href="contact.html">Kontakt<span class="sr-only">(current)</span></a>
-            </li>
-          </ul>
-        </div>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">OOO Community</div>
+        <ul class="footer-links">
+          <li><a href="mailto:info@open3.cz">info@open3.cz</a></li>
+          <li><a href="tel:+420735593621">+420 735 593 621</a></li>
+          <li><a href="https://discord.gg/qYCAubmDQc">Discord</a></li>
+          <li><a href="https://www.instagram.com/ooo.community">Instagram</a></li>
+        </ul>
       </div>
-    </nav>
-
- <!-- Page Content - PŮVODNÍ DESIGN -->
-    <div class="about-page">
-      <div class="container">
-        <div class="row">
-          <div class="col-md-12">
-            <div class="section-heading">
-              <div class="line-dec"></div>
-              <h1>Kontakt</h1>
-            </div>
-          </div>
-          <div class="col-md-6">
-            <div class="left-image">
-              <img src="assets/images/kontakt.jpg" alt="OOO Komunita">
-            </div>
-          </div>
-          <div class="col-md-6">
-            <div class="right-content">
-              <h4>Kontakt</h4>
-              
-              <ul class="list-unstyled">
-                <strong>Káča</strong>
-                <li><strong>Email:</strong> info@open3.cz</li>
-                <li><strong>Telefon:</strong> +420 735 593 621 (telefon, sms, WhatsApp)</li>
-                <br>
-                <br>
-                <strong>Sociální sítě</strong>
-                <li><strong>Instagram:</strong><a href="https://www.instagram.com/ooo.community"> @ooo.community</a></li>
-                <li><strong>Discord:</strong><a href="https://discord.gg/qYCAubmDQc"> https://discord.gg/qYCAubmDQc</a></li>
-                
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div class="footer-bottom">© 2026 OOO Community z.s. — Design: Adam</div>
     </div>
+  </footer>
 
-   <!-- Footer -->
-    <div class="footer" id="kontakt">
-      <div class="container">
-        <div class="row">
-          <div class="col-md-12">
-            <div class="footer-menu">
-              <ul>
-                <li>Email: <a href="mailto:info@open3.cz">info@open3.cz</a></li>
-                <li>Telefon: <a href="tel:+420735593621">+420 735 593 621</a></li>
-                <li><a href="https://discord.gg/qYCAubmDQc">Discord komunita</a></li>
-                <li><a href="https://www.instagram.com/ooo.community">Instagram @ooo.community</a></li>
-              </ul>
-            </div>
-          </div>
-          <div class="col-md-12">
-            <div class="social-icons">
-              <ul>
-                <li><a href="https://discord.gg/qYCAubmDQc"><i class="fa fa-comments"></i></a></li>
-                <li><a href="https://www.instagram.com/ooo.community"><i class="fa fa-instagram"></i></a></li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sub Footer -->
-    <div class="sub-footer">
-      <div class="container">
-        <div class="row">
-          <div class="col-md-12">
-            <div class="copyright-text">
-              <p>Copyright © 2026 OOO Community z.s. - Design: <a href="#">Adam</a></p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Scripts -->
-    <script src="vendor/jquery/jquery.min.js"></script>
-    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-  </body>
+  <script src="assets/js/auth.js"></script>
+</body>
 </html>
