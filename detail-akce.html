@@ -404,21 +404,60 @@
       if (this.checked) partnerGroup.style.display = 'block';
     });
 
-    fetch(API_BASE + '/api/events')
-      .then(function (response) {
-        if (!response.ok) throw new Error('HTTP ' + response.status);
-        return response.json();
+    Promise.all([
+      fetch(API_BASE + '/api/events').then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      }),
+      fetch(API_BASE + '/api/members').then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
       })
-      .then(function (events) {
+    ])
+      .then(function (results) {
+        const events = results[0];
+        const membersForAccess = results[1];
         const event = events.find(function (ev) { return ev.event_id === eventId; });
-        
-        // Načti members pro partner search ✅ KROK 2B
-        loadMembers();
-      
+
         if (!event) {
           headerEl.textContent = 'Akce s ID ' + eventId + ' nebyla nalezena.';
           return;
         }
+
+        // 🔒 KONTROLA OPRÁVNĚNÍ – stejná logika jako na akce.html (userHasRequiredRole),
+        // ať se akce nedá obejít přímým odkazem, když na ni uživatel nemá roli / není přihlášený
+        function userHasRequiredRole(requiredRolesString, userRolesObj) {
+          const trimmed = (requiredRolesString || '').trim();
+          if (!trimmed) return true;
+          const requiredList = trimmed.split(',').map(function (r) { return r.trim(); }).filter(function (r) { return r.length > 0; });
+          if (requiredList.length === 0) return true;
+          return requiredList.some(function (roleName) { return userRolesObj.hasOwnProperty(roleName); });
+        }
+
+        const loggedUserForAccess = getLoggedUser();
+        const isLoggedInForAccess = !!loggedUserForAccess && !!loggedUserForAccess.userId;
+        let myRolesForAccess = {};
+        if (isLoggedInForAccess) {
+          const me = membersForAccess.find(function (m) { return m.user_id === loggedUserForAccess.userId; });
+          myRolesForAccess = (me && me.roles) || {};
+        }
+        const requiredRolesForAccess = event.discord_role_required || '';
+        const hasAccess = isLoggedInForAccess && userHasRequiredRole(requiredRolesForAccess, myRolesForAccess);
+
+        if (!hasAccess) {
+          document.querySelector('.single-product .container').innerHTML =
+            '<div class="row"><div class="col-md-12">' +
+            '<div class="section-heading"><div class="line-dec"></div><h1>Přístup odepřen</h1></div>' +
+            (isLoggedInForAccess
+              ? '<p>Na tuto akci nemáš potřebné oprávnění (' + (requiredRolesForAccess || '—') + ').</p>'
+              : '<p>Pro zobrazení a přihlášení na tuto akci se nejdřív musíš přihlásit přes Discord.</p>') +
+            '<a href="akce.html" class="btn btn-primary mt-3">← Zpět na seznam akcí</a>' +
+            '</div></div>';
+          return;
+        }
+
+        // Načti members pro partner search ✅ KROK 2B (jen pro autorizované uživatele)
+        loadMembers();
 
         // 🆕 PŘIDEJ TADY - hned po if (!event)
         const isFreeEvent = !event.cena || event.cena.trim() === '' || parseFloat(event.cena) === 0;
