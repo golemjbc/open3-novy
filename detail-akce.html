@@ -474,12 +474,18 @@
       (function checkAlreadyRegistered() {
         const storedUserJson = localStorage.getItem('oooUser');
         if (!storedUserJson) return;
-        let userId, userName;
+        let userId, userName, provider;
         try {
           const u = JSON.parse(storedUserJson);
-          userId = u.userId; userName = u.userName;
+          userId = u.userId; userName = u.userName; provider = u.provider;
         } catch (e) { return; }
         if (!userId) return;
+        // Google účty se ověřují výhradně přes credential blok níž (čerstvé, server-side
+        // ověřené) - tahle stará (Discord) kontrola posílala syrové userId z localStorage
+        // rovnou jako user_id, což u Google účtu mate dvě různé věci ("google_<sub>" není
+        // Discord ID) a u staré/zbylé session mohlo najít cizí/neplatnou registraci, co s
+        // aktuálním přihlášením nesouvisí (nahlásila uživatelka 2026-08-23).
+        if (provider === 'google' || /^google_/.test(userId)) return;
 
         fetch(API_BASE + '/api/my-registrations?user_id=' + encodeURIComponent(userId))
           .then(r => r.json())
