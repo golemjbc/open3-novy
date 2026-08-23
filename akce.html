@@ -183,7 +183,8 @@
           events.forEach(e => {
             const requiredRoles = e.discord_role_required || '';
             const isLoggedIn = !!loggedUser && !!loggedUser.userId;
-            const canSee = isLoggedIn && userHasRequiredRole(requiredRoles, myRoles);
+            const isPublicEvent = e.typ_akce === 'A';
+            const canSee = isLoggedIn && (isPublicEvent || userHasRequiredRole(requiredRoles, myRoles));
             const soon = isSoon(e);
             const img = getSmartImageUrl(e.obrazek);
 
@@ -205,7 +206,7 @@
             if (canSee) {
               footer = `<a href="detail-akce.html?event_id=${encodeURIComponent(e.event_id)}" class="btn btn-primary btn-block">Detail &amp; přihlášení</a>`;
             } else if (!isLoggedIn) {
-              footer = `<span class="access-badge locked">Pro detail se přihlas přes Discord</span>`;
+              footer = `<span class="access-badge locked">Pro detail se musíš přihlásit</span>`;
             } else {
               footer = `<span class="access-badge role">Jen pro role: ${requiredRoles || '—'}</span>`;
             }

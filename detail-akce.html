@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
+  <meta name="referrer" content="no-referrer">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="OOO Community - Otevři se. Poznej se. Propoj se.">
@@ -135,7 +136,8 @@
           myRoles = (me && me.roles) || {};
         }
         const requiredRoles = event.discord_role_required || '';
-        const hasAccess = isLoggedIn && userHasRequiredRole(requiredRoles, myRoles);
+        const isPublicEvent = event.typ_akce === 'A';
+        const hasAccess = isLoggedIn && (isPublicEvent || userHasRequiredRole(requiredRoles, myRoles));
 
         if (!hasAccess) {
           pageBody.innerHTML = `
@@ -143,7 +145,7 @@
               <h2>Přístup odepřen</h2>
               <p>${isLoggedIn
                 ? 'Na tuto akci nemáš potřebné oprávnění (' + (requiredRoles || '—') + ').'
-                : 'Pro zobrazení a přihlášení na tuto akci se nejdřív musíš přihlásit přes Discord.'}</p>
+                : 'Pro zobrazení a přihlášení na tuto akci se nejdřív musíš přihlásit.'}</p>
               <a href="akce.html" class="btn btn-primary">← Zpět na seznam akcí</a>
             </div>`;
           return;
@@ -222,6 +224,69 @@
               ${leadHtml}
               ${discordLinkHtml}
 
+              ${(() => {
+                const currentUser = getLoggedUser();
+                // provider === 'google' pozná novou, čerstvou přihlašovací session. Fallback
+                // na tvar userId (Google appka ho vždycky skládá jako "google_<id>") je pro
+                // starší/uloženou session z localStorage, co v sobě ještě provider nemá
+                // (vznikla dřív, než auth.js začal provider ukládat) - bez tohohle fallbacku
+                // se takový člověk tiše přesměruje na starou Discord přihlášku (viz krok 22,
+                // 2026-08-23 - přesně tenhle případ nastal a přihláška šla špatnou cestou).
+                const isGoogleUser = !!(currentUser && (currentUser.provider === 'google' || /^google_/.test(currentUser.userId || '')));
+                const isPublicEvent = event.typ_akce === 'A';
+
+                if (isGoogleUser && !isPublicEvent) {
+                  return `
+                    <div id="registration-block" class="status-panel info">
+                      <h4 style="margin-top:0;">Tahle akce vyžaduje Discord</h4>
+                      <p style="margin-bottom:0;">Akce tohoto typu vyžaduje roli na Discordu. Přihlášení přes Google zatím funguje jen pro veřejné akce — registrace na tenhle typ akce přes Google se připravuje.</p>
+                    </div>`;
+                }
+
+                if (isGoogleUser && isPublicEvent) {
+                  return `
+                    <div id="registration-block">
+                      <h3>Přihláška na akci</h3>
+                      <form id="registration-form-google">
+                        <div class="form-group">
+                          <label class="form-label">Typ účasti</label>
+                          <div class="pill-choice">
+                            <input type="radio" name="typUcastiG" id="typSingleG" value="single" checked>
+                            <label for="typSingleG">Single</label>
+                            <input type="radio" name="typUcastiG" id="typParG" value="par">
+                            <label for="typParG">Pár</label>
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="form-label">Preference</label>
+                          <div class="pref-list">${prefsHtml}</div>
+                        </div>
+                        <div class="form-group">
+                          <label class="form-label" for="telefonG">Telefon (nepovinné)</label>
+                          <input type="tel" class="form-control" id="telefonG" placeholder="+420 123 456 789" value="+420 " inputmode="tel">
+                        </div>
+                        <div class="form-group">
+                          <label class="form-label" for="instagramG">Instagram (nepovinné)</label>
+                          <input type="text" class="form-control" id="instagramG" placeholder="@tvůj_účet">
+                        </div>
+                        <div class="form-group">
+                          <label style="display:flex; gap:8px; align-items:flex-start; font-size:0.9rem;">
+                            <input type="checkbox" id="confirm18" required style="margin-top:3px;">
+                            <span>Potvrzuji, že mi je 18 let.</span>
+                          </label>
+                        </div>
+                        <div class="form-group">
+                          <label style="display:flex; gap:8px; align-items:flex-start; font-size:0.9rem;">
+                            <input type="checkbox" id="confirmRules" required style="margin-top:3px;">
+                            <span>Souhlasím s <a href="pravidla.html" target="_blank">pravidly komunity a zpracováním osobních údajů (GDPR)</a>.</span>
+                          </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block" id="submitGoogleReg" disabled>Přihlásit se na akci</button>
+                      </form>
+                    </div>`;
+                }
+
+                return `
               <div id="registration-block">
                 <h3>Přihláška na akci</h3>
                 <form id="registration-form">
@@ -248,7 +313,8 @@
                   </div>
                   <button type="submit" class="btn btn-primary btn-block">Přihlásit se na akci</button>
                 </form>
-              </div>
+              </div>`;
+              })()}
 
               <div id="registration-info" class="status-panel success hidden"></div>
               <div id="deposit-info" class="status-panel info hidden"></div>
@@ -290,8 +356,10 @@
       if (galleryNext) galleryNext.addEventListener('click', () => goToSlide(galleryIndex + 1));
 
       const partnerGroup = document.getElementById('partner-group');
-      document.getElementById('typSingle').addEventListener('change', function () { if (this.checked) partnerGroup.classList.add('hidden'); });
-      document.getElementById('typPar').addEventListener('change', function () { if (this.checked) partnerGroup.classList.remove('hidden'); });
+      const typSingleEl = document.getElementById('typSingle');
+      const typParEl = document.getElementById('typPar');
+      if (typSingleEl) typSingleEl.addEventListener('change', function () { if (this.checked) partnerGroup.classList.add('hidden'); });
+      if (typParEl) typParEl.addEventListener('change', function () { if (this.checked) partnerGroup.classList.remove('hidden'); });
 
       // Partner autocomplete (stejná logika jako produkce, jen nový markup)
       let discordMembers = members.map(m => {
@@ -333,10 +401,10 @@
       }
       function hidePanel(id) { document.getElementById(id).classList.add('hidden'); }
 
-      function loadPaymentInfo(userId, userName, typUcasti, paymentType) {
+      function loadPaymentInfo(userId, userName, typUcasti, paymentType, idParam) {
         if (!userId) return;
         const qp = new URLSearchParams({
-          event_id: event.event_id, user_id: userId, user_name: userName || '',
+          event_id: event.event_id, [idParam || 'user_id']: userId, user_name: userName || '',
           typ_ucasti: typUcasti || 'single', payment_type: paymentType || 'deposit',
           jednorazova: event.jednorazova || 'ne'
         });
@@ -376,6 +444,33 @@
         };
       }
 
+      // Sdílené vyhodnocení "už je přihlášen/á" - stejná logika pro Discord i Google cestu,
+      // liší se jen tím, podle čeho se řádek v Prihlasky hledá (user_id vs ooo_id).
+      function renderRegistrationStatus(found, id, userName, idParam) {
+        const p = parsePrihlaskaRow(found);
+        const depositOK = p.deposit_status?.toUpperCase() === 'OK';
+        const doplatekOK = p.doplatek_status?.toUpperCase() === 'OK';
+
+        document.getElementById('registration-block').classList.add('hidden');
+
+        if (isFreeEvent) {
+          showPanel('registration-info', '<strong>🎉 Jsi přihlášený na akci zdarma!</strong>');
+          return;
+        }
+        if (doplatekOK || (isFreeEvent === false && event.jednorazova === 'ano' && depositOK) || (depositOK && doplatekOK)) {
+          showPanel('payment-complete', '<h4>Akce zaplacena ✅</h4><p style="margin:0;">Máš všechny platby v pořádku. Uvidíme se na akci!</p>');
+          return;
+        }
+        if (event.jednorazova !== 'ano' && depositOK && !doplatekOK) {
+          showPanel('registration-info', '<strong>✅ Záloha zaplacena!</strong> Doplatek: ' + (p.doplatek || 'bude upřesněno'));
+          loadPaymentInfo(id, userName, p.typ_ucasti, 'final', idParam);
+          return;
+        }
+        const paymentType = (event.jednorazova === 'ano') ? 'final' : 'deposit';
+        showPanel('registration-info', '<strong>Jsi přihlášen!</strong> Tvá přihláška byla úspěšně zaregistrována.');
+        loadPaymentInfo(id, userName, p.typ_ucasti, paymentType, idParam);
+      }
+
       (function checkAlreadyRegistered() {
         const storedUserJson = localStorage.getItem('oooUser');
         if (!storedUserJson) return;
@@ -392,34 +487,140 @@
             if (!Array.isArray(list)) return;
             const found = list.find(item => item.event_id === event.event_id);
             if (!found) return;
-
-            const p = parsePrihlaskaRow(found);
-            const depositOK = p.deposit_status?.toUpperCase() === 'OK';
-            const doplatekOK = p.doplatek_status?.toUpperCase() === 'OK';
-
-            document.getElementById('registration-block').classList.add('hidden');
-
-            if (isFreeEvent) {
-              showPanel('registration-info', '<strong>🎉 Jsi přihlášený na akci zdarma!</strong>');
-              return;
-            }
-            if (doplatekOK || (isFreeEvent === false && event.jednorazova === 'ano' && depositOK) || (depositOK && doplatekOK)) {
-              showPanel('payment-complete', '<h4>Akce zaplacena ✅</h4><p style="margin:0;">Máš všechny platby v pořádku. Uvidíme se na akci!</p>');
-              return;
-            }
-            if (event.jednorazova !== 'ano' && depositOK && !doplatekOK) {
-              showPanel('registration-info', '<strong>✅ Záloha zaplacena!</strong> Doplatek: ' + (p.doplatek || 'bude upřesněno'));
-              loadPaymentInfo(userId, userName, p.typ_ucasti, 'final');
-              return;
-            }
-            const paymentType = (event.jednorazova === 'ano') ? 'final' : 'deposit';
-            showPanel('registration-info', '<strong>Jsi přihlášen!</strong> Tvá přihláška byla úspěšně zaregistrována.');
-            loadPaymentInfo(userId, userName, p.typ_ucasti, paymentType);
+            renderRegistrationStatus(found, userId, userName, 'user_id');
           })
           .catch(err => console.error('my-registrations error:', err));
       })();
 
-      document.getElementById('registration-form').addEventListener('submit', function (e) {
+      // --- Registrace přes Google (jen veřejné akce typ A) ---
+      // Použije se rovnou token z aktuálního přihlášení (localStorage) - žádné druhé
+      // přihlašování před odesláním přihlášky. Server si ho i tak vždy ověří (podpis +
+      // platnost + komu byl vydaný), takže se nedá podvrhnout - jen se needěje žádost
+      // o čerstvý token navíc. Jediné, co se může stát, je že token je po delší době
+      // neplatný (Google tokeny mají platnost cca hodinu) - v tom případě požádáme
+      // o nové přihlášení přes hlavičku.
+      const googleForm = document.getElementById('registration-form-google');
+      if (googleForm) {
+        const confirm18 = document.getElementById('confirm18');
+        const confirmRules = document.getElementById('confirmRules');
+        const submitBtn = document.getElementById('submitGoogleReg');
+        const storedCredential = (getLoggedUser() || {}).credential || null;
+
+        function updateGoogleSubmitState() {
+          submitBtn.disabled = !(confirm18.checked && confirmRules.checked);
+        }
+        confirm18.addEventListener('change', updateGoogleSubmitState);
+        confirmRules.addEventListener('change', updateGoogleSubmitState);
+        updateGoogleSubmitState();
+
+        // Telefon: předvyplněná +420 předvolba, číslice se za psaní samy seskupují po
+        // trojicích (+420 123 456 789) - všichni v komunitě mají české číslo.
+        const telefonInput = document.getElementById('telefonG');
+        telefonInput.addEventListener('input', function () {
+          let digits = this.value.replace(/^\+420/, '').replace(/\D/g, '').slice(0, 9);
+          const groups = digits.match(/.{1,3}/g) || [];
+          this.value = '+420' + (groups.length ? ' ' + groups.join(' ') : ' ');
+        });
+        telefonInput.addEventListener('focus', function () {
+          if (this.value.length >= this.value.indexOf('+420 ') + 5) {
+            this.setSelectionRange(this.value.length, this.value.length);
+          }
+        });
+
+        if (storedCredential) {
+          fetch(API_BASE + '/api/my-registrations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ credential: storedCredential, eventId: event.event_id }),
+          })
+            .then(r => r.json())
+            .then(data => {
+              const profile = data && data.profile;
+              const list = Array.isArray(data) ? data : (data && data.registrations) || [];
+
+              // Telefon/instagram: pokud je má člověk už v profilu, znovu se na ně
+              // neptáme - pole se předvyplní a skryjí.
+              if (profile) {
+                if (profile.telefon) {
+                  const g = document.getElementById('telefonG').closest('.form-group');
+                  document.getElementById('telefonG').value = profile.telefon;
+                  if (g) g.classList.add('hidden');
+                }
+                if (profile.instagram) {
+                  const g = document.getElementById('instagramG').closest('.form-group');
+                  document.getElementById('instagramG').value = profile.instagram;
+                  if (g) g.classList.add('hidden');
+                }
+              }
+
+              if (!list.length) return;
+              renderRegistrationStatus(list[0], list[0].ooo_id, (profile && (profile.google_name || profile.google_email)) || '', 'ooo_id');
+            })
+            .catch(err => console.error('Google my-registrations error:', err));
+        }
+
+        googleForm.addEventListener('submit', function (e) {
+          e.preventDefault();
+          if (!storedCredential) {
+            alert('Přihlášení už vypršelo, přihlas se prosím znovu přes tlačítko v hlavičce.');
+            return;
+          }
+          const typUcastiG = document.querySelector('input[name="typUcastiG"]:checked').value;
+          const selectedPrefs = Array.from(googleForm.querySelectorAll('input[name="pref"]:checked')).map(cb => cb.value);
+          const telefonRaw = document.getElementById('telefonG').value.trim();
+          const telefonVal = /\d/.test(telefonRaw) ? telefonRaw : ''; // "+420" bez číslic = nevyplněno
+          const instagramVal = document.getElementById('instagramG').value.trim();
+
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Odesílám…';
+
+          fetch(API_BASE + '/api/register-event-google', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              credential: storedCredential, event_id: event.event_id,
+              typ_ucasti: typUcastiG, preference: selectedPrefs,
+              telefon: telefonVal, instagram: instagramVal,
+            }),
+          })
+            .then(r => r.json())
+            .then(data => {
+              if (!data.ok) {
+                const msg = /neplatný google token/i.test(data.error || '')
+                  ? 'Přihlášení vypršelo, přihlas se prosím znovu přes hlavičku a zkus to znovu.'
+                  : 'Chyba při registraci: ' + (data.error || 'neznámá chyba');
+                alert(msg);
+                submitBtn.disabled = false;
+                updateGoogleSubmitState();
+                return;
+              }
+              if (data.already_registered) {
+                renderRegistrationStatus({
+                  event_id: event.event_id, ooo_id: data.ooo_id,
+                  deposit_status: data.deposit_status, doplatek_status: data.doplatek_status,
+                  doplatek: data.deposit_amount, partner: typUcastiG,
+                }, data.ooo_id, data.name || data.email || '', 'ooo_id');
+                return;
+              }
+              document.getElementById('registration-block').classList.add('hidden');
+              showPanel('registration-info', isFreeEvent
+                ? '<strong>🎉 Jsi přihlášený na akci zdarma!</strong>'
+                : '<strong>Jsi přihlášen!</strong> Potvrzení jsme ti poslali i e-mailem.');
+              if (!isFreeEvent && data.ooo_id) {
+                loadPaymentInfo(data.ooo_id, data.name || data.email || '', typUcastiG, event.jednorazova === 'ano' ? 'final' : 'deposit', 'ooo_id');
+              }
+            })
+            .catch(err => {
+              console.error('Registrace (Google) error:', err);
+              alert('Chyba při registraci: ' + err.message);
+              submitBtn.disabled = false;
+              updateGoogleSubmitState();
+            });
+        });
+      }
+
+      const discordForm = document.getElementById('registration-form');
+      if (discordForm) discordForm.addEventListener('submit', function (e) {
         e.preventDefault();
         const typUcasti = document.querySelector('input[name="typUcasti"]:checked').value;
         const partner = partnerInput.value.trim();
