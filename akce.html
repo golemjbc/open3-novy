@@ -184,7 +184,14 @@
             const requiredRoles = e.discord_role_required || '';
             const isLoggedIn = !!loggedUser && !!loggedUser.userId;
             const isPublicEvent = e.typ_akce === 'A';
-            const canSee = isLoggedIn && (isPublicEvent || userHasRequiredRole(requiredRoles, myRoles));
+            // Typ B přes Google (2026-08-24): Google uživatel ještě nemusí mít roli na
+            // Discordu (to je celý smysl flow - zaregistruje se a roli doplní pak), takže
+            // pro typ B se mu akce musí zobrazit i bez role. Discord uživatelé (bez
+            // isGoogleUser) mají beze změny - typ B jim zůstává skrytý, dokud roli nemají,
+            // stejně jako typ C.
+            const isGoogleUser = !!(loggedUser && (loggedUser.provider === 'google' || /^google_/.test(loggedUser.userId || '')));
+            const isMemberEventViaGoogle = e.typ_akce === 'B' && isGoogleUser;
+            const canSee = isLoggedIn && (isPublicEvent || isMemberEventViaGoogle || userHasRequiredRole(requiredRoles, myRoles));
             const soon = isSoon(e);
             const img = getSmartImageUrl(e.obrazek);
 

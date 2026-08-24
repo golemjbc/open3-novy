@@ -68,6 +68,11 @@
 
   <script src="assets/js/auth.js"></script>
   <script>
+    // Po přihlášení přes hlavičku (na téhle stránce často z access-denied stavu, kdy
+    // stránka ještě nezná roli/typ přihlášení) se musí celá stránka znovu vyhodnotit -
+    // stejný vzorec jako akce.html, jinak zůstane viset na starém stavu bez obnovení.
+    window.onOooLogin = () => location.reload();
+
     const params = new URLSearchParams(window.location.search);
     const eventId = params.get('event_id');
     const pageBody = document.getElementById('page-body');
@@ -137,7 +142,12 @@
         }
         const requiredRoles = event.discord_role_required || '';
         const isPublicEvent = event.typ_akce === 'A';
-        const hasAccess = isLoggedIn && (isPublicEvent || userHasRequiredRole(requiredRoles, myRoles));
+        // Typ B přes Google (2026-08-24): stejná výjimka jako v akce.html - Google
+        // uživatel bez role musí na detail vůbec vidět, jinak se nikdy nedostane
+        // k registraci/formuláři, co ho k roli teprve navede.
+        const isGoogleUser = !!(loggedUser && (loggedUser.provider === 'google' || /^google_/.test(loggedUser.userId || '')));
+        const isMemberEventViaGoogle = event.typ_akce === 'B' && isGoogleUser;
+        const hasAccess = isLoggedIn && (isPublicEvent || isMemberEventViaGoogle || userHasRequiredRole(requiredRoles, myRoles));
 
         if (!hasAccess) {
           pageBody.innerHTML = `
@@ -234,16 +244,22 @@
                 // 2026-08-23 - přesně tenhle případ nastal a přihláška šla špatnou cestou).
                 const isGoogleUser = !!(currentUser && (currentUser.provider === 'google' || /^google_/.test(currentUser.userId || '')));
                 const isPublicEvent = event.typ_akce === 'A';
+                // Typ B (jen role na Discordu, žádné schvalování) přes Google umí endpoint
+                // od 2026-08-24 - formulář se zobrazí stejně jako u A, jen po odeslání
+                // (nebo návratu na stránku) může přijít needs_discord_role místo platby,
+                // viz submit handler a checkAlreadyRegistered níž. Typ C (dotazník +
+                // schválení patronem, Fáze 5) zatím není postavený vůbec.
+                const isSupportedByGoogle = isPublicEvent || event.typ_akce === 'B';
 
-                if (isGoogleUser && !isPublicEvent) {
+                if (isGoogleUser && !isSupportedByGoogle) {
                   return `
                     <div id="registration-block" class="status-panel info">
                       <h4 style="margin-top:0;">Tahle akce vyžaduje Discord</h4>
-                      <p style="margin-bottom:0;">Akce tohoto typu vyžaduje roli na Discordu. Přihlášení přes Google zatím funguje jen pro veřejné akce — registrace na tenhle typ akce přes Google se připravuje.</p>
+                      <p style="margin-bottom:0;">Akce tohoto typu vyžaduje roli na Discordu. Přihlášení přes Google zatím funguje jen pro veřejné a členské akce — registrace na tenhle typ akce přes Google se připravuje.</p>
                     </div>`;
                 }
 
-                if (isGoogleUser && isPublicEvent) {
+                if (isGoogleUser && isSupportedByGoogle) {
                   return `
                     <div id="registration-block">
                       <h3>Přihláška na akci</h3>
@@ -401,6 +417,60 @@
       }
       function hidePanel(id) { document.getElementById(id).classList.add('hidden'); }
 
+      // Typ B (2026-08-24): dokud chybí role na Discordu, platba se vůbec nezobrazuje -
+      // stejná informace jako v e-mailu (needs_discord_role z register-event-google /
+      // my-registrations). DŮLEŽITÉ (oprava 2026-08-24, nalezeno živým testem): tlačítko
+      // MUSÍ vést na stejný discord_cta_url, co dostal e-mail (OAuth párování nebo přímý
+      // odkaz na server) - ne na obecnou veřejnou pozvánku. Obecná pozvánka jen připojí na
+      // server bez jakéhokoli párování s ooo_id, takže registrace zůstane navěky viset na
+      // "chybí role" i po připojení - přesně tohle se živě stalo. discord_cta_url může
+      // chybět jen ve výjimečném selhání (chybějící pairingCode) - pak fallback na
+      // obecnou pozvánku, lepší než úplně bez tlačítka.
+      function showNeedsDiscordRolePanel(ctaUrl) {
+        document.getElementById('registration-block').classList.add('hidden');
+        const url = ctaUrl || 'https://discord.gg/qYCAubmDQc';
+        showPanel('registration-info', `
+          <h4 style="margin-top:0;">Ještě jeden krok</h4>
+          <p>Tvoje přihláška je přijatá. Tahle akce vyžaduje roli na Discordu (dokončit uvítací proces/pravidla serveru) — poslali jsme ti e-mail se stejným tlačítkem. Jakmile roli dostaneš, stránka se sama obnoví (bot roli synchronizuje do pár minut).</p>
+          <a href="${url}" target="_blank" class="btn btn-primary">Propojit a otevřít Discord</a>
+        `);
+        startDiscordRolePoll();
+      }
+
+      // Automatické obnovení stránky, jakmile role dorazí (2026-08-24, na žádost po
+      // živém testu - "stránka by se měla sama po napárování aktualizovat"). Bot
+      // synchronizuje role z Discordu do Sheetu ve 1minutovém cyklu, takže se čeká -
+      // polling po 10s je dost časté na to, aby to nepůsobilo rozbitě, a dost řídké,
+      // aby to nezatěžovalo API. Zastaví se samo po ~10 minutách (60 pokusů), ať
+      // nezůstane běžet do nekonečna, když člověk kartu jen nechá otevřenou.
+      let discordRolePollTimer = null;
+      let discordRolePollAttempts = 0;
+      function startDiscordRolePoll() {
+        if (discordRolePollTimer) return;
+        const credential = (getLoggedUser() || {}).credential;
+        if (!credential) return;
+        discordRolePollAttempts = 0;
+        discordRolePollTimer = setInterval(() => {
+          discordRolePollAttempts++;
+          if (discordRolePollAttempts > 60) { clearInterval(discordRolePollTimer); return; }
+          fetch(API_BASE + '/api/my-registrations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ credential, eventId: event.event_id }),
+          })
+            .then(r => r.json())
+            .then(data => {
+              const list = Array.isArray(data) ? data : (data && data.registrations) || [];
+              const found = list.find(item => item.event_id === event.event_id);
+              if (found && !found.needs_discord_role) {
+                clearInterval(discordRolePollTimer);
+                location.reload();
+              }
+            })
+            .catch(err => console.error('Discord role poll error:', err));
+        }, 10000);
+      }
+
       function loadPaymentInfo(userId, userName, typUcasti, paymentType, idParam) {
         if (!userId) return;
         const qp = new URLSearchParams({
@@ -447,6 +517,10 @@
       // Sdílené vyhodnocení "už je přihlášen/á" - stejná logika pro Discord i Google cestu,
       // liší se jen tím, podle čeho se řádek v Prihlasky hledá (user_id vs ooo_id).
       function renderRegistrationStatus(found, id, userName, idParam) {
+        if (found && found.needs_discord_role) {
+          showNeedsDiscordRolePanel(found.discord_cta_url);
+          return;
+        }
         const p = parsePrihlaskaRow(found);
         const depositOK = p.deposit_status?.toUpperCase() === 'OK';
         const doplatekOK = p.doplatek_status?.toUpperCase() === 'OK';
@@ -605,7 +679,13 @@
                   event_id: event.event_id, ooo_id: data.ooo_id,
                   deposit_status: data.deposit_status, doplatek_status: data.doplatek_status,
                   doplatek: data.deposit_amount, partner: typUcastiG,
+                  needs_discord_role: data.needs_discord_role,
+                  discord_cta_url: data.discord_cta_url,
                 }, data.ooo_id, data.name || data.email || '', 'ooo_id');
+                return;
+              }
+              if (data.needs_discord_role) {
+                showNeedsDiscordRolePanel(data.discord_cta_url);
                 return;
               }
               document.getElementById('registration-block').classList.add('hidden');
