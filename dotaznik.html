@@ -33,6 +33,7 @@
           <li><a href="akce.html">Akce</a></li>
           <li><a href="pravidla.html">Pravidla</a></li>
           <li><a href="contact.html">Kontakt</a></li>
+          <li id="nav-admin" style="display:none;"><a href="admin-akce.html">Administrace</a></li>
         </ul>
       </nav>
       <div class="header-actions">
@@ -160,6 +161,18 @@
   </footer>
 
   <script src="assets/js/auth.js"></script>
+  <script>
+    // Administrace v menu (2026-08-24) - stejná role-kontrola jako v akce.html.
+    (function () {
+      const nav = document.getElementById('nav-admin');
+      const user = getLoggedUser();
+      if (!nav || !user || !user.userId) return;
+      fetch(API_BASE + '/api/members').then(r => r.json()).then(members => {
+        const me = members.find(m => m.user_id === user.userId);
+        if (me && (me.roles['Rada'] || '').toString().trim().toUpperCase() === 'X') nav.style.display = '';
+      }).catch(() => {});
+    })();
+  </script>
   <script>
     window.onOooLogin = () => location.reload();
 

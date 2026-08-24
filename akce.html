@@ -32,6 +32,7 @@
           <li><a href="akce.html" class="active">Akce</a></li>
           <li><a href="pravidla.html">Pravidla</a></li>
           <li><a href="contact.html">Kontakt</a></li>
+          <li id="nav-admin" style="display:none;"><a href="admin-akce.html">Administrace</a></li>
         </ul>
       </nav>
       <div class="header-actions">
@@ -188,6 +189,11 @@
     const loggedUser = getLoggedUser();
 
     Promise.all([loadMyRoles(loggedUser), loadMyRegistrations(loggedUser)]).then(([myRoles, myRegisteredEventIds]) => {
+      // Administrace v menu (2026-08-24) - jen UX zkratka pro radu, backend admin
+      // endpointy stejnou roli ověřují znovu, nezávisle (requireAdminIdentity).
+      if ((myRoles['Rada'] || '').toString().trim().toUpperCase() === 'X') {
+        document.getElementById('nav-admin').style.display = '';
+      }
       fetch(API_BASE + '/api/events')
         .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
         .then(events => {

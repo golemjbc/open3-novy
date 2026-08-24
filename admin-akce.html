@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta name="referrer" content="no-referrer">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OOO Community - Otevři se. Poznej se. Propoj se.">
+  <meta property="og:title" content="Administrace akcí — OOO Community">
+  <meta property="og:description" content="Eventy, Seznamování, Umění, Výzkum, ... Přidej se do komunity!">
+  <meta property="og:image" content="https://open3.cz/assets/images/LogoMETA.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://open3.cz/admin-akce.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="OOO Community">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://open3.cz/assets/images/LogoMETA.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="favicon.ico">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <title>Administrace akcí — OOO Community</title>
+  <style>
+    .admin-event-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+    .admin-event-card h3 { margin: 0 0 4px; }
+    .admin-event-meta { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px; }
+    .admin-event-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .admin-reg-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 0.88rem; }
+    .admin-reg-table th, .admin-reg-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .admin-reg-table th { font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); }
+    .status-ok { color: #1a7f37; font-weight: 700; }
+    .status-pending { color: var(--text-muted); }
+    .admin-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+    .admin-form-grid .form-group { margin-bottom: 0; }
+    .hidden { display: none !important; }
+    /* Datum + čas (2026-08-24, oprava - dřív se dvě nativní pole mačkala vedle sebe do
+       jednoho úzkého sloupce, na některých prohlížečích/šířkách se to překrývalo).
+       flex-wrap: wrap - když se nevejdou vedle sebe, čas spadne na vlastní řádek pod
+       datum, místo aby se oba mačkaly nebo přesahovaly. */
+    .datetime-row { display: flex; flex-wrap: wrap; gap: 6px; }
+    .datetime-row input[type="date"] { flex: 1 1 130px; min-width: 130px; padding-left: 8px; padding-right: 4px; }
+    .datetime-row input[type="time"] { flex: 1 1 85px; min-width: 85px; max-width: 110px; padding-left: 8px; padding-right: 4px; }
+    /* Částky (2026-08-24, oprava - "zbytečně velký, mohly by mít formátování jako
+       peníze") - užší pole s "Kč" napevno vedle, ať vypadá jako částka, ne jako
+       libovolný dlouhý text. */
+    .amount-field { position: relative; max-width: 160px; }
+    .amount-field input { padding-right: 40px; }
+    .amount-field .amount-suffix {
+      position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+      color: var(--text-muted); font-size: 0.85rem; pointer-events: none;
+    }
+    /* Sticky hlavička jinak při scrollIntoView zakryje horní část formuláře. */
+    #event-form-card { scroll-margin-top: calc(var(--header-h) + 16px); }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container">
+      <button class="nav-toggle" id="nav-toggle" aria-label="Menu">☰</button>
+      <a class="brand" href="index.html"><img src="assets/images/OOOlogo.png" alt="OOO logo"> <span>OOO Community</span></a>
+      <nav>
+        <ul class="nav-links" id="nav-links">
+          <li><a href="index.html">Domů</a></li>
+          <li><a href="akce.html">Akce</a></li>
+          <li><a href="pravidla.html">Pravidla</a></li>
+          <li><a href="contact.html">Kontakt</a></li>
+          <li id="nav-admin" class="hidden"><a href="admin-akce.html" class="active">Administrace</a></li>
+        </ul>
+      </nav>
+      <div class="header-actions">
+        <div id="user-info"><img id="user-avatar" src="" alt=""><span id="user-name"></span></div>
+        <a id="login-button" href="#" class="btn btn-primary btn-sm">Přihlásit</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="section">
+    <div class="container">
+      <span class="eyebrow">Administrace</span>
+      <h1>Akce a přihlášky</h1>
+
+      <div id="gate-loading" class="status-panel info">Ověřuji oprávnění…</div>
+
+      <div id="gate-denied" class="access-denied hidden">
+        <h3>Nemáš oprávnění</h3>
+        <p>Tahle stránka je jen pro radu. Přihlas se prosím přes tlačítko v hlavičce účtem, co má roli Rada.</p>
+      </div>
+
+      <div id="admin-content" class="hidden">
+        <div class="admin-event-card">
+          <h3>Založit novou akci</h3>
+          <p class="admin-event-meta">Typ a rok se dají nastavit jen teď — číslo akce se dopočítá automaticky a dál se nedá měnit.</p>
+          <div class="admin-form-grid">
+            <div class="form-group">
+              <label class="form-label">Typ akce</label>
+              <select id="new-typ-akce" class="form-control">
+                <option value="A">A — veřejná</option>
+                <option value="B">B — členská</option>
+                <option value="C">C — review (dotazník + patron)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Rok konání (dvě číslice)</label>
+              <input id="new-rok" class="form-control" value="26" maxlength="2">
+            </div>
+          </div>
+          <button id="btn-new-event" class="btn btn-primary" style="margin-top:16px;">Založit akci a otevřít formulář</button>
+        </div>
+
+        <div id="event-form-card" class="admin-event-card hidden">
+          <h3 id="event-form-title">Nová akce</h3>
+          <div id="event-form-id-badge" class="admin-event-meta"></div>
+          <div class="admin-form-grid">
+            <div class="form-group"><label class="form-label">Název</label><input id="f-nazev" class="form-control"></div>
+            <div class="form-group"><label class="form-label">Místo</label><input id="f-místo" class="form-control"></div>
+            <div class="form-group"><label class="form-label">Lokalita (přesná adresa, po platbě)</label><input id="f-lokalita_presna" class="form-control"></div>
+            <div class="form-group">
+              <label class="form-label">Datum od</label>
+              <div class="datetime-row">
+                <input type="date" id="f-datum od-date" class="form-control">
+                <input type="time" id="f-datum od-time" class="form-control">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Datum do</label>
+              <div class="datetime-row">
+                <input type="date" id="f-datum_do-date" class="form-control">
+                <input type="time" id="f-datum_do-time" class="form-control">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Konec registrace</label>
+              <div class="datetime-row">
+                <input type="date" id="f-registrace_konec-date" class="form-control">
+                <input type="time" id="f-registrace_konec-time" class="form-control">
+              </div>
+            </div>
+            <div class="form-group"><label class="form-label">Cena (jednorázovka)</label><div class="amount-field"><input id="f-cena" class="form-control" inputmode="numeric"><span class="amount-suffix">Kč</span></div></div>
+            <div class="form-group"><label class="form-label">Záloha</label><div class="amount-field"><input id="f-zaloha" class="form-control" inputmode="numeric"><span class="amount-suffix">Kč</span></div></div>
+            <div class="form-group"><label class="form-label">Doplatek</label><div class="amount-field"><input id="f-doplatek" class="form-control" inputmode="numeric"><span class="amount-suffix">Kč</span></div></div>
+            <div class="form-group">
+              <label class="form-label">Jednorázová platba?</label>
+              <select id="f-jednorazova" class="form-control"><option value="ne">Ne (záloha + doplatek)</option><option value="ano">Ano (jedna platba)</option></select>
+            </div>
+            <div class="form-group"><label class="form-label">Účet</label><input id="f-ucet" class="form-control"></div>
+            <div class="form-group"><label class="form-label">IBAN</label><input id="f-IBAN" class="form-control"></div>
+            <div class="form-group">
+              <label class="form-label">Vyžadovaná Discord role (přesný název sloupce)</label>
+              <input id="f-discord_role_required" class="form-control">
+              <p class="form-hint">Předvyplní se podle typu akce. Víc rolí odděl čárkou - stačí, když má člověk aspoň jednu z nich.</p>
+            </div>
+          </div>
+          <div class="form-group" style="margin-top:16px;">
+            <label class="form-label">Popis (nové řádky se uloží jako zalomení)</label>
+            <textarea id="f-popis" class="form-control" rows="6"></textarea>
+          </div>
+          <div class="admin-form-grid" style="margin-top:16px;">
+            <div class="form-group">
+              <label class="form-label" id="f-cover-label">Titulní fotka (na přehled akcí)</label>
+              <div id="f-cover-existing" class="form-hint hidden"></div>
+              <input type="file" id="f-cover-input" class="form-control" accept="image/jpeg,image/png,image/webp">
+              <div id="f-cover-preview"></div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" id="f-album-label">Album (do detailu akce, max 10 fotek)</label>
+              <div id="f-album-existing" class="form-hint hidden"></div>
+              <input type="file" id="f-album-input" class="form-control" accept="image/jpeg,image/png,image/webp" multiple>
+              <div id="f-album-preview" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;"></div>
+              <p class="form-hint">Nahrání nových fotek nahradí celé album - vyber prosím všechny, co tam mají zůstat.</p>
+            </div>
+          </div>
+          <div class="admin-event-actions" style="margin-top:16px;">
+            <button id="btn-save-event" class="btn btn-primary">Uložit</button>
+            <button id="btn-cancel-event" class="btn btn-outline">Zrušit</button>
+          </div>
+          <div id="event-form-msg" class="form-hint"></div>
+        </div>
+
+        <h2 style="margin-top:40px;">Existující akce</h2>
+        <label style="display:flex; align-items:center; gap:8px; margin-bottom:16px; font-size:0.9rem; cursor:pointer;">
+          <input type="checkbox" id="include-archived-toggle">
+          Zobrazit i proběhlé akce
+        </label>
+        <div id="events-list"></div>
+
+        <div id="registrations-card" class="admin-event-card hidden">
+          <h3 id="registrations-title">Přihlášky</h3>
+          <div id="registrations-body"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-bottom">© 2026 OOO Community z.s. — Design: Adam</div>
+    </div>
+  </footer>
+
+  <script src="assets/js/auth.js"></script>
+  <script>
+    function identityPayload() {
+      const user = getLoggedUser();
+      if (!user) return null;
+      const isGoogleUser = !!(user.provider === 'google' || /^google_/.test(user.userId || ''));
+      return isGoogleUser ? { credential: user.credential } : { discord_user_id: user.userId };
+    }
+
+    const gateLoading = document.getElementById('gate-loading');
+    const gateDenied = document.getElementById('gate-denied');
+    const adminContent = document.getElementById('admin-content');
+    const navAdmin = document.getElementById('nav-admin');
+
+    let allEvents = [];
+    let editingEventId = null;
+
+    const EDITABLE_FIELD_IDS = [
+      'nazev', 'popis', 'místo', 'lokalita_presna',
+      'cena', 'jednorazova', 'zaloha', 'doplatek', 'ucet', 'IBAN', 'discord_role_required',
+    ];
+
+    // Datum/čas (2026-08-24, na žádost - "chytřejší pole než jen obyčejný textový") -
+    // datum + čas přes nativní pickery, ale ULOŽÍ se ve stejném formátu "D.M.RRRR[ H:MM]",
+    // jaký už dnes používá zbytek webu (parseCzechDate v akce.html, formatDateRange v
+    // detail-akce.html) - žádná migrace formátu napříč projektem, jen hezčí vstup tady.
+    const DATE_TIME_FIELDS = ['datum od', 'datum_do', 'registrace_konec'];
+
+    function czechDateTimeToInputs(str) {
+      const s = (str || '').toString().trim();
+      if (!s) return { date: '', time: '' };
+      const [datePart, timePart] = s.split(' ');
+      const dp = datePart.split('.');
+      if (dp.length < 3) return { date: '', time: '' };
+      const [d, m, y] = dp;
+      if (!d || !m || !y) return { date: '', time: '' };
+      return { date: y.padStart(4, '0') + '-' + m.padStart(2, '0') + '-' + d.padStart(2, '0'), time: timePart || '' };
+    }
+
+    function inputsToCzechDateTime(dateVal, timeVal) {
+      if (!dateVal) return '';
+      const [y, m, d] = dateVal.split('-');
+      const base = parseInt(d, 10) + '.' + parseInt(m, 10) + '.' + y;
+      return timeVal ? base + ' ' + timeVal : base;
+    }
+
+    function fillForm(event) {
+      EDITABLE_FIELD_IDS.forEach(name => {
+        const el = document.getElementById('f-' + name);
+        if (el) el.value = (event && event[name]) || (name === 'jednorazova' ? 'ne' : '');
+      });
+      DATE_TIME_FIELDS.forEach(name => {
+        const { date, time } = czechDateTimeToInputs(event && event[name]);
+        document.getElementById('f-' + name + '-date').value = date;
+        document.getElementById('f-' + name + '-time').value = time;
+      });
+    }
+
+    function readForm() {
+      const out = {};
+      EDITABLE_FIELD_IDS.forEach(name => {
+        const el = document.getElementById('f-' + name);
+        if (el) out[name] = el.value;
+      });
+      DATE_TIME_FIELDS.forEach(name => {
+        const dateVal = document.getElementById('f-' + name + '-date').value;
+        const timeVal = document.getElementById('f-' + name + '-time').value;
+        out[name] = inputsToCzechDateTime(dateVal, timeVal);
+      });
+      return out;
+    }
+
+    // Fotky (2026-08-24) - titulní (jedna) + album (víc, max 10), stejný base64 vzorec
+    // jako dotaznik.html. Album se při novém nahrání celé nahradí, ne dopisuje - proto
+    // se posílá jen, když admin skutečně něco vybral.
+    const MAX_ALBUM_PHOTOS = 10;
+    const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
+    let selectedCoverPhoto = null;
+    let selectedAlbumPhotos = [];
+
+    function readFileAsPhoto(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve({ base64: reader.result.split(',')[1], mimeType: reader.result.split(';')[0].replace('data:', '') });
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function resetPhotoInputs(existingEvent) {
+      selectedCoverPhoto = null;
+      selectedAlbumPhotos = [];
+      document.getElementById('f-cover-input').value = '';
+      document.getElementById('f-album-input').value = '';
+      document.getElementById('f-cover-preview').innerHTML = '';
+      document.getElementById('f-album-preview').innerHTML = '';
+      const coverExisting = document.getElementById('f-cover-existing');
+      const albumExisting = document.getElementById('f-album-existing');
+      if (existingEvent && existingEvent.obrazek) {
+        coverExisting.innerHTML = 'Aktuální: <a href="' + existingEvent.obrazek + '" target="_blank">odkaz</a>';
+        coverExisting.classList.remove('hidden');
+      } else {
+        coverExisting.classList.add('hidden');
+      }
+      const albumUrls = ((existingEvent && existingEvent.obrazky) || '').split(';').map(u => u.trim()).filter(Boolean);
+      if (albumUrls.length) {
+        albumExisting.innerHTML = 'Aktuálně ' + albumUrls.length + ' fotek: ' + albumUrls.map((u, i) => `<a href="${u}" target="_blank">#${i + 1}</a>`).join(', ');
+        albumExisting.classList.remove('hidden');
+      } else {
+        albumExisting.classList.add('hidden');
+      }
+    }
+
+    document.getElementById('f-cover-input').addEventListener('change', async () => {
+      const file = document.getElementById('f-cover-input').files[0];
+      const preview = document.getElementById('f-cover-preview');
+      preview.innerHTML = '';
+      if (!file) { selectedCoverPhoto = null; return; }
+      if (file.size > MAX_PHOTO_BYTES) { alert('Fotka je moc velká (max 8 MB).'); document.getElementById('f-cover-input').value = ''; return; }
+      selectedCoverPhoto = await readFileAsPhoto(file);
+      const img = document.createElement('img');
+      img.src = 'data:' + selectedCoverPhoto.mimeType + ';base64,' + selectedCoverPhoto.base64;
+      img.style.cssText = 'width:120px;height:80px;object-fit:cover;border-radius:8px;margin-top:8px;';
+      preview.appendChild(img);
+    });
+
+    document.getElementById('f-album-input').addEventListener('change', async () => {
+      const files = Array.from(document.getElementById('f-album-input').files || []);
+      const preview = document.getElementById('f-album-preview');
+      preview.innerHTML = '';
+      selectedAlbumPhotos = [];
+      if (files.length > MAX_ALBUM_PHOTOS) { alert('Vyber prosím maximálně ' + MAX_ALBUM_PHOTOS + ' fotek.'); document.getElementById('f-album-input').value = ''; return; }
+      const tooBig = files.find(f => f.size > MAX_PHOTO_BYTES);
+      if (tooBig) { alert('Fotka "' + tooBig.name + '" je moc velká (max 8 MB).'); document.getElementById('f-album-input').value = ''; return; }
+      for (const file of files) {
+        const photo = await readFileAsPhoto(file);
+        selectedAlbumPhotos.push(photo);
+        const img = document.createElement('img');
+        img.src = 'data:' + photo.mimeType + ';base64,' + photo.base64;
+        img.style.cssText = 'width:70px;height:70px;object-fit:cover;border-radius:8px;';
+        preview.appendChild(img);
+      }
+    });
+
+    // Nová akce se do Sheetu NEZAPISUJE hned po kliknutí na "Založit" - jen se otevře
+    // prázdný formulář a typ/rok se pamatují lokálně (pendingNewEvent). Řádek v Akce
+    // vznikne až při prvním skutečném "Uložit" (2026-08-24, oprava - dřív vznikl řádek
+    // hned a tlačítko "Zrušit" ho nikdy nesmazalo, takže po rozmyšlení zůstal v tabulce
+    // poloprázdný přízrak akce).
+    let pendingNewEvent = null;
+
+    // Výchozí role podle typu akce (2026-08-24, na žádost) - jen předvyplnění, admin ho
+    // může v poli dál upravit. Odpovídá tomu, jak dnes roli vyhodnocuje kód (register-
+    // event-google, my-registration...): A veřejná bez role, B členská (Čekatel NEBO OOO
+    // člen stačí), C review vyžaduje Kinkster.
+    const DEFAULT_ROLE_BY_TYPE = { A: '', B: 'Čekatel, OOO člen', C: 'Kinkster' };
+
+    // Účet/IBAN jsou dnes napříč akcemi vždy stejné (2026-08-24, na žádost - "ať
+    // neuděláme chybu") - předvyplní se, admin je může přepsat, kdyby se to jednou
+    // opravdu mělo lišit.
+    const DEFAULT_UCET = '2003263980/2010';
+    const DEFAULT_IBAN = 'CZ3220100000002003263980';
+
+    // Kopírování akce (2026-08-24, na žádost - "abych mohl snadno podobné akce
+    // kopírovat") - zdroj se jen zapamatuje, samotné vytvoření pořád vyžaduje čerstvý
+    // výběr typu+roku (btn-new-event dole) - event_id musí být vždycky nový, nikdy se
+    // needituje zdrojová akce. Fotky se úmyslně NEKOPÍRUJÍ (nová instance dostane
+    // vlastní), stejně tak data/čas (kopie je "podobná akce", ne totéž datum znovu).
+    let pendingCopySource = null;
+
+    function openFormForCopy(event) {
+      pendingCopySource = event;
+      document.getElementById('event-form-msg').textContent = '';
+      document.getElementById('new-typ-akce').value = event.typ_akce;
+      document.querySelector('.admin-event-card').scrollIntoView({ behavior: 'smooth' });
+      alert(`Kopíruju "${event.nazev}" - vyber prosím rok konání nové akce a klikni na "Založit akci a otevřít formulář". Formulář se předvyplní podle zdrojové akce (bez fotek a bez data - to nastav nové).`);
+    }
+
+    function openFormForNewEvent(typAkce, rok) {
+      editingEventId = null;
+      pendingNewEvent = { typ_akce: typAkce, rok };
+      document.getElementById('event-form-title').textContent = 'Nová akce (typ ' + typAkce + ', rok ' + rok + ')';
+      document.getElementById('event-form-id-badge').textContent = 'event_id se vygeneruje při prvním uložení.';
+      const source = pendingCopySource;
+      pendingCopySource = null;
+      fillForm(source || {});
+      if (source) {
+        // Datum se u kopie záměrně nepřenáší - je to "podobná akce", ne totéž datum znovu.
+        DATE_TIME_FIELDS.forEach(name => {
+          document.getElementById('f-' + name + '-date').value = '';
+          document.getElementById('f-' + name + '-time').value = '';
+        });
+      }
+      document.getElementById('f-discord_role_required').value = (source && source.discord_role_required) || DEFAULT_ROLE_BY_TYPE[typAkce] || '';
+      document.getElementById('f-ucet').value = (source && source.ucet) || DEFAULT_UCET;
+      document.getElementById('f-IBAN').value = (source && source.IBAN) || DEFAULT_IBAN;
+      if (source) {
+        document.getElementById('f-nazev').value = (source.nazev || '') + ' (kopie)';
+        document.getElementById('event-form-title').textContent = 'Kopie akce "' + source.nazev + '" (typ ' + typAkce + ', rok ' + rok + ')';
+      }
+      resetPhotoInputs(null);
+      document.getElementById('event-form-card').classList.remove('hidden');
+      document.getElementById('event-form-msg').textContent = '';
+      document.getElementById('event-form-card').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function openFormForEdit(event) {
+      editingEventId = event.event_id;
+      pendingNewEvent = null;
+      document.getElementById('event-form-title').textContent = 'Úprava — ' + event.nazev;
+      document.getElementById('event-form-id-badge').textContent = 'event_id: ' + event.event_id + ' (typ ' + event.typ_akce + ', needitovatelné)';
+      fillForm(event);
+      resetPhotoInputs(event);
+      document.getElementById('event-form-card').classList.remove('hidden');
+      document.getElementById('event-form-msg').textContent = '';
+      document.getElementById('event-form-card').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function renderEvents() {
+      const container = document.getElementById('events-list');
+      if (!allEvents.length) { container.innerHTML = '<p class="form-hint">Zatím žádné akce.</p>'; return; }
+      // is_past (2026-08-24, sloučení Akce+Archiv) - proběhlé akce se jen vizuálně
+      // odliší (tlumenější karta + štítek), ne skryjí úplně - vidí je jen ten, kdo
+      // zaškrtl "Zobrazit i proběhlé akce" (checkbox už poslal include_archived, takže
+      // co je v allEvents, to se má zobrazit).
+      container.innerHTML = allEvents.map(e => `
+        <div class="admin-event-card" style="${e.is_past ? 'opacity:0.6;' : ''}">
+          <h3>${e.nazev || e.event_id}${e.is_past ? ' <span class="form-hint" style="font-weight:400;">(proběhlo)</span>' : ''}</h3>
+          <div class="admin-event-meta">${e.event_id} · typ ${e.typ_akce} · ${e.registrations_count} přihlášek (záloha OK: ${e.deposit_ok_count}, doplatek OK: ${e.doplatek_ok_count})</div>
+          <div class="admin-event-actions">
+            <button class="btn btn-outline btn-sm" data-action="edit" data-event="${e.event_id}">Upravit</button>
+            <button class="btn btn-outline btn-sm" data-action="registrations" data-event="${e.event_id}">Přihlášky</button>
+            <button class="btn btn-outline btn-sm" data-action="copy" data-event="${e.event_id}">Kopírovat jako novou akci</button>
+            <button class="btn btn-outline btn-sm" data-action="delete" data-event="${e.event_id}" data-nazev="${(e.nazev || e.event_id).replace(/"/g, '&quot;')}" style="margin-left:auto; color:#b42318; border-color:#b42318;">Zrušit akci</button>
+          </div>
+        </div>
+      `).join('');
+      container.querySelectorAll('[data-action="edit"]').forEach(btn => btn.addEventListener('click', () => {
+        const event = allEvents.find(e => e.event_id === btn.dataset.event);
+        if (event) openFormForEdit(event);
+      }));
+      container.querySelectorAll('[data-action="registrations"]').forEach(btn => btn.addEventListener('click', () => {
+        loadRegistrations(btn.dataset.event);
+      }));
+      container.querySelectorAll('[data-action="copy"]').forEach(btn => btn.addEventListener('click', () => {
+        const event = allEvents.find(e => e.event_id === btn.dataset.event);
+        if (event) openFormForCopy(event);
+      }));
+      // Zrušení akce (2026-08-24, na žádost) - potvrzovací okno je jediná ochrana proti
+      // omylu, akce se pak trvale smaže z listu Akce (existující přihlášky/dotazníkové
+      // odpovědi zůstávají, jejich řešení je ruční, stejně jako doteď).
+      container.querySelectorAll('[data-action="delete"]').forEach(btn => btn.addEventListener('click', () => {
+        const eventId = btn.dataset.event;
+        const nazev = btn.dataset.nazev;
+        if (!confirm(`Opravdu trvale zrušit akci "${nazev}" (${eventId})? Tohle nejde vzít zpět. Existující přihlášky se nesmažou, jen zůstanou bez akce - je potřeba je vyřešit ručně.`)) return;
+        fetch(API_BASE + '/api/panel-delete-event', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...identityPayload(), event_id: eventId }),
+        })
+          .then(r => r.json())
+          .then(data => {
+            if (!data.ok) { alert('Chyba: ' + (data.error || 'neznámá')); return; }
+            loadEvents();
+          })
+          .catch(err => alert('Chyba: ' + err.message));
+      }));
+    }
+
+    function loadEvents() {
+      const includeArchived = document.getElementById('include-archived-toggle').checked;
+      return fetch(API_BASE + '/api/panel-list-events', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...identityPayload(), include_archived: includeArchived }),
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (!data.ok) throw new Error(data.error || 'Chyba při načítání akcí.');
+          allEvents = data.events || [];
+          renderEvents();
+        });
+    }
+
+    document.getElementById('include-archived-toggle').addEventListener('change', () => {
+      loadEvents().catch(err => alert('Chyba při načítání akcí: ' + err.message));
+    });
+
+    function statusLabel(status) {
+      return (status || '').toUpperCase() === 'OK' ? '<span class="status-ok">OK</span>' : `<span class="status-pending">${status || '—'}</span>`;
+    }
+
+    function loadRegistrations(eventId) {
+      fetch(API_BASE + '/api/panel-list-registrations', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...identityPayload(), event_id: eventId }),
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (!data.ok) throw new Error(data.error || 'Chyba při načítání přihlášek.');
+          const card = document.getElementById('registrations-card');
+          // Jen event_id v titulku byl na žádost doplněn i o jméno akce (2026-08-24) -
+          // ať je hned vidět, o kterou akci jde, ne jen její kód.
+          const eventMeta = allEvents.find(e => e.event_id === eventId);
+          const eventLabel = eventMeta ? `${eventMeta.nazev} (${eventId})` : eventId;
+          document.getElementById('registrations-title').textContent = 'Přihlášky — ' + eventLabel;
+          const body = document.getElementById('registrations-body');
+          if (!data.registrations.length) {
+            body.innerHTML = '<p class="form-hint">Zatím nikdo přihlášený.</p>';
+          } else {
+            body.innerHTML = `
+              <table class="admin-reg-table">
+                <thead><tr><th>Jméno</th><th>Kontakt</th><th>Typ účasti</th><th>Záloha</th><th>Doplatek</th><th></th></tr></thead>
+                <tbody>
+                  ${data.registrations.map(r => `
+                    <tr>
+                      <td>${r.jmeno || '—'}</td>
+                      <td>${r.email || ''}${r.telefon ? ' · ' + r.telefon : ''}</td>
+                      <td>${r.typ_ucasti || ''}</td>
+                      <td>${statusLabel(r.deposit_status)} (${r.deposit || 0} Kč)
+                        ${(r.deposit_status || '').toUpperCase() !== 'OK'
+                          ? `<button class="btn btn-outline btn-sm" data-mark="deposit_status" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}">Označit OK</button>`
+                          : `<button class="btn btn-outline btn-sm" data-mark="deposit_status" data-value="nova_prihlaska" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}">Vrátit zpět</button>`}
+                      </td>
+                      <td>${statusLabel(r.doplatek_status)} (${r.doplatek || 0} Kč)
+                        ${(r.doplatek_status || '').toUpperCase() !== 'OK'
+                          ? `<button class="btn btn-outline btn-sm" data-mark="doplatek_status" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}">Označit OK</button>`
+                          : `<button class="btn btn-outline btn-sm" data-mark="doplatek_status" data-value="nova_prihlaska" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}">Vrátit zpět</button>`}
+                      </td>
+                      <td></td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            `;
+            body.querySelectorAll('[data-mark]').forEach(btn => btn.addEventListener('click', () => {
+              const field = btn.dataset.mark;
+              const value = btn.dataset.value || 'OK';
+              fetch(API_BASE + '/api/panel-update-registration', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  ...identityPayload(), event_id: eventId,
+                  ooo_id: btn.dataset.ooo || undefined, user_id: btn.dataset.user || undefined,
+                  field, value,
+                }),
+              })
+                .then(r => r.json())
+                .then(res => {
+                  if (!res.ok) { alert('Chyba: ' + (res.error || 'neznámá')); return; }
+                  loadRegistrations(eventId);
+                  loadEvents();
+                })
+                .catch(err => alert('Chyba: ' + err.message));
+            }));
+          }
+          card.classList.remove('hidden');
+          card.scrollIntoView({ behavior: 'smooth' });
+        })
+        .catch(err => alert('Chyba: ' + err.message));
+    }
+
+    document.getElementById('btn-new-event').addEventListener('click', () => {
+      const typ_akce = document.getElementById('new-typ-akce').value;
+      const rok = document.getElementById('new-rok').value.trim();
+      openFormForNewEvent(typ_akce, rok);
+    });
+
+    document.getElementById('btn-cancel-event').addEventListener('click', () => {
+      // Nic se nemaže - dokud se neuložilo, žádný řádek v Sheetu ani nevznikl.
+      document.getElementById('event-form-card').classList.add('hidden');
+      editingEventId = null;
+      pendingNewEvent = null;
+    });
+
+    document.getElementById('btn-save-event').addEventListener('click', () => {
+      if (!editingEventId && !pendingNewEvent) return;
+      const body = editingEventId
+        ? { ...identityPayload(), event_id: editingEventId, ...readForm() }
+        : { ...identityPayload(), typ_akce: pendingNewEvent.typ_akce, rok: pendingNewEvent.rok, ...readForm() };
+      if (selectedCoverPhoto) body.cover_photo = selectedCoverPhoto;
+      if (selectedAlbumPhotos.length) body.album_photos = selectedAlbumPhotos;
+      document.getElementById('event-form-msg').textContent = 'Ukládám…';
+      fetch(API_BASE + '/api/panel-save-event', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (!data.ok) { document.getElementById('event-form-msg').textContent = 'Chyba: ' + (data.error || 'neznámá'); return; }
+          if (data.created) {
+            editingEventId = data.event_id;
+            pendingNewEvent = null;
+            document.getElementById('event-form-title').textContent = 'Nová akce — ' + data.event_id;
+            document.getElementById('event-form-id-badge').textContent = 'event_id: ' + data.event_id + ' (číslo_akce: ' + data.cislo_akce + ', needitovatelné)';
+          }
+          document.getElementById('event-form-msg').textContent = 'Uloženo.';
+          selectedCoverPhoto = null;
+          selectedAlbumPhotos = [];
+          document.getElementById('f-cover-input').value = '';
+          document.getElementById('f-album-input').value = '';
+          loadEvents();
+        })
+        .catch(err => { document.getElementById('event-form-msg').textContent = 'Chyba: ' + err.message; });
+    });
+
+    // Přístupová brána - stejný vzorec jako u ostatních stránek (loadMyRoles), jen
+    // rozhodující je role Rada. Frontend gating je jen UX - backend (requireAdminIdentity)
+    // ověřuje roli znovu, nezávisle, u každého volání.
+    const loggedUser = getLoggedUser();
+    if (!loggedUser || !loggedUser.userId) {
+      gateLoading.classList.add('hidden');
+      gateDenied.classList.remove('hidden');
+      gateDenied.querySelector('p').textContent = 'Tahle stránka je jen pro radu. Přihlas se prosím přes tlačítko v hlavičce.';
+    } else {
+      fetch(API_BASE + '/api/members')
+        .then(r => r.json())
+        .then(members => {
+          const me = members.find(m => m.user_id === loggedUser.userId);
+          const roles = (me && me.roles) || {};
+          const isRada = (roles['Rada'] || '').toString().trim().toUpperCase() === 'X';
+          gateLoading.classList.add('hidden');
+          if (!isRada) {
+            gateDenied.classList.remove('hidden');
+          } else {
+            navAdmin.classList.remove('hidden');
+            adminContent.classList.remove('hidden');
+            loadEvents().catch(err => alert('Chyba při načítání akcí: ' + err.message));
+          }
+        })
+        .catch(() => {
+          gateLoading.classList.add('hidden');
+          gateDenied.classList.remove('hidden');
+        });
+    }
+  </script>
+</body>
+</html>
