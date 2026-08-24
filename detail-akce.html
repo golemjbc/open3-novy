@@ -142,12 +142,12 @@
         }
         const requiredRoles = event.discord_role_required || '';
         const isPublicEvent = event.typ_akce === 'A';
-        // Typ B přes Google (2026-08-24): stejná výjimka jako v akce.html - Google
-        // uživatel bez role musí na detail vůbec vidět, jinak se nikdy nedostane
-        // k registraci/formuláři, co ho k roli teprve navede.
+        // Typ B (Google) i typ C (Google i Discord, 2026-08-24) - stejná výjimka jako v
+        // akce.html, viz komentář tam. Bez role musí na detail vůbec vidět, jinak se
+        // nikdy nedostane k registraci/formuláři, co ho k roli teprve navede.
         const isGoogleUser = !!(loggedUser && (loggedUser.provider === 'google' || /^google_/.test(loggedUser.userId || '')));
-        const isMemberEventViaGoogle = event.typ_akce === 'B' && isGoogleUser;
-        const hasAccess = isLoggedIn && (isPublicEvent || isMemberEventViaGoogle || userHasRequiredRole(requiredRoles, myRoles));
+        const canBypassRoleCheck = (event.typ_akce === 'B' && isGoogleUser) || event.typ_akce === 'C';
+        const hasAccess = isLoggedIn && (isPublicEvent || canBypassRoleCheck || userHasRequiredRole(requiredRoles, myRoles));
 
         if (!hasAccess) {
           pageBody.innerHTML = `
@@ -244,12 +244,27 @@
                 // 2026-08-23 - přesně tenhle případ nastal a přihláška šla špatnou cestou).
                 const isGoogleUser = !!(currentUser && (currentUser.provider === 'google' || /^google_/.test(currentUser.userId || '')));
                 const isPublicEvent = event.typ_akce === 'A';
-                // Typ B (jen role na Discordu, žádné schvalování) přes Google umí endpoint
-                // od 2026-08-24 - formulář se zobrazí stejně jako u A, jen po odeslání
-                // (nebo návratu na stránku) může přijít needs_discord_role místo platby,
-                // viz submit handler a checkAlreadyRegistered níž. Typ C (dotazník +
-                // schválení patronem, Fáze 5) zatím není postavený vůbec.
-                const isSupportedByGoogle = isPublicEvent || event.typ_akce === 'B';
+                // Typ B (jen role na Discordu) i typ C (dotazník + schválení patronem,
+                // Fáze 5, 2026-08-24) přes Google umí endpoint - formulář se zobrazí
+                // stejně jako u A, jen po odeslání (nebo návratu na stránku) může přijít
+                // needs_discord_role/needs_questionnaire/needs_patron_approval místo
+                // platby, viz submit handler a checkAlreadyRegistered níž.
+                const isSupportedByGoogle = isPublicEvent || event.typ_akce === 'B' || event.typ_akce === 'C';
+
+                // Discord uživatel bez role na typ C (2026-08-24, na výslovnou žádost -
+                // "chovat se logicky podobně jako Google"): dřív tu byla mezera - hasAccess
+                // nahoře ho pustí dál (viz canBypassRoleCheck), ale bez tohohle by spadl do
+                // nativního Discord formuláře (register-event), co dotazníkový flow vůbec
+                // nezná. Použije stejný "univerzální" formulář jako Google, jen s Discord
+                // identitou místo credential - viz identityPayload() v submit handleru.
+                const isDiscordUser = !!currentUser && !isGoogleUser;
+                let hasRoleForCurrentUser = true;
+                if (isDiscordUser && event.typ_akce === 'C') {
+                  const me = members.find(m => m.user_id === currentUser.userId);
+                  const myRolesHere = (me && me.roles) || {};
+                  hasRoleForCurrentUser = userHasRequiredRole(event.discord_role_required || '', myRolesHere);
+                }
+                const usesUnifiedForm = (isGoogleUser && isSupportedByGoogle) || (isDiscordUser && event.typ_akce === 'C' && !hasRoleForCurrentUser);
 
                 if (isGoogleUser && !isSupportedByGoogle) {
                   return `
@@ -259,7 +274,7 @@
                     </div>`;
                 }
 
-                if (isGoogleUser && isSupportedByGoogle) {
+                if (usesUnifiedForm) {
                   return `
                     <div id="registration-block">
                       <h3>Přihláška na akci</h3>
@@ -434,18 +449,41 @@
           <p>Tvoje přihláška je přijatá. Tahle akce vyžaduje roli na Discordu (dokončit uvítací proces/pravidla serveru) — poslali jsme ti e-mail se stejným tlačítkem. Jakmile roli dostaneš, stránka se sama obnoví (bot roli synchronizuje do pár minut).</p>
           <a href="${url}" target="_blank" class="btn btn-primary">Propojit a otevřít Discord</a>
         `);
-        startDiscordRolePoll();
+        startWaitingStatePoll();
       }
 
-      // Automatické obnovení stránky, jakmile role dorazí (2026-08-24, na žádost po
-      // živém testu - "stránka by se měla sama po napárování aktualizovat"). Bot
-      // synchronizuje role z Discordu do Sheetu ve 1minutovém cyklu, takže se čeká -
-      // polling po 10s je dost časté na to, aby to nepůsobilo rozbitě, a dost řídké,
-      // aby to nezatěžovalo API. Zastaví se samo po ~10 minutách (60 pokusů), ať
-      // nezůstane běžet do nekonečna, když člověk kartu jen nechá otevřenou.
+      // Typ C (Fáze 5, 2026-08-24): dva další "čekej" stavy vedle needs_discord_role -
+      // dotazník nevyplněný (odkaz na dotaznik.html) a dotazník vyplněný, čeká se na
+      // patrona (nic se nedá udělat, jen čekat, stejné auto-obnovení jako u role).
+      function showNeedsQuestionnairePanel(url) {
+        document.getElementById('registration-block').classList.add('hidden');
+        showPanel('registration-info', `
+          <h4 style="margin-top:0;">Ještě jeden krok</h4>
+          <p>Tvoje přihláška je přijatá. Tahle akce je pro ověřené členy komunity — prvním krokem je vyplnit krátký vstupní dotazník.</p>
+          <a href="${url}" class="btn btn-primary">Vyplnit dotazník</a>
+        `);
+        startWaitingStatePoll();
+      }
+      function showNeedsPatronApprovalPanel() {
+        document.getElementById('registration-block').classList.add('hidden');
+        showPanel('registration-info', `
+          <h4 style="margin-top:0;">Čeká tě schůzka s patronem</h4>
+          <p>Dotazník máme, patron si ho prohlédne a ozve se ti, abyste si domluvili osobní nebo online popovídání. Stránka se sama obnoví, jakmile bude vše hotové. Nic teď dělat nemusíš.</p>
+        `);
+        startWaitingStatePoll();
+      }
+
+      // Automatické obnovení stránky, jakmile se vyřeší poslední čekající krok
+      // (needs_discord_role / needs_questionnaire / needs_patron_approval, 2026-08-24,
+      // na žádost po živém testu - "stránka by se měla sama po napárování
+      // aktualizovat"). Bot synchronizuje roli z Discordu do Sheetu ve 1minutovém
+      // cyklu, takže se čeká - polling po 10s je dost časté na to, aby to nepůsobilo
+      // rozbitě, a dost řídké, aby to nezatěžovalo API. Zastaví se samo po ~10 minutách
+      // (60 pokusů), ať nezůstane běžet do nekonečna, když člověk kartu jen nechá
+      // otevřenou.
       let discordRolePollTimer = null;
       let discordRolePollAttempts = 0;
-      function startDiscordRolePoll() {
+      function startWaitingStatePoll() {
         if (discordRolePollTimer) return;
         const credential = (getLoggedUser() || {}).credential;
         if (!credential) return;
@@ -462,7 +500,7 @@
             .then(data => {
               const list = Array.isArray(data) ? data : (data && data.registrations) || [];
               const found = list.find(item => item.event_id === event.event_id);
-              if (found && !found.needs_discord_role) {
+              if (found && !found.needs_discord_role && !found.needs_questionnaire && !found.needs_patron_approval) {
                 clearInterval(discordRolePollTimer);
                 location.reload();
               }
@@ -519,6 +557,14 @@
       function renderRegistrationStatus(found, id, userName, idParam) {
         if (found && found.needs_discord_role) {
           showNeedsDiscordRolePanel(found.discord_cta_url);
+          return;
+        }
+        if (found && found.needs_questionnaire) {
+          showNeedsQuestionnairePanel(found.questionnaire_url);
+          return;
+        }
+        if (found && found.needs_patron_approval) {
+          showNeedsPatronApprovalPanel();
           return;
         }
         const p = parsePrihlaskaRow(found);
@@ -584,7 +630,16 @@
         const confirm18 = document.getElementById('confirm18');
         const confirmRules = document.getElementById('confirmRules');
         const submitBtn = document.getElementById('submitGoogleReg');
-        const storedCredential = (getLoggedUser() || {}).credential || null;
+        // Tenhle formulář teď slouží i Discord uživatelům bez role na typ C (2026-08-24,
+        // na výslovnou žádost) - identita se pozná podle provider a posílá se pod
+        // odpovídajícím jménem pole (my-registrations čeká `user_id`, register-event-
+        // google čeká `discord_user_id` - dva různé, staré/nové konvence, nesjednocovat
+        // silou na jednu, ať se to nesplete).
+        const loggedUserForForm = getLoggedUser();
+        const isGoogleUserForForm = !!(loggedUserForForm && (loggedUserForForm.provider === 'google' || /^google_/.test(loggedUserForForm.userId || '')));
+        const storedCredential = isGoogleUserForForm ? (loggedUserForForm.credential || null) : null;
+        const discordUserIdForForm = (loggedUserForForm && !isGoogleUserForForm) ? loggedUserForForm.userId : null;
+        const hasIdentityForForm = !!(storedCredential || discordUserIdForForm);
 
         function updateGoogleSubmitState() {
           submitBtn.disabled = !(confirm18.checked && confirmRules.checked);
@@ -607,11 +662,14 @@
           }
         });
 
-        if (storedCredential) {
+        if (hasIdentityForForm) {
           fetch(API_BASE + '/api/my-registrations', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ credential: storedCredential, eventId: event.event_id }),
+            body: JSON.stringify({
+              ...(storedCredential ? { credential: storedCredential } : { user_id: discordUserIdForForm }),
+              eventId: event.event_id,
+            }),
           })
             .then(r => r.json())
             .then(data => {
@@ -636,12 +694,12 @@
               if (!list.length) return;
               renderRegistrationStatus(list[0], list[0].ooo_id, (profile && (profile.google_name || profile.google_email)) || '', 'ooo_id');
             })
-            .catch(err => console.error('Google my-registrations error:', err));
+            .catch(err => console.error('Google/Discord my-registrations error:', err));
         }
 
         googleForm.addEventListener('submit', function (e) {
           e.preventDefault();
-          if (!storedCredential) {
+          if (!hasIdentityForForm) {
             alert('Přihlášení už vypršelo, přihlas se prosím znovu přes tlačítko v hlavičce.');
             return;
           }
@@ -658,7 +716,8 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              credential: storedCredential, event_id: event.event_id,
+              ...(storedCredential ? { credential: storedCredential } : { discord_user_id: discordUserIdForForm }),
+              event_id: event.event_id,
               typ_ucasti: typUcastiG, preference: selectedPrefs,
               telefon: telefonVal, instagram: instagramVal,
             }),
@@ -681,11 +740,22 @@
                   doplatek: data.deposit_amount, partner: typUcastiG,
                   needs_discord_role: data.needs_discord_role,
                   discord_cta_url: data.discord_cta_url,
+                  needs_questionnaire: data.needs_questionnaire,
+                  questionnaire_url: data.questionnaire_url,
+                  needs_patron_approval: data.needs_patron_approval,
                 }, data.ooo_id, data.name || data.email || '', 'ooo_id');
                 return;
               }
               if (data.needs_discord_role) {
                 showNeedsDiscordRolePanel(data.discord_cta_url);
+                return;
+              }
+              if (data.needs_questionnaire) {
+                showNeedsQuestionnairePanel(data.questionnaire_url);
+                return;
+              }
+              if (data.needs_patron_approval) {
+                showNeedsPatronApprovalPanel();
                 return;
               }
               document.getElementById('registration-block').classList.add('hidden');

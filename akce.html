@@ -164,12 +164,30 @@
         .catch(() => ({}));
     }
 
+    // Na žádost (2026-08-24) - tlačítko v seznamu se má lišit na první pohled, když je
+    // uživatel na danou akci už přihlášený. Vrací Set event_id, na které je přihlášený -
+    // jeden dotaz na VŠECHNY registrace najednou (bez eventId filtru), ne po jedné.
+    function loadMyRegistrations(loggedUser) {
+      if (!loggedUser || !loggedUser.userId) return Promise.resolve(new Set());
+      const isGoogleUser = !!(loggedUser.provider === 'google' || /^google_/.test(loggedUser.userId || ''));
+      const body = isGoogleUser ? { credential: loggedUser.credential } : { user_id: loggedUser.userId };
+      return fetch(API_BASE + '/api/my-registrations', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      })
+        .then(r => r.ok ? r.json() : Promise.reject(r.status))
+        .then(data => {
+          const list = Array.isArray(data) ? data : (data && data.registrations) || [];
+          return new Set(list.map(item => item.event_id).filter(Boolean));
+        })
+        .catch(() => new Set());
+    }
+
     const container = document.getElementById('events-container');
     let allCards = [];
 
     const loggedUser = getLoggedUser();
 
-    loadMyRoles(loggedUser).then(myRoles => {
+    Promise.all([loadMyRoles(loggedUser), loadMyRegistrations(loggedUser)]).then(([myRoles, myRegisteredEventIds]) => {
       fetch(API_BASE + '/api/events')
         .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
         .then(events => {
@@ -186,12 +204,16 @@
             const isPublicEvent = e.typ_akce === 'A';
             // Typ B přes Google (2026-08-24): Google uživatel ještě nemusí mít roli na
             // Discordu (to je celý smysl flow - zaregistruje se a roli doplní pak), takže
-            // pro typ B se mu akce musí zobrazit i bez role. Discord uživatelé (bez
-            // isGoogleUser) mají beze změny - typ B jim zůstává skrytý, dokud roli nemají,
-            // stejně jako typ C.
+            // se mu akce musí zobrazit i bez role. Discord uživatelé u typu B zůstávají
+            // beze změny skrytí, dokud roli nemají - tu dostanou zdarma přes Rules
+            // Screening, není tu žádná mezera k přemostění.
+            // Typ C (Fáze 5, doplněno 2026-08-24): tady mezera BYLA - Discord uživatel bez
+            // Kinkster role neměl žádné vedení k dotazníku, jen zeď "nemáš oprávnění". Teď
+            // se chová logicky stejně jako Google (na výslovnou žádost) - uvidí akci i bez
+            // role, po pokusu o registraci ho čeká stejný dotazníkový flow.
             const isGoogleUser = !!(loggedUser && (loggedUser.provider === 'google' || /^google_/.test(loggedUser.userId || '')));
-            const isMemberEventViaGoogle = e.typ_akce === 'B' && isGoogleUser;
-            const canSee = isLoggedIn && (isPublicEvent || isMemberEventViaGoogle || userHasRequiredRole(requiredRoles, myRoles));
+            const canBypassRoleCheck = (e.typ_akce === 'B' && isGoogleUser) || e.typ_akce === 'C';
+            const canSee = isLoggedIn && (isPublicEvent || canBypassRoleCheck || userHasRequiredRole(requiredRoles, myRoles));
             const soon = isSoon(e);
             const img = getSmartImageUrl(e.obrazek);
 
@@ -209,8 +231,12 @@
             card.dataset.mine = canSee ? '1' : '0';
             card.dataset.soon = soon ? '1' : '0';
 
+            const alreadyRegistered = canSee && myRegisteredEventIds.has(e.event_id);
+
             let footer;
-            if (canSee) {
+            if (alreadyRegistered) {
+              footer = `<a href="detail-akce.html?event_id=${encodeURIComponent(e.event_id)}" class="btn btn-outline btn-block">✓ Přihlášeno — zobrazit detail</a>`;
+            } else if (canSee) {
               footer = `<a href="detail-akce.html?event_id=${encodeURIComponent(e.event_id)}" class="btn btn-primary btn-block">Detail &amp; přihlášení</a>`;
             } else if (!isLoggedIn) {
               footer = `<span class="access-badge locked">Pro detail se musíš přihlásit</span>`;
