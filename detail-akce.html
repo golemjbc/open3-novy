@@ -801,8 +801,16 @@
         });
 
         fetch(API_BASE + '/api/register-event?' + qp.toString())
-          .then(r => r.json())
-          .then(data => {
+          .then(r => r.json().then(data => ({ status: r.status, data })))
+          .then(({ status, data }) => {
+            // Scénář 9e/3,6 (2026-08-24): dřív se tahle hláška zobrazila vždycky, i když
+            // backend registraci odmítl (chybějící role - viz register-event/index.js) -
+            // tichý "úspěch" navzdory selhání. Teď se odpověď skutečně rozliší, stejně
+            // jako u sjednoceného Google formuláře výš.
+            if (status !== 200 || data.ok === false) {
+              alert('Chyba při registraci: ' + (data.error || 'neznámá chyba'));
+              return;
+            }
             document.getElementById('registration-block').classList.add('hidden');
             showPanel('registration-info', isFreeEvent
               ? '<strong>🎉 Jsi přihlášený na akci zdarma!</strong>'
