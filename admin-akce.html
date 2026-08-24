@@ -25,8 +25,12 @@
     .admin-event-card h3 { margin: 0 0 4px; }
     .admin-event-meta { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px; }
     .admin-event-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-    .admin-reg-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 0.88rem; }
-    .admin-reg-table th, .admin-reg-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    /* Tabulka přihlášek se na mobilu nevešla a posouvala celou stránku vodorovně
+       (2026-08-24, oprava) - teď se posouvá jen ona sama, uvnitř vlastního rámečku. */
+    .admin-reg-table-wrap { overflow-x: auto; margin-top: 12px; }
+    .admin-reg-table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 0.88rem; }
+    .admin-reg-table th, .admin-reg-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; white-space: nowrap; }
+    .admin-reg-table td:nth-child(2) { white-space: normal; }
     .admin-reg-table th { font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); }
     .status-ok { color: #1a7f37; font-weight: 700; }
     .status-pending { color: var(--text-muted); }
@@ -507,29 +511,30 @@
             body.innerHTML = '<p class="form-hint">Zatím nikdo přihlášený.</p>';
           } else {
             body.innerHTML = `
-              <table class="admin-reg-table">
-                <thead><tr><th>Jméno</th><th>Kontakt</th><th>Typ účasti</th><th>Záloha</th><th>Doplatek</th><th></th></tr></thead>
-                <tbody>
-                  ${data.registrations.map(r => `
-                    <tr>
-                      <td>${r.jmeno || '—'}</td>
-                      <td>${r.email || ''}${r.telefon ? ' · ' + r.telefon : ''}</td>
-                      <td>${r.typ_ucasti || ''}</td>
-                      <td>${statusLabel(r.deposit_status)} (${r.deposit || 0} Kč)
-                        ${(r.deposit_status || '').toUpperCase() !== 'OK'
-                          ? `<button class="btn btn-outline btn-sm" data-mark="deposit_status" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}">Označit OK</button>`
-                          : `<button class="btn btn-outline btn-sm" data-mark="deposit_status" data-value="nova_prihlaska" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}">Vrátit zpět</button>`}
-                      </td>
-                      <td>${statusLabel(r.doplatek_status)} (${r.doplatek || 0} Kč)
-                        ${(r.doplatek_status || '').toUpperCase() !== 'OK'
-                          ? `<button class="btn btn-outline btn-sm" data-mark="doplatek_status" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}">Označit OK</button>`
-                          : `<button class="btn btn-outline btn-sm" data-mark="doplatek_status" data-value="nova_prihlaska" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}">Vrátit zpět</button>`}
-                      </td>
-                      <td></td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
+              <div class="admin-reg-table-wrap">
+                <table class="admin-reg-table">
+                  <thead><tr><th>Jméno</th><th>Kontakt</th><th>Typ účasti</th><th>Záloha</th><th>Doplatek</th></tr></thead>
+                  <tbody>
+                    ${data.registrations.map(r => `
+                      <tr>
+                        <td>${r.jmeno || '—'}</td>
+                        <td>${r.email || ''}${r.telefon ? ' · ' + r.telefon : ''}</td>
+                        <td>${r.typ_ucasti || ''}</td>
+                        <td>${statusLabel(r.deposit_status)} (${r.deposit || 0} Kč)
+                          ${(r.deposit_status || '').toUpperCase() !== 'OK'
+                            ? `<button class="btn btn-outline btn-sm" data-mark="deposit_status" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}">Označit OK</button>`
+                            : `<button class="btn btn-outline btn-sm" data-mark="deposit_status" data-value="nova_prihlaska" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}">Vrátit zpět</button>`}
+                        </td>
+                        <td>${statusLabel(r.doplatek_status)} (${r.doplatek || 0} Kč)
+                          ${(r.doplatek_status || '').toUpperCase() !== 'OK'
+                            ? `<button class="btn btn-outline btn-sm" data-mark="doplatek_status" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}">Označit OK</button>`
+                            : `<button class="btn btn-outline btn-sm" data-mark="doplatek_status" data-value="nova_prihlaska" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}">Vrátit zpět</button>`}
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
             `;
             body.querySelectorAll('[data-mark]').forEach(btn => btn.addEventListener('click', () => {
               const field = btn.dataset.mark;
