@@ -23,24 +23,53 @@ function initAuthUI() {
   const loginBtn = document.getElementById('login-button');
   if (!loginBtn) return;
 
+  // Avatar + mini menu místo přímého tlačítka "Odhlásit" (2026-08-25, plán sekce 7c,
+  // nápad 2026-08-23) - klik na avatar rozbalí menu "Profil"/"Odhlásit" místo dřívějšího
+  // rovnou-odhlásit. Menu se staví jednou dynamicky (žádná statická značka na stránkách
+  // není potřeba měnit) a vkládá se jako potomek #user-info, co má position:relative.
+  let userMenu = null;
+  function ensureUserMenu() {
+    if (userMenu) return userMenu;
+    userMenu = document.createElement('div');
+    userMenu.className = 'user-menu hidden';
+    userMenu.innerHTML = `
+      <button type="button" class="user-menu-item" id="user-menu-profil">Profil</button>
+      <button type="button" class="user-menu-item user-menu-item--danger" id="user-menu-logout">Odhlásit</button>
+    `;
+    userInfo.appendChild(userMenu);
+    userMenu.querySelector('#user-menu-logout').addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeUserMenu();
+      setLoggedOut();
+      if (typeof window.onOooLogout === 'function') window.onOooLogout();
+    });
+    userMenu.querySelector('#user-menu-profil').addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeUserMenu();
+      if (typeof window.openProfileModal === 'function') window.openProfileModal();
+    });
+    document.addEventListener('click', (e) => {
+      if (userMenu && !userMenu.classList.contains('hidden') && !userInfo.contains(e.target)) closeUserMenu();
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeUserMenu(); });
+    return userMenu;
+  }
+  function closeUserMenu() { if (userMenu) userMenu.classList.add('hidden'); }
+  function toggleUserMenu() { ensureUserMenu().classList.toggle('hidden'); }
+
   function setLoggedIn(user) {
     userName.textContent = user.userName;
     userAvatar.src = user.avatarUrl;
     userInfo.style.display = 'flex';
-    loginBtn.textContent = '';
-    const uname = document.createElement('span');
-    uname.className = 'btn-uname';
-    uname.textContent = user.userName;
-    const label = document.createElement('span');
-    label.className = 'btn-logout-text';
-    label.textContent = 'Odhlásit';
-    loginBtn.appendChild(uname);
-    loginBtn.appendChild(label);
-    loginBtn.dataset.mode = 'logout';
+    userInfo.onclick = toggleUserMenu;
+    loginBtn.style.display = 'none';
   }
 
   function setLoggedOut() {
     userInfo.style.display = 'none';
+    userInfo.onclick = null;
+    closeUserMenu();
+    loginBtn.style.display = '';
     loginBtn.textContent = 'Přihlásit';
     loginBtn.dataset.mode = 'login';
     localStorage.removeItem('oooUser');
@@ -57,13 +86,10 @@ function initAuthUI() {
     if (typeof window.onOooLogin === 'function') window.onOooLogin(data.user);
   });
 
+  // loginBtn je teď vidět jen odhlášený (přihlášený stav řeší #user-info + jeho menu),
+  // takže tenhle klik je vždycky "chci se přihlásit".
   loginBtn.addEventListener('click', function (e) {
     e.preventDefault();
-    if (loginBtn.dataset.mode === 'logout') {
-      setLoggedOut();
-      if (typeof window.onOooLogout === 'function') window.onOooLogout();
-      return;
-    }
     showLoginChoiceModal();
   });
 
