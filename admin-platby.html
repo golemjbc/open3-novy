@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta name="referrer" content="no-referrer">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OOO Community - Otevři se. Poznej se. Propoj se.">
+  <meta property="og:title" content="Platby — OOO Community">
+  <meta property="og:description" content="Eventy, Seznamování, Umění, Výzkum, ... Přidej se do komunity!">
+  <meta property="og:image" content="https://open3.cz/assets/images/LogoMETA.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://open3.cz/admin-platby.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="OOO Community">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://open3.cz/assets/images/LogoMETA.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="favicon.ico">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <title>Platby — OOO Community</title>
+  <style>
+    .hidden { display: none !important; }
+    .status-ok { color: #1a7f37; font-weight: 700; }
+    .status-pending { color: var(--text-muted); }
+    .status-warn { color: #b42318; font-weight: 600; }
+
+    /* Přehled FIO plateb (2026-08-25, na žádost - "napojení na FIO banku přes token...
+       abych mohl podle VS pátrat a potvrzovat"). Řádek transakce + rozbalovací formulář
+       ručního spárování, stejný "klikni a rozbal" vzorec jako doplatek v admin-akce.html
+       (pay-edit), ne natrvalo vystavený formulář u každého řádku. */
+    .fio-row { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 10px; }
+    .fio-row-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+    .fio-amt { font-weight: 700; font-variant-numeric: tabular-nums; font-size: 1.05rem; }
+    .fio-amt.negative { color: #b42318; }
+    .fio-amt.positive { color: #1a7f37; }
+    .fio-meta { font-size: 0.82rem; color: var(--text-muted); margin-top: 4px; }
+    .fio-poznamka { font-size: 0.82rem; color: var(--text-muted); margin-top: 6px; font-style: italic; }
+    .fio-actions { margin-top: 8px; display: flex; gap: 12px; flex-wrap: wrap; }
+    .fio-link { font-size: 0.8rem; font-weight: 600; color: var(--primary); background: none; border: none; padding: 0; cursor: pointer; }
+    .fio-link:hover { color: var(--primary-dark); text-decoration: underline; text-underline-offset: 2px; }
+    .fio-match-form { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+    .fio-match-form.open { display: flex; }
+    .fio-match-form .form-group { margin-bottom: 0; min-width: 160px; }
+    .fio-match-form label { font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 3px; }
+    .fio-match-form input, .fio-match-form select { padding: 7px 9px; border-radius: 8px; border: 1.5px solid var(--border); font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container">
+      <button class="nav-toggle" id="nav-toggle" aria-label="Menu">☰</button>
+      <a class="brand" href="index.html"><img src="assets/images/OOOlogo.png" alt="OOO logo"> <span>OOO Community</span></a>
+      <nav>
+        <ul class="nav-links" id="nav-links">
+          <li><a href="index.html">Domů</a></li>
+          <li><a href="akce.html">Akce</a></li>
+          <li><a href="pravidla.html">Pravidla</a></li>
+          <li><a href="contact.html">Kontakt</a></li>
+          <li id="nav-admin" class="hidden" data-self-managed="1"><a href="admin-akce.html">Administrace</a></li>
+        </ul>
+      </nav>
+      <div class="header-actions">
+        <div id="user-info"><img id="user-avatar" src="" alt=""><span id="user-name"></span></div>
+        <a id="login-button" href="#" class="btn btn-primary btn-sm">Přihlásit</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="section">
+    <div class="container">
+      <span class="eyebrow">Pro organizátory</span>
+      <h1>Platby</h1>
+
+      <div id="gate-loading" class="status-panel info">Ověřuji oprávnění…</div>
+
+      <div id="gate-denied" class="access-denied hidden">
+        <h3>Nemáš oprávnění</h3>
+        <p>Tahle stránka je pro radu a organizátory akcí. Přihlas se prosím přes tlačítko v hlavičce.</p>
+      </div>
+
+      <div id="admin-content" class="hidden">
+        <div class="admin-tabs">
+          <a href="admin-akce.html">Akce a přihlášky</a>
+          <a href="admin-dotazniky.html">Fronta dotazníků</a>
+          <a href="admin-clenove.html">Přehled členů</a>
+          <a href="admin-platby.html" class="active">Platby</a>
+        </div>
+
+        <div id="fio-token-notice" class="status-panel hidden" style="margin-bottom:16px;"></div>
+
+        <div class="admin-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.9rem; cursor:pointer;">
+              <input type="checkbox" id="include-resolved-toggle">
+              Zobrazit i vyřešené platby
+            </label>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+              <button id="btn-sync-now" class="btn btn-outline btn-sm">Stáhnout nové platby z FIO</button>
+              <button id="btn-backfill" class="btn btn-outline btn-sm">Dohledat historii (3 měsíce)</button>
+            </div>
+          </div>
+          <p class="form-hint">Časovač na pozadí stahuje nové platby z FIO banky každých 15 minut a podle variabilního symbolu je sám spáruje se zálohou/doplatkem, pokud vše sedí (akce, osoba, směr platby i částka). Cokoliv nesedí na první pohled, skončí tady k ruční kontrole - nikdy se nic nepotvrdí "napůl jistě". "Dohledat historii" je jednorázové zpětné stažení - platby, co byly dřív ručně potvrzené, se v historii jen zalogují (ne jako podezřelá duplicita), ať se najdou hlavně ty, co se dřív přehlédly.</p>
+          <div id="fio-sync-msg" class="form-hint"></div>
+          <div id="fio-payments-body" style="margin-top:16px;"><p class="form-hint">Načítám…</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-bottom">© 2026 OOO Community z.s. — Design: Adam</div>
+    </div>
+  </footer>
+
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/profile-modal.js"></script>
+  <script src="assets/js/member-modal.js"></script>
+  <script>
+    function identityPayload() { return getIdentityPayload(getLoggedUser()); }
+
+    const gateLoading = document.getElementById('gate-loading');
+    const gateDenied = document.getElementById('gate-denied');
+    const adminContent = document.getElementById('admin-content');
+    const navAdmin = document.getElementById('nav-admin');
+
+    let allEventsForSelect = [];
+
+    function loadEventsForSelect() {
+      return fetch(API_BASE + '/api/panel-list-events', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...identityPayload(), include_archived: true }),
+      })
+        .then(r => r.json())
+        .then(data => { if (data.ok) allEventsForSelect = data.events || []; })
+        .catch(() => {});
+    }
+
+    function eventSelectOptions(selectedEventId) {
+      return '<option value="">— vyber akci —</option>' + allEventsForSelect.map(e =>
+        `<option value="${e.event_id}" ${e.event_id === selectedEventId ? 'selected' : ''}>${e.nazev || e.event_id} (${e.event_id})</option>`
+      ).join('');
+    }
+
+    function stavLabel(stav) {
+      if (stav === 'auto-ok') return '<span class="status-ok">Potvrzeno automaticky</span>';
+      if (stav === 'potvrzeno-rucne') return '<span class="status-ok">Potvrzeno ručně</span>';
+      if (stav === 'needs-review') return '<span class="status-warn">Ke kontrole</span>';
+      if (stav === 'ignorovano') return '<span class="status-pending">Ignorováno</span>';
+      return '<span class="status-pending">Nespárováno</span>';
+    }
+
+    function typPlatbyLabel(t) {
+      if (t === 'zaloha') return 'záloha';
+      if (t === 'doplatek') return 'doplatek';
+      if (t === 'vratka') return 'vratka';
+      return '';
+    }
+
+    function renderPayments(payments) {
+      const body = document.getElementById('fio-payments-body');
+      if (!payments.length) { body.innerHTML = '<p class="form-hint">Žádné platby k zobrazení.</p>'; return; }
+      const unresolved = ['needs-review', 'unmatched'];
+      body.innerHTML = payments.map(p => `
+        <div class="fio-row" data-fio-id="${p.fio_id}">
+          <div class="fio-row-top">
+            <div>
+              <span class="fio-amt ${p.castka >= 0 ? 'positive' : 'negative'}">${p.castka >= 0 ? '+' : ''}${p.castka} ${p.mena || 'Kč'}</span>
+              <span class="fio-meta">${p.datum || ''}${p.vs ? ' · VS ' + p.vs : ''}</span>
+            </div>
+            <div>${stavLabel(p.stav)}</div>
+          </div>
+          <div class="fio-meta">
+            ${p.event_nazev || p.event_id ? `Akce: ${p.event_nazev || p.event_id}` : ''}
+            ${p.jmeno || p.ooo_id ? ` · Osoba: ${p.jmeno || p.ooo_id}` : ''}
+            ${p.typ_platby ? ` · ${typPlatbyLabel(p.typ_platby)}` : ''}
+          </div>
+          ${p.nazev_protiuctu || p.protiucet ? `<div class="fio-meta">Protiúčet: ${p.nazev_protiuctu || ''} ${p.protiucet || ''}</div>` : ''}
+          ${p.zprava ? `<div class="fio-meta">Zpráva: ${p.zprava}</div>` : ''}
+          ${p.poznamka ? `<div class="fio-poznamka">${p.poznamka}</div>` : ''}
+          ${unresolved.includes(p.stav) ? `
+            <div class="fio-actions">
+              <button type="button" class="fio-link" data-toggle-match="${p.fio_id}">Spárovat ručně</button>
+              <button type="button" class="fio-link" data-ignore="${p.fio_id}">Ignorovat (nesouvisí s OOO)</button>
+            </div>
+            <div class="fio-match-form" id="match-form-${p.fio_id}">
+              <div class="form-group">
+                <label>Akce</label>
+                <select data-field="event_id">${eventSelectOptions(p.event_id)}</select>
+              </div>
+              <div class="form-group">
+                <label>ooo_id (Google)</label>
+                <input type="text" data-field="ooo_id" value="${p.ooo_id || ''}" placeholder="např. 00069">
+              </div>
+              <div class="form-group">
+                <label>Discord user_id</label>
+                <input type="text" data-field="user_id" placeholder="Discord ID">
+              </div>
+              <div class="form-group">
+                <label>Typ platby</label>
+                <select data-field="typ_platby">
+                  <option value="zaloha" ${p.typ_platby === 'zaloha' ? 'selected' : ''}>záloha</option>
+                  <option value="doplatek" ${p.typ_platby === 'doplatek' ? 'selected' : ''}>doplatek</option>
+                  <option value="vratka" ${p.typ_platby === 'vratka' ? 'selected' : ''}>vratka</option>
+                </select>
+              </div>
+              <button type="button" class="btn btn-primary btn-sm" data-confirm-match="${p.fio_id}">Potvrdit spárování</button>
+            </div>
+          ` : ''}
+        </div>
+      `).join('');
+
+      body.querySelectorAll('[data-toggle-match]').forEach(btn => btn.addEventListener('click', () => {
+        document.getElementById('match-form-' + btn.dataset.toggleMatch).classList.toggle('open');
+      }));
+
+      body.querySelectorAll('[data-ignore]').forEach(btn => btn.addEventListener('click', () => {
+        if (!confirm('Označit tuhle platbu jako nesouvisející s OOO? Zmizí z fronty k vyřešení.')) return;
+        reviewPayment(btn.dataset.ignore, 'ignore', {});
+      }));
+
+      body.querySelectorAll('[data-confirm-match]').forEach(btn => btn.addEventListener('click', () => {
+        const fioId = btn.dataset.confirmMatch;
+        const form = document.getElementById('match-form-' + fioId);
+        const event_id = form.querySelector('[data-field="event_id"]').value;
+        const ooo_id = form.querySelector('[data-field="ooo_id"]').value.trim();
+        const user_id = form.querySelector('[data-field="user_id"]').value.trim();
+        const typ_platby = form.querySelector('[data-field="typ_platby"]').value;
+        if (!event_id || (!ooo_id && !user_id)) { alert('Vyber akci a zadej ooo_id nebo Discord user_id.'); return; }
+        reviewPayment(fioId, 'match', { event_id, ooo_id: ooo_id || undefined, user_id: user_id || undefined, typ_platby });
+      }));
+    }
+
+    function reviewPayment(fio_id, action, extra) {
+      fetch(API_BASE + '/api/panel-review-fio-payment', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...identityPayload(), fio_id, action, ...extra }),
+      })
+        .then(r => r.json())
+        .then(res => {
+          if (!res.ok) { alert('Chyba: ' + (res.error || 'neznámá')); return; }
+          loadPayments();
+        })
+        .catch(err => alert('Chyba: ' + err.message));
+    }
+
+    function loadPayments() {
+      const includeResolved = document.getElementById('include-resolved-toggle').checked;
+      return fetch(API_BASE + '/api/panel-list-fio-payments', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...identityPayload(), include_resolved: includeResolved }),
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (!data.ok) throw new Error(data.error || 'Chyba při načítání plateb.');
+          renderPayments(data.payments);
+        });
+    }
+
+    document.getElementById('include-resolved-toggle').addEventListener('change', () => {
+      loadPayments().catch(err => alert('Chyba: ' + err.message));
+    });
+
+    document.getElementById('btn-sync-now').addEventListener('click', () => {
+      const msg = document.getElementById('fio-sync-msg');
+      msg.textContent = 'Stahuju…';
+      fetch(API_BASE + '/api/panel-sync-fio-payments', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(identityPayload()),
+      })
+        .then(r => r.json())
+        .then(res => {
+          if (!res.ok) { msg.textContent = 'Chyba: ' + (res.error || 'neznámá'); return; }
+          const notice = document.getElementById('fio-token-notice');
+          if (res.skipped) {
+            notice.textContent = res.reason;
+            notice.classList.remove('hidden');
+            msg.textContent = '';
+          } else {
+            notice.classList.add('hidden');
+            msg.textContent = `Staženo ${res.fetched} plateb (${res.new || 0} nových) - automaticky potvrzeno ${res.autoOk}, ke kontrole ${res.needsReview}, nespárováno ${res.unmatched}.`;
+          }
+          loadPayments();
+        })
+        .catch(err => { msg.textContent = 'Chyba: ' + err.message; });
+    });
+
+    document.getElementById('btn-backfill').addEventListener('click', () => {
+      if (!confirm('Dohledat platby za poslední 3 měsíce z FIO banky? Je to jednorázová akce - už dřív ručně potvrzené platby se jen zalogují (ne jako duplicita), hlavně se tím najdou ty, co se přehlédly.')) return;
+      const msg = document.getElementById('fio-sync-msg');
+      msg.textContent = 'Dohledávám historii (může to chvíli trvat)…';
+      fetch(API_BASE + '/api/panel-backfill-fio-payments', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...identityPayload(), days: 89 }),
+      })
+        .then(r => r.json())
+        .then(res => {
+          if (!res.ok) { msg.textContent = 'Chyba: ' + (res.error || 'neznámá'); return; }
+          const notice = document.getElementById('fio-token-notice');
+          if (res.skipped) {
+            notice.textContent = res.reason;
+            notice.classList.remove('hidden');
+            msg.textContent = '';
+          } else {
+            notice.classList.add('hidden');
+            msg.textContent = `Dohledáno (${res.dateFrom} – ${res.dateTo}): ${res.fetched} plateb (${res.new || 0} nových) - automaticky potvrzeno/zalogováno ${res.autoOk}, ke kontrole ${res.needsReview}, nespárováno ${res.unmatched}.`;
+          }
+          loadPayments();
+        })
+        .catch(err => { msg.textContent = 'Chyba: ' + err.message; });
+    });
+
+    // Přístupová brána - Rada NEBO Spolupracovník / tvůrce (stejná dvojice jako
+    // admin-akce.html - platby patří ke stejné agendě jako akce a přihlášky).
+    const loggedUser = getLoggedUser();
+    if (!loggedUser || !loggedUser.userId) {
+      gateLoading.classList.add('hidden');
+      gateDenied.classList.remove('hidden');
+    } else {
+      fetch(API_BASE + '/api/my-roles', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(identityPayload()),
+      })
+        .then(r => r.json())
+        .then(data => {
+          gateLoading.classList.add('hidden');
+          if (!data.rada && !data.spolupracovnik) {
+            gateDenied.classList.remove('hidden');
+          } else {
+            navAdmin.classList.remove('hidden');
+            adminContent.classList.remove('hidden');
+            Promise.all([loadEventsForSelect(), loadPayments()]).catch(err => alert('Chyba při načítání: ' + err.message));
+          }
+        })
+        .catch(() => {
+          gateLoading.classList.add('hidden');
+          gateDenied.classList.remove('hidden');
+        });
+    }
+  </script>
+</body>
+</html>
