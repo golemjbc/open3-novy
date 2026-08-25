@@ -665,3 +665,90 @@ p { margin: 0 0 16px; color: var(--text-muted); }
 .hidden { display: none !important; }
 .text-center { text-align: center; }
 .mt-lg { margin-top: 32px; }
+
+/* ---------- Znovupoužitelné okno detailu člena (Část B, 2026-08-24) ---------- */
+.member-modal-overlay {
+  position: fixed; inset: 0; background: rgba(10, 16, 69, 0.6); z-index: 1000;
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.member-modal {
+  background: var(--surface); border-radius: var(--radius); padding: 28px;
+  max-width: 560px; width: 100%; max-height: 88vh; overflow-y: auto;
+  box-shadow: var(--shadow-lg); position: relative;
+}
+.member-modal-close {
+  position: absolute; top: 12px; right: 16px; background: none; border: none;
+  font-size: 1.6rem; line-height: 1; color: var(--text-muted); cursor: pointer;
+}
+.member-modal-close:hover { color: var(--text); }
+.member-modal-loading, .member-modal-error, .member-modal-empty { color: var(--text-muted); font-size: 0.9rem; }
+.member-modal-error { color: #b42318; }
+.member-modal-header { display: flex; gap: 16px; align-items: center; margin-bottom: 16px; }
+.member-modal-header h3 { margin: 0 0 4px; }
+.member-modal-photo {
+  width: 88px; height: 88px; border-radius: var(--radius-sm); object-fit: contain; flex-shrink: 0;
+  background: var(--bg-alt); border: 1px solid var(--border); cursor: zoom-in;
+}
+.member-photo-lightbox {
+  position: fixed; inset: 0; background: rgba(10, 16, 69, 0.85); z-index: 1100;
+  display: flex; align-items: center; justify-content: center; padding: 24px; cursor: zoom-out;
+}
+.member-photo-lightbox img { max-width: 100%; max-height: 100%; border-radius: var(--radius); box-shadow: var(--shadow-lg); }
+.member-modal-photo-empty { border: 1px dashed var(--border); }
+.member-modal-contact { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+.member-modal h4 { margin: 20px 0 8px; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); }
+.member-access-list { display: flex; flex-direction: column; gap: 6px; }
+.member-access-row { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: var(--radius-sm); font-size: 0.88rem; }
+.member-access-ok { background: var(--success-bg); color: var(--success); }
+.member-access-waiting { background: var(--warning-bg); color: var(--warning); }
+.member-access-missing { background: var(--bg-alt); color: var(--text-muted); }
+.member-access-icon { font-weight: 700; }
+.member-history-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.member-history-list li { font-size: 0.88rem; background: var(--bg-alt); padding: 8px 12px; border-radius: var(--radius-sm); }
+.member-history-status { color: var(--text-muted); }
+.member-q-fields { display: flex; flex-direction: column; gap: 6px; }
+.member-q-field { font-size: 0.88rem; }
+.member-patron-actions { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
+.member-patron-actions select { padding: 8px 10px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); margin-left: 8px; }
+.member-patron-buttons { display: flex; gap: 10px; }
+.member-modal-msg { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+.member-notes-section { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
+.member-notes-checks { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.88rem; }
+.member-notes-checks label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.member-notes-section textarea { width: 100%; min-height: 60px; padding: 8px 10px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); font-family: inherit; font-size: 0.88rem; resize: vertical; box-sizing: border-box; }
+.member-notes-section label.member-notes-label { font-size: 0.82rem; color: var(--text-muted); display: block; margin-bottom: 4px; }
+
+.member-link { color: var(--primary); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; background: none; border: none; padding: 0; font: inherit; }
+.member-link:hover { color: var(--primary-dark); }
+
+/* Zrušená účast v přehledu přihlášek (2026-08-25) - řádek zůstává, jen prošedlý a
+   přeškrtnutý, ať je vidět historie, ne skrytý/smazaný záznam. */
+.reg-row-cancelled { opacity: 0.55; text-decoration: line-through; }
+.reg-row-cancelled .member-link { pointer-events: none; text-decoration: line-through; }
+
+/* ---------- Admin tabulky - responzivní na mobilu (2026-08-24, na žádost - vodorovné
+   posouvání "není přehledný") ---------- */
+.admin-tabs { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.admin-tabs a { padding: 10px 16px; font-size: 0.9rem; font-weight: 600; color: var(--text-muted); border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+.admin-tabs a:hover { color: var(--text); }
+.admin-tabs a.active { color: var(--primary); border-bottom-color: var(--primary); }
+.admin-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 24px; }
+.admin-card h3 { margin: 0 0 12px; }
+.admin-responsive-table-wrap { overflow-x: auto; }
+.admin-responsive-table { width: 100%; min-width: 480px; border-collapse: collapse; font-size: 0.88rem; }
+.admin-responsive-table th, .admin-responsive-table td {
+  text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top;
+}
+.admin-responsive-table th { font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); }
+@media (max-width: 700px) {
+  .admin-responsive-table-wrap { overflow-x: visible; }
+  .admin-responsive-table { min-width: 0; }
+  .admin-responsive-table thead { display: none; }
+  .admin-responsive-table, .admin-responsive-table tbody, .admin-responsive-table tr, .admin-responsive-table td { display: block; width: 100%; }
+  .admin-responsive-table tr { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 10px; }
+  .admin-responsive-table td { border-bottom: none; padding: 4px 0; white-space: normal; }
+  .admin-responsive-table td[data-label]::before {
+    content: attr(data-label) ": "; font-weight: 600; color: var(--text-muted);
+    font-size: 0.78rem; text-transform: uppercase;
+  }
+}

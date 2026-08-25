@@ -25,15 +25,58 @@
     .admin-event-card h3 { margin: 0 0 4px; }
     .admin-event-meta { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px; }
     .admin-event-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-    /* Tabulka přihlášek se na mobilu nevešla a posouvala celou stránku vodorovně
-       (2026-08-24, oprava) - teď se posouvá jen ona sama, uvnitř vlastního rámečku. */
-    .admin-reg-table-wrap { overflow-x: auto; margin-top: 12px; }
-    .admin-reg-table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 0.88rem; }
-    .admin-reg-table th, .admin-reg-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; white-space: nowrap; }
-    .admin-reg-table td:nth-child(2) { white-space: normal; }
-    .admin-reg-table th { font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); }
     .status-ok { color: #1a7f37; font-weight: 700; }
     .status-pending { color: var(--text-muted); }
+
+    /* Platební buňka (záloha/doplatek) v přehledu přihlášek (2026-08-25, potřetí
+       přepracováno na žádost - "pořád chaos", "nekoukal jsem se na mobilu"). Dva
+       problémy s předchozí verzí: (1) vlastní tabulka `.admin-reg-table` neuměla na
+       mobilu nic jiného než vodorovné posouvání, zatímco zbytek administrace
+       (admin-clenove.html, admin-dotazniky.html) už dávno používá sdílený vzor
+       `.admin-responsive-table` (řádek → karta s popisky na úzkém displeji) - tabulka
+       přihlášek teď na ten stejný sdílený vzor přechází, žádná nová/jiná mobilní
+       logika; (2) "karta v kartě" (fialový box uvnitř bílého řádku) působila těžce a
+       nesourodě se zbytkem tabulky - teď je to jen tenký řádek (částka + tečkový
+       indikátor stavu), akce jsou textové odkazy pod tím, a formulář na úpravu částky
+       se u doplatku zobrazí, jen když na to člověk klikne ("Upravit částku") - ne
+       natrvalo vystavený input jako předtím. */
+    .pay-line { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .pay-amt { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .pay-status { display: inline-flex; align-items: center; gap: 5px; font-size: 0.74rem; font-weight: 600; }
+    .pay-status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+    .pay-status--ok { color: var(--success); }
+    .pay-status--pending { color: var(--text-muted); }
+    .pay-links { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 4px; }
+    .pay-link { font-size: 0.76rem; font-weight: 600; color: var(--primary); background: none; border: none; padding: 0; cursor: pointer; }
+    .pay-link:hover { color: var(--primary-dark); text-decoration: underline; text-underline-offset: 2px; }
+    /* Přepínač zaplaceno/nezaplaceno (2026-08-25, na žádost - dřív textový odkaz
+       "Zrušit" vedle stavu platby, který si člověk spletl se "Zrušit účast" úplně
+       vpravo ve stejném řádku). Skutečný vizuální on/off přepínač jednoznačně
+       neznamená "zrušit", jen mění stav zaplaceno/nezaplaceno. */
+    .pay-switch { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; }
+    .pay-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+    .pay-switch-track { width: 34px; height: 19px; border-radius: 999px; background: var(--border); position: relative; flex-shrink: 0; transition: background .15s; }
+    .pay-switch-thumb { position: absolute; top: 2px; left: 2px; width: 15px; height: 15px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(10, 16, 69, 0.25); transition: transform .15s; }
+    .pay-switch input:checked ~ .pay-switch-track { background: var(--success); }
+    .pay-switch input:checked ~ .pay-switch-track .pay-switch-thumb { transform: translateX(15px); }
+    .pay-switch input:focus-visible ~ .pay-switch-track { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .pay-switch-label { font-size: 0.76rem; font-weight: 600; color: var(--text-muted); }
+    .pay-switch input:checked ~ .pay-switch-label { color: var(--success); }
+    .pay-edit { display: flex; gap: 6px; margin-top: 8px; }
+    .pay-edit.hidden { display: none; }
+    .pay-edit input[type=number] { width: 84px; padding: 6px 8px; border-radius: 8px; border: 1.5px solid var(--border); font-size: 0.85rem; background: var(--surface); font-variant-numeric: tabular-nums; -moz-appearance: textfield; appearance: textfield; }
+    .pay-edit input[type=number]::-webkit-outer-spin-button,
+    .pay-edit input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .pay-edit input[type=number]:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(175, 59, 110, 0.15); }
+    .pay-icon-btn { flex-shrink: 0; width: 30px; height: 30px; border-radius: 8px; border: none; background: var(--primary); color: #fff; cursor: pointer; font-size: 0.85rem; font-weight: 700; line-height: 1; display: flex; align-items: center; justify-content: center; transition: background .15s, transform .1s; }
+    .pay-icon-btn:hover { background: var(--primary-dark); }
+    .pay-icon-btn:active { transform: scale(0.94); }
+    /* Sloupce Jméno/Účast v tabulce přihlášek mají tlačítka/odkazy, ne jen text - v
+       responzivním (kartovém) módu na mobilu potřebují trochu prostoru navíc pod
+       popiskem, ať tlačítko nekoliduje s řádkem nad sebou. */
+    @media (max-width: 700px) {
+      #registrations-body .admin-responsive-table td[data-label] { padding-top: 6px; padding-bottom: 6px; }
+    }
     .admin-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
     .admin-form-grid .form-group { margin-bottom: 0; }
     .hidden { display: none !important; }
@@ -81,14 +124,14 @@
 
   <section class="section">
     <div class="container">
-      <span class="eyebrow">Administrace</span>
+      <span class="eyebrow">Pro organizátory</span>
       <h1>Akce a přihlášky</h1>
 
       <div id="gate-loading" class="status-panel info">Ověřuji oprávnění…</div>
 
       <div id="gate-denied" class="access-denied hidden">
         <h3>Nemáš oprávnění</h3>
-        <p>Tahle stránka je jen pro radu. Přihlas se prosím přes tlačítko v hlavičce účtem, co má roli Rada.</p>
+        <p>Tahle stránka je pro radu a organizátory akcí. Přihlas se prosím přes tlačítko v hlavičce účtem, co má roli Rada nebo Spolupracovník / tvůrce.</p>
       </div>
 
       <div id="admin-content" class="hidden">
@@ -203,6 +246,7 @@
   </footer>
 
   <script src="assets/js/auth.js"></script>
+  <script src="assets/js/member-modal.js"></script>
   <script>
     function identityPayload() {
       const user = getLoggedUser();
@@ -492,6 +536,33 @@
       return (status || '').toUpperCase() === 'OK' ? '<span class="status-ok">OK</span>' : `<span class="status-pending">${status || '—'}</span>`;
     }
 
+    // Jedna platební buňka (záloha/doplatek) v přehledu přihlášek (2026-08-25, verze 5 -
+    // skutečný přepínač zaplaceno/nezaplaceno místo textového odkazu "Zrušit", co si
+    // šlo splést se "Zrušit účast" ve stejném řádku) - částka nahoře, pod tím přepínač
+    // stavu platby a u doplatku navíc odkaz na úpravu částky (editId = id skryté sekce,
+    // přepíná se v listeneru u [data-toggle-edit]).
+    function payCell({ amount, isOk, cancelled, toggle, setAmount, editId }) {
+      const amt = `<span class="pay-amt">${amount} Kč</span>`;
+      if (cancelled) {
+        const status = `<span class="pay-status pay-status--${isOk ? 'ok' : 'pending'}">${isOk ? 'Zaplaceno' : 'Čeká'}</span>`;
+        return `<div class="pay-line">${amt}${status}</div>`;
+      }
+      const line = `<div class="pay-line">${amt}</div>`;
+      const toggleSwitch = `
+        <label class="pay-switch" title="${isOk ? 'Označit jako nezaplacené' : 'Označit jako zaplacené'}">
+          <input type="checkbox" ${isOk ? 'checked' : ''} data-mark="${toggle.field}" data-ooo="${toggle.ooo || ''}" data-user="${toggle.user || ''}">
+          <span class="pay-switch-track"><span class="pay-switch-thumb"></span></span>
+          <span class="pay-switch-label">${isOk ? 'Zaplaceno' : 'Nezaplaceno'}</span>
+        </label>`;
+      const editToggle = setAmount ? `<button type="button" class="pay-link" data-toggle-edit="${editId}">Aktualizovat částku</button>` : '';
+      const editForm = setAmount ? `
+        <div class="pay-edit hidden" id="${editId}">
+          <input type="number" min="0" step="1" value="${amount || ''}" placeholder="Kč" class="doplatek-input" data-ooo="${setAmount.ooo || ''}" data-user="${setAmount.user || ''}">
+          <button type="button" class="pay-icon-btn" data-set-doplatek="1" data-ooo="${setAmount.ooo || ''}" data-user="${setAmount.user || ''}" title="Uložit částku a poslat notifikaci">✓</button>
+        </div>` : '';
+      return `${line}<div class="pay-links">${toggleSwitch}${editToggle}</div>${editForm}`;
+    }
+
     function loadRegistrations(eventId) {
       fetch(API_BASE + '/api/panel-list-registrations', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -511,24 +582,32 @@
             body.innerHTML = '<p class="form-hint">Zatím nikdo přihlášený.</p>';
           } else {
             body.innerHTML = `
-              <div class="admin-reg-table-wrap">
-                <table class="admin-reg-table">
-                  <thead><tr><th>Jméno</th><th>Kontakt</th><th>Typ účasti</th><th>Záloha</th><th>Doplatek</th></tr></thead>
+              <div class="admin-responsive-table-wrap">
+                <table class="admin-responsive-table">
+                  <thead><tr><th>Jméno</th><th>Kontakt</th><th>Typ účasti</th><th>Záloha</th><th>Doplatek</th><th>Účast</th></tr></thead>
                   <tbody>
-                    ${data.registrations.map(r => `
-                      <tr>
-                        <td>${r.jmeno || '—'}</td>
-                        <td>${r.email || ''}${r.telefon ? ' · ' + r.telefon : ''}</td>
-                        <td>${r.typ_ucasti || ''}</td>
-                        <td>${statusLabel(r.deposit_status)} (${r.deposit || 0} Kč)
-                          ${(r.deposit_status || '').toUpperCase() !== 'OK'
-                            ? `<button class="btn btn-outline btn-sm" data-mark="deposit_status" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}">Označit OK</button>`
-                            : `<button class="btn btn-outline btn-sm" data-mark="deposit_status" data-value="nova_prihlaska" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}">Vrátit zpět</button>`}
-                        </td>
-                        <td>${statusLabel(r.doplatek_status)} (${r.doplatek || 0} Kč)
-                          ${(r.doplatek_status || '').toUpperCase() !== 'OK'
-                            ? `<button class="btn btn-outline btn-sm" data-mark="doplatek_status" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}">Označit OK</button>`
-                            : `<button class="btn btn-outline btn-sm" data-mark="doplatek_status" data-value="nova_prihlaska" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}">Vrátit zpět</button>`}
+                    ${data.registrations.map((r, i) => `
+                      <tr${r.odhlaseno_datum ? ' class="reg-row-cancelled"' : ''}>
+                        <td data-label="Jméno">${(r.ooo_id || r.user_id) ? `<button type="button" class="member-link" data-ooo="${r.ooo_id || ''}" data-discord="${r.user_id || ''}">${r.jmeno || r.ooo_id || r.user_id}</button>` : (r.jmeno || '—')}</td>
+                        <td data-label="Kontakt">${r.email || ''}${r.telefon ? ' · ' + r.telefon : ''}</td>
+                        <td data-label="Typ účasti">${r.typ_ucasti || ''}</td>
+                        <td data-label="Záloha">${payCell({
+                          amount: r.deposit || 0,
+                          isOk: (r.deposit_status || '').toUpperCase() === 'OK',
+                          cancelled: !!r.odhlaseno_datum,
+                          toggle: { field: 'deposit_status', ooo: r.ooo_id, user: r.user_id },
+                        })}</td>
+                        <td data-label="Doplatek">${payCell({
+                          amount: r.doplatek || 0,
+                          isOk: (r.doplatek_status || '').toUpperCase() === 'OK',
+                          cancelled: !!r.odhlaseno_datum,
+                          toggle: { field: 'doplatek_status', ooo: r.ooo_id, user: r.user_id },
+                          setAmount: { ooo: r.ooo_id, user: r.user_id },
+                          editId: 'doplatek-edit-' + i,
+                        })}</td>
+                        <td data-label="Účast">${r.odhlaseno_datum
+                          ? `Zrušeno ${r.odhlaseno_datum}${r.vraceno_castka ? ' (vráceno ' + r.vraceno_castka + ' Kč)' : ''}`
+                          : `<button class="btn btn-outline btn-sm" data-cancel="1" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}" data-jmeno="${(r.jmeno || r.ooo_id || r.user_id || '').replace(/"/g, '&quot;')}" data-deposit="${(r.deposit_status || '').toUpperCase() === 'OK' ? (r.deposit || 0) : 0}" data-doplatek="${(r.doplatek_status || '').toUpperCase() === 'OK' ? (r.doplatek || 0) : 0}">Zrušit účast</button>`}
                         </td>
                       </tr>
                     `).join('')}
@@ -536,22 +615,57 @@
                 </table>
               </div>
             `;
-            body.querySelectorAll('[data-mark]').forEach(btn => btn.addEventListener('click', () => {
-              const field = btn.dataset.mark;
-              const value = btn.dataset.value || 'OK';
+            body.querySelectorAll('.member-link[data-ooo]').forEach(btn => btn.addEventListener('click', () => openMemberModal(btn.dataset.ooo, btn.dataset.discord)));
+            // Přepínač zaplaceno/nezaplaceno (2026-08-25) - checkbox, ne tlačítko: stav
+            // "zapnuto" = OK, "vypnuto" = nova_prihlaska. Při chybě se vizuálně vrátí
+            // zpátky, ať přepínač nelže o stavu, co se ve skutečnosti nezapsal.
+            body.querySelectorAll('[data-mark]').forEach(input => input.addEventListener('change', () => {
+              const field = input.dataset.mark;
+              const value = input.checked ? 'OK' : 'nova_prihlaska';
               fetch(API_BASE + '/api/panel-update-registration', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   ...identityPayload(), event_id: eventId,
-                  ooo_id: btn.dataset.ooo || undefined, user_id: btn.dataset.user || undefined,
+                  ooo_id: input.dataset.ooo || undefined, user_id: input.dataset.user || undefined,
                   field, value,
                 }),
               })
                 .then(r => r.json())
                 .then(res => {
-                  if (!res.ok) { alert('Chyba: ' + (res.error || 'neznámá')); return; }
+                  if (!res.ok) { alert('Chyba: ' + (res.error || 'neznámá')); input.checked = !input.checked; return; }
                   loadRegistrations(eventId);
                   loadEvents();
+                })
+                .catch(err => { alert('Chyba: ' + err.message); input.checked = !input.checked; });
+            }));
+            body.querySelectorAll('[data-cancel]').forEach(btn => btn.addEventListener('click', () => openCancelModal({
+              eventId,
+              ooo_id: btn.dataset.ooo || null,
+              user_id: btn.dataset.user || null,
+              jmeno: btn.dataset.jmeno,
+              paidTotal: (Number(btn.dataset.deposit) || 0) + (Number(btn.dataset.doplatek) || 0),
+            })));
+            body.querySelectorAll('[data-toggle-edit]').forEach(btn => btn.addEventListener('click', () => {
+              const el = document.getElementById(btn.dataset.toggleEdit);
+              if (el) el.classList.toggle('hidden');
+            }));
+            body.querySelectorAll('[data-set-doplatek]').forEach(btn => btn.addEventListener('click', () => {
+              const input = btn.parentElement.querySelector('.doplatek-input');
+              const doplatek_amount = Number(input.value);
+              if (Number.isNaN(doplatek_amount) || doplatek_amount < 0) { alert('Neplatná částka.'); return; }
+              fetch(API_BASE + '/api/panel-set-doplatek', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  ...identityPayload(), event_id: eventId,
+                  ooo_id: btn.dataset.ooo || undefined, user_id: btn.dataset.user || undefined,
+                  doplatek_amount,
+                }),
+              })
+                .then(r => r.json())
+                .then(res => {
+                  if (!res.ok) { alert('Chyba: ' + (res.error || 'neznámá')); return; }
+                  alert(res.notify_ok ? 'Doplatek nastaven, notifikace odeslána.' : 'Doplatek nastaven, notifikaci se ale nepodařilo odeslat (nebo o něm nemáme kontakt) - dej mu prosím vědět sám.');
+                  loadRegistrations(eventId);
                 })
                 .catch(err => alert('Chyba: ' + err.message));
             }));
@@ -560,6 +674,80 @@
           card.scrollIntoView({ behavior: 'smooth' });
         })
         .catch(err => alert('Chyba: ' + err.message));
+    }
+
+    // Zrušit účast (2026-08-25) - spočítá, co bylo zaplaceno (jen podle deposit_status/
+    // doplatek_status = OK, žádné napojení na bankovní výpis zatím není), necha
+    // organizátora částku ručně upravit (částečná vratka), a po potvrzení ukáže platební
+    // blok obráceně - QR/VS/zpráva pro vratku na účet, který organizátor zadá ručně
+    // (dokud nejede automatické párování plateb). Přihláška se nemaže, jen se od teď
+    // zobrazuje prošedle/přeškrtnutá (viz reg-row-cancelled výše).
+    function cancelModalEnsureDom() {
+      if (document.getElementById('cancel-modal-overlay')) return;
+      const overlay = document.createElement('div');
+      overlay.id = 'cancel-modal-overlay';
+      overlay.className = 'member-modal-overlay hidden';
+      overlay.innerHTML = `
+        <div class="member-modal">
+          <button type="button" class="member-modal-close" aria-label="Zavřít">&times;</button>
+          <div class="member-modal-body" id="cancel-modal-body"></div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) closeCancelModal(); });
+      overlay.querySelector('.member-modal-close').addEventListener('click', closeCancelModal);
+    }
+    function closeCancelModal() {
+      const overlay = document.getElementById('cancel-modal-overlay');
+      if (overlay) overlay.classList.add('hidden');
+    }
+    function openCancelModal({ eventId, ooo_id, user_id, jmeno, paidTotal }) {
+      cancelModalEnsureDom();
+      const overlay = document.getElementById('cancel-modal-overlay');
+      const bodyEl = document.getElementById('cancel-modal-body');
+      bodyEl.innerHTML = `
+        <h3>Zrušit účast — ${jmeno}</h3>
+        <p class="member-modal-contact">Zaplaceno celkem (podle stavu záloha/doplatek): <strong>${paidTotal} Kč</strong>. Částku lze upravit, pokud se má vrátit jen část.</p>
+        <label class="member-notes-label">Kolik vrátit (Kč)
+          <input type="number" id="cancel-refund-amount" min="0" step="1" value="${paidTotal}" style="width:100%; padding:8px 10px; border-radius:8px; border:1.5px solid var(--border); box-sizing:border-box; margin-top:4px;">
+        </label>
+        <label class="member-notes-label" style="margin-top:12px; display:block;">Číslo účtu člena (odkud platil / kam se má vrátit)
+          <input type="text" id="cancel-refund-iban" placeholder="např. 123456789/0800" style="width:100%; padding:8px 10px; border-radius:8px; border:1.5px solid var(--border); box-sizing:border-box; margin-top:4px;">
+        </label>
+        <p class="form-hint" style="margin-top:6px;">Zatím se platby nenačítají automaticky — číslo účtu zadej ručně podle bankovního výpisu.</p>
+        <div style="display:flex; gap:10px; margin-top:18px;">
+          <button type="button" class="btn btn-primary btn-sm" id="cancel-confirm-btn">Zrušit účast a spočítat vratku</button>
+          <button type="button" class="btn btn-outline btn-sm" id="cancel-abort-btn">Zpět</button>
+        </div>
+        <p class="member-modal-msg" id="cancel-modal-msg"></p>
+      `;
+      overlay.classList.remove('hidden');
+      bodyEl.querySelector('#cancel-abort-btn').addEventListener('click', closeCancelModal);
+      bodyEl.querySelector('#cancel-confirm-btn').addEventListener('click', () => {
+        const refund_amount = Number(document.getElementById('cancel-refund-amount').value);
+        const refund_iban = document.getElementById('cancel-refund-iban').value.trim();
+        if (Number.isNaN(refund_amount) || refund_amount < 0) { document.getElementById('cancel-modal-msg').textContent = 'Neplatná částka.'; return; }
+        document.getElementById('cancel-modal-msg').textContent = 'Ukládám…';
+        fetch(API_BASE + '/api/panel-cancel-registration', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...identityPayload(), event_id: eventId, ooo_id: ooo_id || undefined, user_id: user_id || undefined, refund_amount, refund_iban: refund_iban || undefined }),
+        })
+          .then(r => r.json())
+          .then(res => {
+            if (!res.ok) { document.getElementById('cancel-modal-msg').textContent = 'Chyba: ' + (res.error || 'neznámá'); return; }
+            bodyEl.innerHTML = `
+              <h3>Účast zrušena — ${jmeno}</h3>
+              <p class="member-modal-contact">Vratka: <strong>${res.vraceno_castka} Kč</strong>, VS: <strong>${res.vs}</strong></p>
+              ${res.qr_base64
+                ? `<img src="data:image/png;base64,${res.qr_base64}" alt="QR platba vratky" style="max-width:220px; display:block; margin:12px 0;"><p class="member-modal-contact" style="white-space:pre-line;">${res.payment_text || ''}</p>`
+                : `<p class="form-hint">Číslo účtu nebylo zadané nebo je vratka 0 Kč — QR se nevygeneroval. Při ruční platbě použij VS ${res.vs} a do zprávy pro příjemce napiš název akce, "vratka" a tenhle VS.</p>`}
+              <p class="form-hint">${res.notify_ok ? 'Členovi odešla notifikace (DM/e-mail), že mu byla účast zrušená.' : 'Notifikaci se nepodařilo odeslat (nebo o něm nemáme kontakt) — dej mu prosím vědět sám.'}</p>
+              <div style="margin-top:16px;"><button type="button" class="btn btn-outline btn-sm" id="cancel-done-btn">Zavřít</button></div>
+            `;
+            bodyEl.querySelector('#cancel-done-btn').addEventListener('click', () => { closeCancelModal(); loadRegistrations(eventId); loadEvents(); });
+          })
+          .catch(err => { document.getElementById('cancel-modal-msg').textContent = 'Chyba: ' + err.message; });
+      });
     }
 
     document.getElementById('btn-new-event').addEventListener('click', () => {
@@ -605,14 +793,14 @@
         .catch(err => { document.getElementById('event-form-msg').textContent = 'Chyba: ' + err.message; });
     });
 
-    // Přístupová brána - stejný vzorec jako u ostatních stránek (loadMyRoles), jen
-    // rozhodující je role Rada. Frontend gating je jen UX - backend (requireAdminIdentity)
-    // ověřuje roli znovu, nezávisle, u každého volání.
+    // Přístupová brána - Rada NEBO Spolupracovník / tvůrce (2026-08-25, na žádost - akce
+    // a přihlášky spravují organizátoři, ne jen rada). Frontend gating je jen UX - backend
+    // (requireAdminIdentity) ověřuje roli znovu, nezávisle, u každého volání.
     const loggedUser = getLoggedUser();
     if (!loggedUser || !loggedUser.userId) {
       gateLoading.classList.add('hidden');
       gateDenied.classList.remove('hidden');
-      gateDenied.querySelector('p').textContent = 'Tahle stránka je jen pro radu. Přihlas se prosím přes tlačítko v hlavičce.';
+      gateDenied.querySelector('p').textContent = 'Tahle stránka je pro radu a organizátory akcí. Přihlas se prosím přes tlačítko v hlavičce.';
     } else {
       fetch(API_BASE + '/api/members')
         .then(r => r.json())
@@ -620,8 +808,9 @@
           const me = members.find(m => m.user_id === loggedUser.userId);
           const roles = (me && me.roles) || {};
           const isRada = (roles['Rada'] || '').toString().trim().toUpperCase() === 'X';
+          const isSpolupracovnik = (roles['Spolupracovník / tvůrce'] || '').toString().trim().toUpperCase() === 'X';
           gateLoading.classList.add('hidden');
-          if (!isRada) {
+          if (!isRada && !isSpolupracovnik) {
             gateDenied.classList.remove('hidden');
           } else {
             navAdmin.classList.remove('hidden');
