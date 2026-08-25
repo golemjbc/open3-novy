@@ -16,6 +16,53 @@ function getLoggedUser() {
   try { return JSON.parse(raw); } catch (e) { return null; }
 }
 
+function isGoogleUser(user) {
+  return !!(user && (user.provider === 'google' || /^google_/.test(user.userId || '')));
+}
+
+// Tělo požadavku na identitu pro backend (2026-08-25, na žádost - "stačila by na to jedna
+// funkce" - tahle přesná logika byla nezávisle přepsaná na 4 místech: admin-akce.html,
+// admin-clenove.html, admin-dotazniky.html, member-modal.js, profile-modal.js). Google
+// cesta posílá credential (ověří se serverem), Discord cesta jen ID (server si identitu
+// dohledá sám, stejný důvěryhodnostní model jako u zbytku backendu).
+function getIdentityPayload(user) {
+  if (!user) return null;
+  return isGoogleUser(user) ? { credential: user.credential } : { discord_user_id: user.userId };
+}
+
+// Položka "Administrace" v hlavičce (2026-08-25, oprava - "zobrazuje se se zpožděním").
+// Dřív to KAŽDÁ stránka zjišťovala vlastní kopií stejného kódu přes /api/members, což
+// stahuje do prohlížeče celý seznam všech ~360 členů jen kvůli jedné vlastní řádce -
+// proto to bylo vidět s citelnou prodlevou. Teď: (1) jedno místo pro všechny stránky,
+// (2) lehký endpoint my-roles vrací jen dva booleany za volajícího, ne celou tabulku,
+// (3) mezivýsledek z posledního přihlášení se ukáže hned z localStorage, na pozadí se
+// ověří znovu - druhá a další návštěva tak nemá vidět žádnou prodlevu, jen případnou
+// tichou opravu, kdyby se role mezitím změnila. Zároveň doplněna kontrola role
+// Spolupracovník / tvůrce (dřív se kontrolovala jen Rada, i když admin panel už týden
+// pouští oba).
+function initAdminNavLink(user) {
+  const nav = document.getElementById('nav-admin');
+  // Admin stránky (admin-akce/clenove/dotazniky.html) mají vlastní přístupovou bránu, co
+  // položku "Administrace" v menu řeší samy jako součást stejné kontroly, co pouští na
+  // celou stránku (requireAdminIdentity) - tenhle obecný kód by jim do toho jen kolidoval
+  // (souběh dvou nezávislých asynchronních kontrol). Značka data-self-managed to odliší.
+  if (!nav || nav.dataset.selfManaged === '1') return;
+  if (!user || !user.userId) { nav.style.display = 'none'; return; }
+  const cacheKey = 'oooIsAdmin_' + user.userId;
+  if (localStorage.getItem(cacheKey) === '1') nav.style.display = '';
+  const payload = isGoogleUser(user) ? { credential: user.credential } : { discord_user_id: user.userId };
+  fetch(API_BASE + '/api/my-roles', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+  })
+    .then(r => r.json())
+    .then(data => {
+      const isAdmin = !!(data.ok && (data.rada || data.spolupracovnik));
+      nav.style.display = isAdmin ? '' : 'none';
+      localStorage.setItem(cacheKey, isAdmin ? '1' : '0');
+    })
+    .catch(() => {});
+}
+
 function initAuthUI() {
   const userInfo = document.getElementById('user-info');
   const userName = document.getElementById('user-name');
@@ -73,16 +120,19 @@ function initAuthUI() {
     loginBtn.textContent = 'Přihlásit';
     loginBtn.dataset.mode = 'login';
     localStorage.removeItem('oooUser');
+    initAdminNavLink(null);
   }
 
   const stored = getLoggedUser();
   if (stored && stored.userId) setLoggedIn(stored); else setLoggedOut();
+  initAdminNavLink(stored);
 
   window.addEventListener('message', function (event) {
     const data = event.data;
     if (!data || data.type !== 'ooo-discord-login') return;
     localStorage.setItem('oooUser', JSON.stringify(data.user));
     setLoggedIn(data.user);
+    initAdminNavLink(data.user);
     if (typeof window.onOooLogin === 'function') window.onOooLogin(data.user);
   });
 
@@ -147,6 +197,7 @@ function initAuthUI() {
             localStorage.setItem('oooUser', JSON.stringify(user));
             overlay.remove();
             setLoggedIn(user);
+            initAdminNavLink(user);
             if (typeof window.onOooLogin === 'function') window.onOooLogin(user);
           } catch (err) {
             alert('Chyba při ověřování: ' + err.message);

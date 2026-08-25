@@ -27,12 +27,7 @@ function closeProfileModal() {
   if (overlay) overlay.classList.add('hidden');
 }
 
-function profileIdentityPayload() {
-  const user = getLoggedUser();
-  if (!user) return null;
-  const isGoogleUser = !!(user.provider === 'google' || /^google_/.test(user.userId || ''));
-  return isGoogleUser ? { credential: user.credential } : { discord_user_id: user.userId };
-}
+function profileIdentityPayload() { return getIdentityPayload(getLoggedUser()); }
 
 // Sekce "propojení účtů" (2026-08-25, na žádost - "obousměrné párování"). Google → Discord
 // už existovalo (generate-pair-code + /parovat na Discordu), jen se to nikde hezky

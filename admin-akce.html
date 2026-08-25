@@ -77,8 +77,17 @@
     @media (max-width: 700px) {
       #registrations-body .admin-responsive-table td[data-label] { padding-top: 6px; padding-bottom: 6px; }
     }
-    .admin-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+    .admin-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
     .admin-form-grid .form-group { margin-bottom: 0; }
+    /* Nadpisky skupin ve formuláři akce (2026-08-25, na žádost - "srovnej mi to logicky,
+       datumy k sobě, částky k sobě") - stejná pole, jen rozdělená do jasně pojmenovaných
+       bloků (Základní info / Termíny / Platba / Popis / Fotky) místo jednoho dlouhého
+       neuspořádaného seznamu. */
+    .form-section-label {
+      font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+      color: var(--primary); margin: 24px 0 10px; padding-top: 16px; border-top: 1px solid var(--border);
+    }
+    .form-section-label:first-of-type { margin-top: 0; padding-top: 0; border-top: none; }
     .hidden { display: none !important; }
     /* Datum + čas (2026-08-24, oprava - dřív se dvě nativní pole mačkala vedle sebe do
        jednoho úzkého sloupce, na některých prohlížečích/šířkách se to překrývalo).
@@ -98,6 +107,7 @@
     }
     /* Sticky hlavička jinak při scrollIntoView zakryje horní část formuláře. */
     #event-form-card { scroll-margin-top: calc(var(--header-h) + 16px); }
+    /* .admin-tabs - sdílené v style.css (2026-08-24, tři admin stránky). */
   </style>
 </head>
 <body>
@@ -112,7 +122,7 @@
           <li><a href="akce.html">Akce</a></li>
           <li><a href="pravidla.html">Pravidla</a></li>
           <li><a href="contact.html">Kontakt</a></li>
-          <li id="nav-admin" class="hidden"><a href="admin-akce.html" class="active">Administrace</a></li>
+          <li id="nav-admin" class="hidden" data-self-managed="1"><a href="admin-akce.html" class="active">Administrace</a></li>
         </ul>
       </nav>
       <div class="header-actions">
@@ -164,10 +174,21 @@
         <div id="event-form-card" class="admin-event-card hidden">
           <h3 id="event-form-title">Nová akce</h3>
           <div id="event-form-id-badge" class="admin-event-meta"></div>
+          <div class="form-section-label">Základní info</div>
           <div class="admin-form-grid">
             <div class="form-group"><label class="form-label">Název</label><input id="f-nazev" class="form-control"></div>
             <div class="form-group"><label class="form-label">Místo</label><input id="f-místo" class="form-control"></div>
             <div class="form-group"><label class="form-label">Lokalita (přesná adresa, po platbě)</label><input id="f-lokalita_presna" class="form-control"></div>
+            <div class="form-group"><label class="form-label">Kapacita (počet lidí, nepovinné)</label><input id="f-kapacita" class="form-control" inputmode="numeric" placeholder="např. 20"><p class="form-hint">Na webu se z toho nikdy neukáže číslo, jen orientační "zaplněnost" (Spousta prostoru / Začíná se plnit / ... / Obsazeno). Prázdné pole = zaplněnost se na webu vůbec nezobrazuje.</p></div>
+            <div class="form-group">
+              <label class="form-label">Vyžadovaná Discord role (přesný název sloupce)</label>
+              <input id="f-discord_role_required" class="form-control">
+              <p class="form-hint">Předvyplní se podle typu akce. Víc rolí odděl čárkou - stačí, když má člověk aspoň jednu z nich.</p>
+            </div>
+          </div>
+
+          <div class="form-section-label">Termíny</div>
+          <div class="admin-form-grid">
             <div class="form-group">
               <label class="form-label">Datum od</label>
               <div class="datetime-row">
@@ -189,26 +210,29 @@
                 <input type="time" id="f-registrace_konec-time" class="form-control">
               </div>
             </div>
-            <div class="form-group"><label class="form-label">Cena (jednorázovka)</label><div class="amount-field"><input id="f-cena" class="form-control" inputmode="numeric"><span class="amount-suffix">Kč</span></div></div>
-            <div class="form-group"><label class="form-label">Záloha</label><div class="amount-field"><input id="f-zaloha" class="form-control" inputmode="numeric"><span class="amount-suffix">Kč</span></div></div>
-            <div class="form-group"><label class="form-label">Doplatek</label><div class="amount-field"><input id="f-doplatek" class="form-control" inputmode="numeric"><span class="amount-suffix">Kč</span></div></div>
+          </div>
+
+          <div class="form-section-label">Platba</div>
+          <div class="admin-form-grid">
             <div class="form-group">
               <label class="form-label">Jednorázová platba?</label>
               <select id="f-jednorazova" class="form-control"><option value="ne">Ne (záloha + doplatek)</option><option value="ano">Ano (jedna platba)</option></select>
+              <p class="form-hint">Určuje, jestli se dole počítá s "Cenou", nebo se "Zálohou" + "Doplatkem".</p>
             </div>
+            <div class="form-group"><label class="form-label">Cena (jednorázovka)</label><div class="amount-field"><input id="f-cena" class="form-control" inputmode="numeric"><span class="amount-suffix">Kč</span></div></div>
+            <div class="form-group"><label class="form-label">Záloha</label><div class="amount-field"><input id="f-zaloha" class="form-control" inputmode="numeric"><span class="amount-suffix">Kč</span></div></div>
+            <div class="form-group"><label class="form-label">Doplatek</label><div class="amount-field"><input id="f-doplatek" class="form-control" inputmode="numeric"><span class="amount-suffix">Kč</span></div></div>
             <div class="form-group"><label class="form-label">Účet</label><input id="f-ucet" class="form-control"></div>
             <div class="form-group"><label class="form-label">IBAN</label><input id="f-IBAN" class="form-control"></div>
-            <div class="form-group">
-              <label class="form-label">Vyžadovaná Discord role (přesný název sloupce)</label>
-              <input id="f-discord_role_required" class="form-control">
-              <p class="form-hint">Předvyplní se podle typu akce. Víc rolí odděl čárkou - stačí, když má člověk aspoň jednu z nich.</p>
-            </div>
           </div>
-          <div class="form-group" style="margin-top:16px;">
+          <div class="form-section-label">Popis</div>
+          <div class="form-group">
             <label class="form-label">Popis (nové řádky se uloží jako zalomení)</label>
             <textarea id="f-popis" class="form-control" rows="6"></textarea>
           </div>
-          <div class="admin-form-grid" style="margin-top:16px;">
+
+          <div class="form-section-label">Fotky</div>
+          <div class="admin-form-grid">
             <div class="form-group">
               <label class="form-label" id="f-cover-label">Titulní fotka (na přehled akcí)</label>
               <div id="f-cover-existing" class="form-hint hidden"></div>
@@ -255,12 +279,7 @@
   <script src="assets/js/profile-modal.js"></script>
   <script src="assets/js/member-modal.js"></script>
   <script>
-    function identityPayload() {
-      const user = getLoggedUser();
-      if (!user) return null;
-      const isGoogleUser = !!(user.provider === 'google' || /^google_/.test(user.userId || ''));
-      return isGoogleUser ? { credential: user.credential } : { discord_user_id: user.userId };
-    }
+    function identityPayload() { return getIdentityPayload(getLoggedUser()); }
 
     const gateLoading = document.getElementById('gate-loading');
     const gateDenied = document.getElementById('gate-denied');
@@ -272,7 +291,7 @@
 
     const EDITABLE_FIELD_IDS = [
       'nazev', 'popis', 'místo', 'lokalita_presna',
-      'cena', 'jednorazova', 'zaloha', 'doplatek', 'ucet', 'IBAN', 'discord_role_required',
+      'cena', 'jednorazova', 'zaloha', 'doplatek', 'ucet', 'IBAN', 'discord_role_required', 'kapacita',
     ];
 
     // Datum/čas (2026-08-24, na žádost - "chytřejší pole než jen obyčejný textový") -
@@ -809,15 +828,13 @@
       gateDenied.classList.remove('hidden');
       gateDenied.querySelector('p').textContent = 'Tahle stránka je pro radu a organizátory akcí. Přihlas se prosím přes tlačítko v hlavičce.';
     } else {
-      fetch(API_BASE + '/api/members')
+      fetch(API_BASE + '/api/my-roles', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(identityPayload()),
+      })
         .then(r => r.json())
-        .then(members => {
-          const me = members.find(m => m.user_id === loggedUser.userId);
-          const roles = (me && me.roles) || {};
-          const isRada = (roles['Rada'] || '').toString().trim().toUpperCase() === 'X';
-          const isSpolupracovnik = (roles['Spolupracovník / tvůrce'] || '').toString().trim().toUpperCase() === 'X';
+        .then(data => {
           gateLoading.classList.add('hidden');
-          if (!isRada && !isSpolupracovnik) {
+          if (!data.rada && !data.spolupracovnik) {
             gateDenied.classList.remove('hidden');
           } else {
             navAdmin.classList.remove('hidden');

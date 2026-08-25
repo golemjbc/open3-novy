@@ -163,18 +163,6 @@
   <script src="assets/js/auth.js"></script>
   <script src="assets/js/profile-modal.js"></script>
   <script>
-    // Administrace v menu (2026-08-24) - stejná role-kontrola jako v akce.html.
-    (function () {
-      const nav = document.getElementById('nav-admin');
-      const user = getLoggedUser();
-      if (!nav || !user || !user.userId) return;
-      fetch(API_BASE + '/api/members').then(r => r.json()).then(members => {
-        const me = members.find(m => m.user_id === user.userId);
-        if (me && (me.roles['Rada'] || '').toString().trim().toUpperCase() === 'X') nav.style.display = '';
-      }).catch(() => {});
-    })();
-  </script>
-  <script>
     window.onOooLogin = () => location.reload();
 
     const params = new URLSearchParams(window.location.search);
@@ -194,7 +182,7 @@
     }
 
     const user = getLoggedUser();
-    const isGoogleUser = !!(user && (user.provider === 'google' || /^google_/.test(user.userId || '')));
+    const isGoogleUser = window.isGoogleUser(user);
     // Dva zdroje identity (2026-08-24, na výslovnou žádost - odkaz na dotazník bude i na
     // Discordu) - Google (credential) nebo Discord (userId, stejný důvěřovaný vzorec jako
     // zbytek appky u Discord přihlášení).

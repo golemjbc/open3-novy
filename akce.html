@@ -96,6 +96,19 @@
   <script src="assets/js/auth.js"></script>
   <script src="assets/js/profile-modal.js"></script>
   <script>
+    // Zaplněnost akce (2026-08-25) - `e.obsazenost` (pokud existuje) už z backendu nese
+    // hotovou frázi + vizuální procento pruhu, žádné číslo se tu nedopočítává ani
+    // neukazuje - jen se to vykreslí. Chybí-li obsazenost (akce nemá nastavenou kapacitu),
+    // nevykreslí se nic.
+    function renderOccupancy(obsazenost) {
+      if (!obsazenost) return '';
+      return `
+        <div class="occupancy">
+          <div class="occupancy-track"><div class="occupancy-fill" style="width:${obsazenost.fill}%"></div></div>
+          <div class="occupancy-text">Obsazenost: ${obsazenost.text}</div>
+        </div>`;
+    }
+
     function getSmartImageUrl(url) {
       if (!url) return null;
       const driveMatch = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
@@ -171,8 +184,7 @@
     // jeden dotaz na VŠECHNY registrace najednou (bez eventId filtru), ne po jedné.
     function loadMyRegistrations(loggedUser) {
       if (!loggedUser || !loggedUser.userId) return Promise.resolve(new Set());
-      const isGoogleUser = !!(loggedUser.provider === 'google' || /^google_/.test(loggedUser.userId || ''));
-      const body = isGoogleUser ? { credential: loggedUser.credential } : { user_id: loggedUser.userId };
+      const body = isGoogleUser(loggedUser) ? { credential: loggedUser.credential } : { user_id: loggedUser.userId };
       return fetch(API_BASE + '/api/my-registrations', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
       })
@@ -190,11 +202,8 @@
     const loggedUser = getLoggedUser();
 
     Promise.all([loadMyRoles(loggedUser), loadMyRegistrations(loggedUser)]).then(([myRoles, myRegisteredEventIds]) => {
-      // Administrace v menu (2026-08-24) - jen UX zkratka pro radu, backend admin
-      // endpointy stejnou roli ověřují znovu, nezávisle (requireAdminIdentity).
-      if ((myRoles['Rada'] || '').toString().trim().toUpperCase() === 'X') {
-        document.getElementById('nav-admin').style.display = '';
-      }
+      // Administrace v menu - řeší teď centrálně initAdminNavLink v auth.js (rychlejší,
+      // bez zpoždění, kontroluje i Spolupracovník / tvůrce, ne jen Rada; 2026-08-25).
       fetch(API_BASE + '/api/events')
         .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
         .then(events => {
@@ -218,8 +227,7 @@
             // Kinkster role neměl žádné vedení k dotazníku, jen zeď "nemáš oprávnění". Teď
             // se chová logicky stejně jako Google (na výslovnou žádost) - uvidí akci i bez
             // role, po pokusu o registraci ho čeká stejný dotazníkový flow.
-            const isGoogleUser = !!(loggedUser && (loggedUser.provider === 'google' || /^google_/.test(loggedUser.userId || '')));
-            const canBypassRoleCheck = (e.typ_akce === 'B' && isGoogleUser) || e.typ_akce === 'C';
+            const canBypassRoleCheck = (e.typ_akce === 'B' && isGoogleUser(loggedUser)) || e.typ_akce === 'C';
             const canSee = isLoggedIn && (isPublicEvent || canBypassRoleCheck || userHasRequiredRole(requiredRoles, myRoles));
             const soon = isSoon(e);
             const img = getSmartImageUrl(e.obrazek);
@@ -261,6 +269,7 @@
                 <div class="price">${formatDateRange(e['datum od'], e.datum_do) || 'Termín bude upřesněn'}</div>
                 ${e['místo'] ? `<div class="meta">${e['místo']}</div>` : ''}
                 <div class="meta">Registrace do ${e.registrace_konec || '—'}</div>
+                ${renderOccupancy(e.obsazenost)}
                 <p class="desc">${descText}</p>
                 <div class="footer-row">${footer}</div>
               </div>

@@ -5,12 +5,7 @@
 
 const CANONICAL_PATRONS = ['Káča & Adam', 'Viktorie & Oliver', 'Karin & Zbyšek', 'Káča'];
 
-function memberModalIdentityPayload() {
-  const user = getLoggedUser();
-  if (!user) return null;
-  const isGoogleUser = !!(user.provider === 'google' || /^google_/.test(user.userId || ''));
-  return isGoogleUser ? { credential: user.credential } : { discord_user_id: user.userId };
-}
+function memberModalIdentityPayload() { return getIdentityPayload(getLoggedUser()); }
 
 // Stejná konverze na náhled jako u fotek akcí jinde na webu (akce.html/detail-akce.html) -
 // funguje jen tomu, kdo je v prohlížeči přihlášený Google účtem se sdíleným přístupem ke

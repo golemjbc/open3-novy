@@ -723,6 +723,15 @@ p { margin: 0 0 16px; color: var(--text-muted); }
 .member-link { color: var(--primary); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; background: none; border: none; padding: 0; font: inherit; }
 .member-link:hover { color: var(--primary-dark); }
 
+/* Zaplněnost akce (2026-08-25) - vizuální pruh bez čísel, jen slovní pásmo (viz
+   lib/capacity.js na backendu - fráze i procenta se počítají tam, nikdy se sem
+   neposílá skutečné číslo). Podlaha na straně backendu zajišťuje, že pruh nikdy
+   nevypadá prázdný. */
+.occupancy { margin: 10px 0; }
+.occupancy-track { height: 7px; border-radius: 999px; background: var(--bg-alt); overflow: hidden; }
+.occupancy-fill { height: 100%; border-radius: 999px; background: var(--gradient); }
+.occupancy-text { font-size: 0.78rem; font-weight: 700; color: var(--primary); margin-top: 5px; }
+
 /* Zrušená účast v přehledu přihlášek (2026-08-25) - řádek zůstává, jen prošedlý a
    přeškrtnutý, ať je vidět historie, ne skrytý/smazaný záznam. */
 .reg-row-cancelled { opacity: 0.55; text-decoration: line-through; }
