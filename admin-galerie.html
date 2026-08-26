@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OOO Community - Otevři se. Poznej se. Propoj se.">
+  <meta property="og:title" content="Fotogalerie — OOO Community">
+  <meta property="og:description" content="Eventy, Seznamování, Umění, Výzkum, ... Přidej se do komunity!">
+  <meta property="og:image" content="https://open3.cz/assets/images/LogoMETA.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://open3.cz/admin-galerie.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="OOO Community">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://open3.cz/assets/images/LogoMETA.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="favicon.ico">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <title>Fotogalerie — OOO Community</title>
+  <style>
+    .hidden { display: none !important; }
+
+    /* Fotogalerie admin (2026-08-26, na žádost) - mřížka náhledů seřazená chronologicky
+       (podle EXIF data pořízení, spočítané serverem při nahrání - klient tu žádné
+       třídění sám nedělá). Skupiny podle podalba, "Bez podalba" vždy první. */
+    .gal-group { margin-bottom: 28px; }
+    .gal-group-title { font-size: 0.95rem; font-weight: 700; color: var(--primary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.03em; }
+    .gal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
+    .gal-item { border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; background: var(--surface); }
+    .gal-thumb-wrap { position: relative; aspect-ratio: 1; background: var(--bg-alt); }
+    .gal-thumb-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .gal-thumb-wrap.gal-thumb-video { background: linear-gradient(135deg, var(--primary) 0%, var(--bg-alt) 150%); }
+    .gal-thumb-wrap.gal-thumb-video img { mix-blend-mode: luminosity; opacity: 0.6; }
+    .gal-video-badge { position: absolute; top: 6px; left: 6px; background: rgba(10,16,69,0.75); color: #fff; font-size: 0.68rem; font-weight: 700; padding: 2px 7px; border-radius: 999px; }
+    .gal-body { padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+    .gal-check-label { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; cursor: pointer; }
+    .gal-podalbum-input { width: 100%; padding: 5px 7px; border-radius: 6px; border: 1.5px solid var(--border); font-size: 0.78rem; box-sizing: border-box; }
+    .gal-actions-row { display: flex; gap: 10px; align-items: center; min-height: 24px; }
+    .gal-delete-btn { font-size: 0.76rem; font-weight: 600; color: #b42318; background: none; border: none; padding: 0; cursor: pointer; align-self: flex-start; }
+    .gal-delete-btn:hover { text-decoration: underline; }
+
+    .gal-upload-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+    .gal-progress { font-size: 0.85rem; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container">
+      <button class="nav-toggle" id="nav-toggle" aria-label="Menu">☰</button>
+      <a class="brand" href="index.html"><img src="assets/images/OOOlogo.png" alt="OOO logo"> <span>OOO Community</span></a>
+      <nav>
+        <ul class="nav-links" id="nav-links">
+          <li><a href="index.html">Domů</a></li>
+          <li><a href="akce.html">Akce</a></li>
+          <li><a href="galerie.html">Galerie</a></li>
+          <li><a href="pravidla.html">Pravidla</a></li>
+          <li><a href="contact.html">Kontakt</a></li>
+          <li id="nav-admin" class="hidden" data-self-managed="1"><a href="admin-akce.html">Administrace</a></li>
+        </ul>
+      </nav>
+      <div class="header-actions">
+        <div id="user-info"><img id="user-avatar" src="" alt=""><span id="user-name"></span></div>
+        <a id="login-button" href="#" class="btn btn-primary btn-sm">Přihlásit</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="section">
+    <div class="container">
+      <span class="eyebrow">Pro organizátory</span>
+      <h1>Fotogalerie</h1>
+
+      <div id="gate-loading" class="status-panel info">Ověřuji oprávnění…</div>
+
+      <div id="gate-denied" class="access-denied hidden">
+        <h3>Nemáš oprávnění</h3>
+        <p>Tahle stránka je pro radu, patrony a organizátory akcí.</p>
+      </div>
+
+      <div id="admin-content" class="hidden">
+        <div class="admin-tabs">
+          <a href="admin-akce.html">Akce a přihlášky</a>
+          <a href="admin-dotazniky.html">Fronta dotazníků</a>
+          <a href="admin-clenove.html">Přehled členů</a>
+          <a href="admin-platby.html">Platby</a>
+          <a href="admin-galerie.html" class="active">Fotogalerie</a>
+        </div>
+
+        <div class="admin-card">
+          <div class="form-group">
+            <label class="form-label">Akce</label>
+            <select id="event-select" class="form-control"><option value="">— vyber akci —</option></select>
+          </div>
+
+          <div id="upload-section" class="hidden">
+            <div class="gal-upload-row">
+              <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,video/mp4,video/quicktime,video/webm" multiple>
+              <span class="gal-progress" id="upload-progress"></span>
+            </div>
+            <p class="form-hint">Fotky se automaticky zmenší a dostanou malý vodoznak, video se nijak neupravuje. Po nahrání se seřadí podle data pořízení (z fotky/telefonu) - nezáleží na pořadí, v jakém je vybereš. Nezaškrtnuté fotky/videa vidí jen rada a lidé, co se na akci skutečně přihlásili - zaškrtnutím "Veřejná" je uvidí kdokoliv.</p>
+          </div>
+
+          <div id="gallery-body" style="margin-top:20px;"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-bottom">© 2026 OOO Community z.s. — Design: Adam</div>
+    </div>
+  </footer>
+
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/profile-modal.js"></script>
+  <script src="assets/js/member-modal.js"></script>
+  <script>
+    function identityPayload() { return getIdentityPayload(getLoggedUser()); }
+
+    const gateLoading = document.getElementById('gate-loading');
+    const gateDenied = document.getElementById('gate-denied');
+    const adminContent = document.getElementById('admin-content');
+    const navAdmin = document.getElementById('nav-admin');
+    const eventSelect = document.getElementById('event-select');
+    const uploadSection = document.getElementById('upload-section');
+    const fileInput = document.getElementById('file-input');
+    const uploadProgress = document.getElementById('upload-progress');
+    const galleryBody = document.getElementById('gallery-body');
+
+    let currentEventId = '';
+
+    // Akce z roku 2025 (a "Vánoční večírek") proběhly PŘED webovým registračním systémem -
+    // nemají žádný řádek v Akce sheetu, takže je samotné panel-list-events nikdy nevrátí
+    // (2026-08-26, migrace starých galerií z Discordu). Zvlášť dotažené a přidané do
+    // stejného výběru, oddělené <optgroup>, ať jde nahrávat/spravovat fotky i pro ně.
+    function loadEventsForSelect() {
+      return Promise.all([
+        fetch(API_BASE + '/api/panel-list-events', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...identityPayload(), include_archived: true }),
+        }).then(r => r.json()),
+        fetch(API_BASE + '/api/panel-gallery-legacy-events', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(identityPayload()),
+        }).then(r => r.json()),
+      ]).then(([eventsData, legacyData]) => {
+        if (!eventsData.ok) throw new Error(eventsData.error || 'Chyba při načítání akcí.');
+        const legacyOptions = (legacyData.ok ? legacyData.events : [])
+          .map(e => `<option value="${e.event_id}">${e.nazev} (${e.event_id})</option>`).join('');
+        eventSelect.innerHTML = '<option value="">— vyber akci —</option>' +
+          eventsData.events.map(e => `<option value="${e.event_id}">${e.nazev || e.event_id} (${e.event_id})</option>`).join('') +
+          (legacyOptions ? `<optgroup label="Starší akce (jen Discord, bez záznamu na webu)">${legacyOptions}</optgroup>` : '');
+      });
+    }
+
+    // Thumbnail přes Google Disk (2026-08-26) - stejný vzorec jako getSmartImageUrl
+    // jinde na webu, Disk umí zmenšit náhled sám, i pro video (vrátí snímek).
+    function thumbUrl(fileId, size) {
+      return `https://drive.google.com/thumbnail?id=${fileId}&sz=w${size || 300}`;
+    }
+
+    function renderGallery(items) {
+      if (!items.length) { galleryBody.innerHTML = '<p class="form-hint">Zatím žádné fotky ani videa.</p>'; return; }
+
+      const groups = new Map();
+      items.forEach(it => {
+        const key = it.podalbum || '';
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(it);
+      });
+      const orderedKeys = ['', ...[...groups.keys()].filter(k => k !== '').sort()];
+
+      galleryBody.innerHTML = orderedKeys.filter(k => groups.has(k)).map(key => `
+        <div class="gal-group">
+          <div class="gal-group-title">${key || 'Bez podalba'}</div>
+          <div class="gal-grid">
+            ${groups.get(key).map(it => `
+              <div class="gal-item" data-id="${it.drive_file_id_zobrazeni}">
+                <div class="gal-thumb-wrap${it.typ === 'video' ? ' gal-thumb-video' : ''}">
+                  <img src="${thumbUrl(it.drive_file_id_zobrazeni)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+                  ${it.typ === 'video' ? '<span class="gal-video-badge">▶ Video</span>' : ''}
+                </div>
+                <div class="gal-body">
+                  <label class="gal-check-label">
+                    <input type="checkbox" data-action="verejna" ${it.verejna ? 'checked' : ''}>
+                    Veřejná
+                  </label>
+                  <label class="gal-check-label">
+                    <input type="checkbox" data-action="titulni" ${it.titulni ? 'checked' : ''}>
+                    Titulní fotka
+                  </label>
+                  <input type="text" class="gal-podalbum-input" data-action="podalbum" placeholder="podalbum (nepovinné)" value="${it.podalbum || ''}">
+                  <div class="gal-actions-row">
+                    ${it.typ !== 'video' ? '<button type="button" class="member-link" data-action="rotate" style="font-size:0.76rem;">↻ Otočit o 90°</button>' : ''}
+                    <button type="button" class="gal-delete-btn" data-action="delete">Smazat</button>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('');
+
+      galleryBody.querySelectorAll('[data-action="verejna"]').forEach(cb => cb.addEventListener('change', () => {
+        const id = cb.closest('.gal-item').dataset.id;
+        fetch(API_BASE + '/api/panel-gallery-update', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...identityPayload(), drive_file_id_zobrazeni: id, verejna: cb.checked }),
+        }).catch(err => alert('Chyba: ' + err.message));
+      }));
+
+      // Titulní fotka (2026-08-26, na žádost) - exkluzivní na akci (backend sám odškrtne
+      // předchozí, viz panel-gallery-update), proto se po uložení musí celá galerie znovu
+      // načíst, ať se to i vizuálně promítne u té dřívější.
+      galleryBody.querySelectorAll('[data-action="titulni"]').forEach(cb => cb.addEventListener('change', () => {
+        const id = cb.closest('.gal-item').dataset.id;
+        fetch(API_BASE + '/api/panel-gallery-update', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...identityPayload(), drive_file_id_zobrazeni: id, titulni: cb.checked }),
+        })
+          .then(r => r.json())
+          .then(() => loadGallery())
+          .catch(err => alert('Chyba: ' + err.message));
+      }));
+
+      galleryBody.querySelectorAll('[data-action="podalbum"]').forEach(inp => inp.addEventListener('change', () => {
+        const id = inp.closest('.gal-item').dataset.id;
+        fetch(API_BASE + '/api/panel-gallery-update', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...identityPayload(), drive_file_id_zobrazeni: id, podalbum: inp.value.trim() }),
+        })
+          .then(r => r.json())
+          .then(() => loadGallery())
+          .catch(err => alert('Chyba: ' + err.message));
+      }));
+
+      // Otočit o 90° (2026-08-26, na žádost) - přepíše jen zobrazenou verzi na Disku,
+      // stejné ID, takže se po úspěchu stačí jen znovu vykreslit galerie (thumbnail cache
+      // Disku se může chvíli dotahovat, není to chyba).
+      galleryBody.querySelectorAll('[data-action="rotate"]').forEach(btn => btn.addEventListener('click', () => {
+        const id = btn.closest('.gal-item').dataset.id;
+        btn.disabled = true;
+        btn.textContent = 'Otáčím…';
+        fetch(API_BASE + '/api/panel-gallery-rotate', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...identityPayload(), drive_file_id_zobrazeni: id, degrees: 90 }),
+        })
+          .then(r => r.json())
+          .then(res => { if (!res.ok) { alert('Chyba: ' + (res.error || 'neznámá')); } loadGallery(); })
+          .catch(err => { alert('Chyba: ' + err.message); loadGallery(); });
+      }));
+
+      galleryBody.querySelectorAll('[data-action="delete"]').forEach(btn => btn.addEventListener('click', () => {
+        if (!confirm('Trvale smazat tuhle fotku/video? Nedá se to vzít zpět.')) return;
+        const id = btn.closest('.gal-item').dataset.id;
+        fetch(API_BASE + '/api/panel-gallery-delete', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...identityPayload(), drive_file_id_zobrazeni: id }),
+        })
+          .then(r => r.json())
+          .then(res => { if (!res.ok) { alert('Chyba: ' + (res.error || 'neznámá')); return; } loadGallery(); })
+          .catch(err => alert('Chyba: ' + err.message));
+      }));
+    }
+
+    function loadGallery() {
+      if (!currentEventId) return;
+      return fetch(API_BASE + '/api/panel-gallery-list', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...identityPayload(), event_id: currentEventId }),
+      })
+        .then(r => r.json())
+        .then(data => { if (!data.ok) throw new Error(data.error || 'Chyba při načítání galerie.'); renderGallery(data.items); })
+        .catch(err => { galleryBody.innerHTML = '<p class="form-hint">Chyba: ' + err.message + '</p>'; });
+    }
+
+    eventSelect.addEventListener('change', () => {
+      currentEventId = eventSelect.value;
+      uploadSection.classList.toggle('hidden', !currentEventId);
+      galleryBody.innerHTML = '';
+      if (currentEventId) loadGallery();
+    });
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // Nahrávání JEDEN soubor najednou, sekvenčně (2026-08-26) - ne paralelně/v jednom
+    // velkém requestu, ať se u desítek fotek/videí najednou nenarazí na limit velikosti
+    // požadavku nebo timeout funkce. Řazení podle data pořízení dělá server, tady se
+    // pořadí výběru souborů nijak neřeší.
+    fileInput.addEventListener('change', async () => {
+      const files = Array.from(fileInput.files || []);
+      if (!files.length) return;
+      let done = 0, failed = 0;
+      for (const file of files) {
+        uploadProgress.textContent = `Nahrávám ${done + 1}/${files.length}…`;
+        try {
+          const base64 = await fileToBase64(file);
+          const res = await fetch(API_BASE + '/api/panel-gallery-upload', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...identityPayload(), event_id: currentEventId, soubor: { base64, mimeType: file.type, filename: file.name } }),
+          }).then(r => r.json());
+          if (!res.ok) { failed++; console.error('Nahrání selhalo:', file.name, res.error); }
+        } catch (err) {
+          failed++;
+          console.error('Nahrání selhalo:', file.name, err.message);
+        }
+        done++;
+      }
+      uploadProgress.textContent = failed ? `Hotovo, ${failed} z ${files.length} se nepodařilo nahrát.` : `Nahráno ${files.length} souborů.`;
+      fileInput.value = '';
+      loadGallery();
+    });
+
+    // Přístupová brána - Rada, Patron NEBO Spolupracovník / tvůrce (2026-08-26, na žádost -
+    // nahrávat fotky smí širší okruh lidí, ne jen ti, co spravují samotné akce/dotazníky).
+    const loggedUser = getLoggedUser();
+    if (!loggedUser || !loggedUser.userId) {
+      gateLoading.classList.add('hidden');
+      gateDenied.classList.remove('hidden');
+    } else {
+      fetch(API_BASE + '/api/my-roles', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(identityPayload()),
+      })
+        .then(r => r.json())
+        .then(data => {
+          gateLoading.classList.add('hidden');
+          if (!data.rada && !data.spolupracovnik && !data.patron) {
+            gateDenied.classList.remove('hidden');
+          } else {
+            navAdmin.classList.remove('hidden');
+            adminContent.classList.remove('hidden');
+            loadEventsForSelect().catch(err => alert('Chyba při načítání akcí: ' + err.message));
+          }
+        })
+        .catch(() => {
+          gateLoading.classList.add('hidden');
+          gateDenied.classList.remove('hidden');
+        });
+    }
+  </script>
+</body>
+</html>

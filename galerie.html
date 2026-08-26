@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OOO Community - Otevři se. Poznej se. Propoj se.">
+  <meta property="og:title" content="Galerie — OOO Community">
+  <meta property="og:description" content="Eventy, Seznamování, Umění, Výzkum, ... Přidej se do komunity!">
+  <meta property="og:image" content="https://open3.cz/assets/images/LogoMETA.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://open3.cz/galerie.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="OOO Community">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://open3.cz/assets/images/LogoMETA.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="favicon.ico">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <title>Galerie — OOO Community</title>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container">
+      <button class="nav-toggle" id="nav-toggle" aria-label="Menu">☰</button>
+      <a class="brand" href="index.html"><img src="assets/images/OOOlogo.png" alt="OOO logo"> <span>OOO Community</span></a>
+      <nav>
+        <ul class="nav-links" id="nav-links">
+          <li><a href="index.html">Domů</a></li>
+          <li><a href="akce.html">Akce</a></li>
+          <li><a href="galerie.html" class="active">Galerie</a></li>
+          <li><a href="pravidla.html">Pravidla</a></li>
+          <li><a href="contact.html">Kontakt</a></li>
+          <li id="nav-admin" style="display:none;"><a href="admin-akce.html">Administrace</a></li>
+        </ul>
+      </nav>
+      <div class="header-actions">
+        <div id="user-info"><img id="user-avatar" src="" alt=""><span id="user-name"></span></div>
+        <a id="login-button" href="#" class="btn btn-primary btn-sm">Přihlásit</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="section" style="padding-bottom: 0;">
+    <div class="container">
+      <a href="galerie.html" class="back-link hidden" id="gallery-back-link">← Zpět na přehled galerií</a>
+      <span class="eyebrow">Vzpomínky</span>
+      <h1 id="gallery-title">Galerie akcí</h1>
+      <p class="form-hint" id="gallery-subtitle">Fotky a videa z proběhlých akcí. Neveřejné fotky vidí jen a účastníci dané akce.</p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top: 24px;">
+    <div class="container">
+      <div id="page-body">
+        <div class="loading-state">Načítám…</div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">OOO Community</div>
+        <ul class="footer-links">
+          <li><a href="mailto:info@open3.cz">info@open3.cz</a></li>
+          <li><a href="tel:+420735593621">+420 735 593 621</a></li>
+          <li><a href="https://discord.gg/qYCAubmDQc">Discord</a></li>
+          <li><a href="https://www.instagram.com/ooo.community">Instagram</a></li>
+        </ul>
+      </div>
+      <div class="footer-bottom">© 2026 OOO Community z.s. — Design: Adam</div>
+    </div>
+  </footer>
+
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/profile-modal.js"></script>
+  <script>
+    function identityPayload() { return getIdentityPayload(getLoggedUser()); }
+    function thumbUrl(fileId, size) { return `https://drive.google.com/thumbnail?id=${fileId}&sz=w${size || 500}`; }
+    // Odkaz na video se otevírá jako PŘÍMÁ navigace (nová záložka), ne <iframe> (2026-08-27,
+    // oprava - "video se nedá spustit bez přihlášení na Google a snaží se ti stahovat").
+    // Vestavěný iframe běžel přes cizí (cross-origin) rámec - moderní prohlížeče tam čím
+    // dál častěji blokují cookies třetích stran, takže Disk nedokázal ověřit, že soubor je
+    // veřejný, a vynutil přihlášení/stažení. Přímá navigace tenhle problém nemá.
+    //
+    // POZOR: /preview, ne /view (2026-08-27, na žádost - "nemůže v tom přehrávači být
+    // vidět, že to hraje z mého soukromého disku?") - /view je plná stránka Disku s
+    // panelem "Sdílet" a podrobnostmi o souboru, které by prozradily, že vlastníkem je
+    // osobní účet (impersonace přes DRIVE_IMPERSONATE_USER, viz lib/drive.js). /preview
+    // je odlehčený přehrávač BEZ týhle chrome - i při přímé navigaci (mimo iframe) ukáže
+    // jen samotné video, žádné jméno/e-mail vlastníka. Ověřeno živě.
+    function driveVideoViewUrl(fileId) { return `https://drive.google.com/file/d/${fileId}/preview`; }
+
+    function formatDateRange(fromStr, toStr) {
+      fromStr = (fromStr || '').trim();
+      toStr = (toStr || '').trim();
+      if (!fromStr && !toStr) return '';
+      if (!fromStr) return toStr;
+      if (!toStr) return fromStr;
+      const parse = (s) => {
+        const parts = s.split('.').map(p => p.trim()).filter(Boolean);
+        return parts.length >= 3 ? { day: parts[0], month: parts[1], year: parts[2] } : null;
+      };
+      const from = parse(fromStr);
+      const to = parse(toStr);
+      if (!from || !to) return `${fromStr} – ${toStr}`;
+      if (from.year === to.year && from.month === to.month) return `${from.day}.–${to.day}.${to.month}.${to.year}`;
+      if (from.year === to.year) return `${from.day}.${from.month}. – ${to.day}.${to.month}.${to.year}`;
+      return `${fromStr} – ${toStr}`;
+    }
+
+    const pageBody = document.getElementById('page-body');
+    const backLink = document.getElementById('gallery-back-link');
+    const titleEl = document.getElementById('gallery-title');
+    const subtitleEl = document.getElementById('gallery-subtitle');
+    const eventIdParam = new URLSearchParams(location.search).get('event_id');
+
+    // === Přehled - dlaždice všech galerií, které smím vidět ===
+    function loadGalleryGrid() {
+      pageBody.className = 'event-grid';
+      fetch(API_BASE + '/api/gallery-events', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(identityPayload() || {}),
+      })
+        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(data => {
+          if (!data.ok) throw new Error(data.error || 'Chyba při načítání galerií.');
+          const events = data.events || [];
+          if (!events.length) {
+            pageBody.innerHTML = '<div class="empty-state">Zatím tu nejsou žádné galerie, které bys mohl(a) vidět.</div>';
+            return;
+          }
+          pageBody.innerHTML = events.map(e => `
+            <div class="event-card">
+              <div class="thumb">
+                ${e.cover_typ === 'video' ? '<span class="badge-video">▶ video</span>' : ''}
+                <img src="${thumbUrl(e.cover_drive_file_id, 500)}" alt="${e.nazev || ''}" loading="lazy">
+              </div>
+              <div class="body">
+                <h3><a href="galerie.html?event_id=${encodeURIComponent(e.event_id)}">${e.nazev || e.event_id}</a></h3>
+                <div class="price">${formatDateRange(e.datum_od, e.datum_do) || 'Termín neuveden'}</div>
+                <div class="meta">${e.pocet} ${e.pocet === 1 ? 'položka' : (e.pocet >= 2 && e.pocet <= 4 ? 'položky' : 'položek')}</div>
+                <div class="footer-row"><a href="galerie.html?event_id=${encodeURIComponent(e.event_id)}" class="btn btn-outline btn-block">Zobrazit galerii</a></div>
+              </div>
+            </div>
+          `).join('');
+        })
+        .catch(err => {
+          console.error(err);
+          pageBody.innerHTML = '<div class="empty-state">Chyba při načítání galerií.</div>';
+        });
+    }
+
+    // === Detail JEDNÉ galerie (2026-08-26, přesunuto z detail-akce.html - "Akce jsou jen
+    // plánované, galerie je samostatná sekce, nezávislá na tom, jestli akce má záznam v
+    // Akce" - proto galerie NENÍ součástí detail-akce.html, žije tady sama o sobě, i pro
+    // akce z roku 2025 bez jakéhokoliv záznamu na webu). ===
+
+    function renderReactionBar(item, allowedEmoji) {
+      const reakce = item.reakce || [];
+      const pills = reakce.map(r => {
+        const mine = r.emoji === item.moje_reakce;
+        const jmena = r.jmena.join(', ').replace(/"/g, '&quot;');
+        return `<button type="button" class="epg-reaction-pill${mine ? ' mine' : ''}" data-file-id="${item.drive_file_id_zobrazeni}" data-emoji="${r.emoji}" title="${jmena}">${r.emoji} ${r.pocet}</button>`;
+      }).join('');
+      const picker = allowedEmoji.map(e =>
+        `<button type="button" class="epg-reaction-pick" data-file-id="${item.drive_file_id_zobrazeni}" data-emoji="${e}">${e}</button>`
+      ).join('');
+      return `
+        <div class="epg-reactions">
+          ${pills}
+          <button type="button" class="epg-reaction-add" data-toggle-picker="1">+</button>
+          <div class="epg-reaction-picker hidden">${picker}</div>
+        </div>
+      `;
+    }
+
+    function renderGalleryItems(items, prihlaseny, allowedEmoji) {
+      if (!items.length) return '<div class="empty-state">Zatím tu nejsou žádné fotky ani videa.</div>';
+      const groups = new Map();
+      items.forEach(it => {
+        const key = it.podalbum || '';
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(it);
+      });
+      const orderedKeys = ['', ...[...groups.keys()].filter(k => k !== '').sort()];
+
+      const photoList = [];
+      orderedKeys.filter(k => groups.has(k)).forEach(key => {
+        groups.get(key).forEach(it => { if (it.typ !== 'video') photoList.push(it); });
+      });
+      window.__epgPhotoList = photoList;
+      const photoIndexByFileId = new Map(photoList.map((it, i) => [it.drive_file_id_zobrazeni, i]));
+
+      return `
+        <div class="event-photo-gallery">
+          ${orderedKeys.filter(k => groups.has(k)).map(key => `
+            <div class="epg-group">
+              ${key ? `<div class="epg-group-title">${key}</div>` : ''}
+              <div class="epg-grid">
+                ${groups.get(key).map(it => `
+                  <div class="epg-cell">
+                    ${it.typ === 'video'
+                      ? `<a href="${driveVideoViewUrl(it.drive_file_id_zobrazeni)}" target="_blank" rel="noopener" class="epg-item epg-video-placeholder"><span class="epg-play-icon">▶</span></a>`
+                      : `<button type="button" class="epg-item" data-lightbox-index="${photoIndexByFileId.get(it.drive_file_id_zobrazeni)}"><img src="${thumbUrl(it.drive_file_id_zobrazeni)}" loading="lazy" alt=""></button>`
+                    }
+                    ${prihlaseny ? renderReactionBar(it, allowedEmoji) : ''}
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `).join('')}
+          <p class="form-hint epg-note">Fotky jsou zmenšené a mají drobný vodoznak. Chceš některou v původním rozlišení bez úprav? Napiš nám.</p>
+        </div>
+      `;
+    }
+
+    // Lightbox - prohlížení fotek s listováním (šipky, klávesnice, pás náhledů).
+    let epgCurrentIndex = 0;
+    let epgFilmstripForList = null;
+
+    function ensureLightboxEl() {
+      let el = document.getElementById('epg-lightbox');
+      if (el) return el;
+      el = document.createElement('div');
+      el.id = 'epg-lightbox';
+      el.className = 'epg-lightbox hidden';
+      el.innerHTML = `
+        <button type="button" class="epg-lightbox-close" aria-label="Zavřít">✕</button>
+        <div class="epg-lightbox-main-wrap">
+          <button type="button" class="epg-lightbox-prev" aria-label="Předchozí">‹</button>
+          <img class="epg-lightbox-main" src="" alt="">
+          <button type="button" class="epg-lightbox-next" aria-label="Další">›</button>
+        </div>
+        <div class="epg-lightbox-counter"></div>
+        <div class="epg-lightbox-filmstrip"></div>
+      `;
+      document.body.appendChild(el);
+      el.querySelector('.epg-lightbox-close').addEventListener('click', closeLightbox);
+      el.querySelector('.epg-lightbox-prev').addEventListener('click', () => showLightboxPhoto(epgCurrentIndex - 1));
+      el.querySelector('.epg-lightbox-next').addEventListener('click', () => showLightboxPhoto(epgCurrentIndex + 1));
+      el.addEventListener('click', (e) => { if (e.target === el) closeLightbox(); });
+      document.addEventListener('keydown', (e) => {
+        if (el.classList.contains('hidden')) return;
+        if (e.key === 'Escape') closeLightbox();
+        if (e.key === 'ArrowLeft') showLightboxPhoto(epgCurrentIndex - 1);
+        if (e.key === 'ArrowRight') showLightboxPhoto(epgCurrentIndex + 1);
+      });
+      return el;
+    }
+
+    function showLightboxPhoto(index) {
+      const list = window.__epgPhotoList || [];
+      if (!list.length) return;
+      epgCurrentIndex = (index + list.length) % list.length;
+      const item = list[epgCurrentIndex];
+      const el = ensureLightboxEl();
+      el.querySelector('.epg-lightbox-main').src = thumbUrl(item.drive_file_id_zobrazeni, 1600);
+      el.querySelector('.epg-lightbox-counter').textContent = (epgCurrentIndex + 1) + ' / ' + list.length;
+      const filmstrip = el.querySelector('.epg-lightbox-filmstrip');
+      if (epgFilmstripForList !== list) {
+        filmstrip.innerHTML = list.map((it, i) => `<div class="epg-lightbox-thumb" data-idx="${i}"><img src="${thumbUrl(it.drive_file_id_zobrazeni, 150)}" loading="lazy" alt=""></div>`).join('');
+        filmstrip.querySelectorAll('.epg-lightbox-thumb').forEach(t => t.addEventListener('click', () => showLightboxPhoto(parseInt(t.dataset.idx, 10))));
+        epgFilmstripForList = list;
+      }
+      filmstrip.querySelectorAll('.epg-lightbox-thumb').forEach(t => t.classList.toggle('active', parseInt(t.dataset.idx, 10) === epgCurrentIndex));
+      const activeThumb = filmstrip.querySelector('.epg-lightbox-thumb.active');
+      if (activeThumb) activeThumb.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+
+    function openLightbox(index) {
+      ensureLightboxEl().classList.remove('hidden');
+      showLightboxPhoto(index);
+    }
+
+    function closeLightbox() {
+      const el = document.getElementById('epg-lightbox');
+      if (el) el.classList.add('hidden');
+    }
+
+    function sendGalleryReaction(eventId, fileId, emoji) {
+      const user = getLoggedUser();
+      fetch(API_BASE + '/api/gallery-react', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...(getIdentityPayload(user) || {}), drive_file_id_zobrazeni: fileId, emoji }),
+      })
+        .then(r => r.json())
+        .then(data => { if (data.ok) loadSingleGallery(eventId); else alert('Chyba: ' + (data.error || 'reakci se nepodařilo uložit.')); })
+        .catch(() => alert('Chyba: reakci se nepodařilo uložit.'));
+    }
+
+    function loadSingleGallery(eventId) {
+      pageBody.className = '';
+      const user = getLoggedUser();
+      fetch(API_BASE + '/api/event-gallery', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...(getIdentityPayload(user) || {}), event_id: eventId }),
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (!data.ok) {
+            titleEl.textContent = 'Galerie nenalezena';
+            subtitleEl.textContent = '';
+            pageBody.innerHTML = '<div class="empty-state">Galerie pro akci ' + eventId + ' nebyla nalezena.</div>';
+            return;
+          }
+          titleEl.textContent = data.nazev || eventId;
+          subtitleEl.textContent = formatDateRange(data.datum_od, data.datum_do);
+          pageBody.innerHTML = renderGalleryItems(data.items, data.prihlaseny, data.allowed_emoji || []);
+          pageBody.querySelectorAll('.epg-item[data-lightbox-index]').forEach(btn => {
+            btn.addEventListener('click', () => openLightbox(parseInt(btn.dataset.lightboxIndex, 10)));
+          });
+          pageBody.querySelectorAll('.epg-reaction-add').forEach(btn => {
+            btn.addEventListener('click', () => btn.nextElementSibling.classList.toggle('hidden'));
+          });
+          pageBody.querySelectorAll('.epg-reaction-pill, .epg-reaction-pick').forEach(btn => {
+            btn.addEventListener('click', () => sendGalleryReaction(eventId, btn.dataset.fileId, btn.dataset.emoji));
+          });
+        })
+        .catch(() => {
+          titleEl.textContent = 'Chyba';
+          pageBody.innerHTML = '<div class="empty-state">Galerii se nepodařilo načíst.</div>';
+        });
+    }
+
+    if (eventIdParam) {
+      backLink.classList.remove('hidden');
+      titleEl.textContent = 'Načítám…';
+      subtitleEl.textContent = '';
+      loadSingleGallery(eventIdParam);
+    } else {
+      loadGalleryGrid();
+    }
+
+    window.onOooLogin = () => location.reload();
+    window.onOooLogout = () => location.reload();
+  </script>
+</body>
+</html>
