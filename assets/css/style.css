@@ -738,6 +738,23 @@ p { margin: 0 0 16px; color: var(--text-muted); }
 .epg-reaction-picker.hidden { display: none; }
 .epg-reaction-pick { padding: 2px 7px; font-size: 0.95rem; }
 
+/* Věková brána (2026-08-27) - stejný vizuální jazyk jako member-modal-overlay níže, jen
+   vyšší z-index (musí být nad úplně vším, i nad lightboxem galerie) a nejde zavřít klikem
+   mimo kartu (žádný "escape" bez potvrzení/odmítnutí). */
+.age-gate-overlay {
+  position: fixed; inset: 0; z-index: 5000;
+  background: rgba(10, 16, 69, 0.94);
+  display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;
+}
+.age-gate-card {
+  background: var(--surface); border-radius: var(--radius); padding: 40px 32px;
+  max-width: 420px; width: 100%; text-align: center; box-shadow: var(--shadow-lg);
+}
+.age-gate-logo { width: 64px; height: 64px; border-radius: 999px; margin-bottom: 16px; }
+.age-gate-card h2 { font-family: "Bebas Neue", "Arial Narrow", sans-serif; font-weight: 400; letter-spacing: 0.03em; font-size: 1.8rem; margin: 0 0 12px; color: var(--text); }
+.age-gate-card p { color: var(--text-muted); font-size: 0.92rem; margin: 0 0 24px; line-height: 1.5; }
+.age-gate-actions { display: flex; flex-direction: column; gap: 10px; }
+
 /* ---------- Znovupoužitelné okno detailu člena (Část B, 2026-08-24) ---------- */
 .member-modal-overlay {
   position: fixed; inset: 0; background: rgba(10, 16, 69, 0.6); z-index: 1000;
