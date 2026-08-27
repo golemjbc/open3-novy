@@ -183,14 +183,17 @@
     }
 
     const user = getLoggedUser();
-    const isGoogleUser = window.isGoogleUser(user);
+    // userIsGoogle, ne isGoogleUser (2026-08-27, oprava - kolidovalo se stejnojmennou
+    // globální funkcí z auth.js, což je SyntaxError už při parsování a celý dotazník
+    // kvůli tomu vůbec neběžel - "vůbec to nešlo").
+    const userIsGoogle = isGoogleUser(user);
     // Dva zdroje identity (2026-08-24, na výslovnou žádost - odkaz na dotazník bude i na
     // Discordu) - Google (credential) nebo Discord (userId, stejný důvěřovaný vzorec jako
     // zbytek appky u Discord přihlášení).
-    const isDiscordUser = !!user && !isGoogleUser;
+    const isDiscordUser = !!user && !userIsGoogle;
 
     function identityPayload() {
-      return isGoogleUser ? { credential: user.credential } : { discord_user_id: user.userId };
+      return userIsGoogle ? { credential: user.credential } : { discord_user_id: user.userId };
     }
 
     if (!user) {
