@@ -299,6 +299,13 @@
     // velkém requestu, ať se u desítek fotek/videí najednou nenarazí na limit velikosti
     // požadavku nebo timeout funkce. Řazení podle data pořízení dělá server, tady se
     // pořadí výběru souborů nijak neřeší.
+    //
+    // panel-gallery-upload-raw, NE panel-gallery-upload (2026-08-27, na žádost - "ať to
+    // zpracuje RPi, ne Azure, kvůli nákladům") - tenhle endpoint jen uloží soubor beze
+    // změny do fronty, žádné zmenšení/vodoznak tu neproběhne. Samotné zpracování (a
+    // zápis do galerie, co se skutečně zobrazí) dělá RPi v cyklu ~15 min
+    // (gallery-processor.py) - proto se čerstvě nahrané fotky v mřížce níž objeví až za
+    // pár minut, ne hned po nahrání.
     fileInput.addEventListener('change', async () => {
       const files = Array.from(fileInput.files || []);
       if (!files.length) return;
@@ -307,7 +314,7 @@
         uploadProgress.textContent = `Nahrávám ${done + 1}/${files.length}…`;
         try {
           const base64 = await fileToBase64(file);
-          const res = await fetch(API_BASE + '/api/panel-gallery-upload', {
+          const res = await fetch(API_BASE + '/api/panel-gallery-upload-raw', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...identityPayload(), event_id: currentEventId, soubor: { base64, mimeType: file.type, filename: file.name } }),
           }).then(r => r.json());
@@ -318,7 +325,9 @@
         }
         done++;
       }
-      uploadProgress.textContent = failed ? `Hotovo, ${failed} z ${files.length} se nepodařilo nahrát.` : `Nahráno ${files.length} souborů.`;
+      uploadProgress.textContent = failed
+        ? `Hotovo, ${failed} z ${files.length} se nepodařilo nahrát.`
+        : `Nahráno ${files.length} souborů. Zpracují a objeví se v galerii do ~15 minut.`;
       fileInput.value = '';
       loadGallery();
     });
