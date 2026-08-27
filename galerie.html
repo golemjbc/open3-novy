@@ -248,6 +248,24 @@
         if (e.key === 'ArrowLeft') showLightboxPhoto(epgCurrentIndex - 1);
         if (e.key === 'ArrowRight') showLightboxPhoto(epgCurrentIndex + 1);
       });
+
+      // Swipe prstem na mobilu (2026-08-27, na žádost - "jako na Tinderu") - vlevo další
+      // fotka, vpravo předchozí, stejně jako šipky. Svislý posun (scroll gesto) se
+      // ignoruje, ať to nekoliduje s běžným scrollováním stránky pod lightboxem.
+      const mainWrap = el.querySelector('.epg-lightbox-main-wrap');
+      let touchStartX = 0, touchStartY = 0;
+      mainWrap.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].clientX;
+        touchStartY = e.changedTouches[0].clientY;
+      }, { passive: true });
+      mainWrap.addEventListener('touchend', (e) => {
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        const dy = e.changedTouches[0].clientY - touchStartY;
+        if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
+        if (dx < 0) showLightboxPhoto(epgCurrentIndex + 1);
+        else showLightboxPhoto(epgCurrentIndex - 1);
+      }, { passive: true });
+
       return el;
     }
 
