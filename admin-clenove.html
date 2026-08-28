@@ -129,7 +129,7 @@
                   <td data-label="Kontakt">${m.email || ''}${m.telefon ? ' · ' + m.telefon : ''}</td>
                   <td data-label="Role" class="member-roles-cell">${Object.keys(m.roles || {}).join(', ')}</td>
                   <td data-label="Náhled">${m.discord_id
-                    ? `<button type="button" class="member-link" data-ghost-discord="${m.discord_id}" data-ghost-jmeno="${(m.jmeno || m.discord_username || m.ooo_id || '').replace(/"/g, '&quot;')}">👻 Zobrazit jako</button>`
+                    ? `<button type="button" class="member-link" data-ghost-discord="${m.discord_id}" data-ghost-jmeno="${(m.jmeno || m.discord_username || m.ooo_id || '').replace(/"/g, '&quot;')}" title="Zobrazit web jako tenhle uživatel" style="font-size:1.1rem;">👻</button>`
                     : '<span class="form-hint" title="Přihlašuje se přes Google - náhled zatím jen pro Discord účty">—</span>'}</td>
                 </tr>
               `).join('')}

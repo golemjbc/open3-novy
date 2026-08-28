@@ -79,6 +79,10 @@
     }
     .admin-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
     .admin-form-grid .form-group { margin-bottom: 0; }
+    /* Organizátoři (2026-08-28) - na žádost přes celou šířku, ne jako běžné pole vedle
+       "Vyžadovaná Discord role": s chipy + autocomplete roste na výšku podle počtu lidí,
+       vedle kratšího pole to v mřížce vypadalo křivě a při přidávání "ujíždělo". */
+    #organizatori-group { grid-column: 1 / -1; }
     /* Nadpisky skupin ve formuláři akce (2026-08-25, na žádost - "srovnej mi to logicky,
        datumy k sobě, částky k sobě") - stejná pole, jen rozdělená do jasně pojmenovaných
        bloků (Základní info / Termíny / Platba / Popis / Fotky) místo jednoho dlouhého
