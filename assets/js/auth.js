@@ -142,8 +142,16 @@ function initAdminNavLink(user) {
       // requireEventAdminIdentity fallbackem), ale položka v menu je společná pro
       // všechny tři admin stránky, tak ji musí odemknout stejně jako rada/spolupracovník -
       // jinak se organizátor bez Rada/Spolupracovník role vůbec neklikne na svoji akci.
-      const isAdmin = !!(data.ok && (data.rada || data.spolupracovnik || data.organizator));
+      // Patron (2026-08-28, chyběl tu úplně stejným způsobem - "Zbyšek jako patron nemá
+      // žádnou sekci administrace") smí jen na admin-dotazniky.html (Fronta dotazníků),
+      // ne na admin-akce.html - proto se navíc přepisuje cíl odkazu, ne jen viditelnost.
+      const isFullAccess = !!(data.rada || data.spolupracovnik || data.organizator);
+      const isPatronOnly = !isFullAccess && !!data.patron;
+      const isAdmin = !!(data.ok && (isFullAccess || isPatronOnly));
       nav.style.display = isAdmin ? '' : 'none';
+      const link = nav.querySelector('a');
+      if (link && isPatronOnly) link.setAttribute('href', 'admin-dotazniky.html');
+      else if (link) link.setAttribute('href', 'admin-akce.html');
       localStorage.setItem(cacheKey, isAdmin ? '1' : '0');
     })
     .catch(() => {});
