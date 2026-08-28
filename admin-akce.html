@@ -155,7 +155,7 @@
           <a href="admin-galerie.html">Fotogalerie</a>
         </div>
 
-        <div class="admin-event-card">
+        <div class="admin-event-card" id="new-event-card">
           <h3>Založit novou akci</h3>
           <p class="admin-event-meta">Typ a rok se dají nastavit jen teď — číslo akce se dopočítá automaticky a dál se nedá měnit.</p>
           <div class="admin-form-grid">
@@ -188,6 +188,15 @@
               <label class="form-label">Vyžadovaná Discord role (přesný název sloupce)</label>
               <input id="f-discord_role_required" class="form-control">
               <p class="form-hint">Předvyplní se podle typu akce. Víc rolí odděl čárkou - stačí, když má člověk aspoň jednu z nich.</p>
+            </div>
+            <div class="form-group hidden" id="organizatori-group">
+              <label class="form-label">Organizátoři (jen Rada může měnit)</label>
+              <div id="organizatori-chips" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;"></div>
+              <div class="autocomplete-wrap">
+                <input type="text" id="organizator-search" class="form-control" placeholder="Napiš jméno…" autocomplete="off">
+                <div id="organizator-dropdown" class="autocomplete-dropdown"></div>
+              </div>
+              <p class="form-hint">Až 5 lidí. Kdo je tu zapsaný, uvidí v administraci jen tuhle jednu akci - i bez role Rada/Spolupracovník.</p>
             </div>
           </div>
 
@@ -292,6 +301,7 @@
 
     let allEvents = [];
     let editingEventId = null;
+    let isRada = false;
 
     const EDITABLE_FIELD_IDS = [
       'nazev', 'popis', 'místo', 'lokalita_presna',
@@ -322,6 +332,68 @@
       return timeVal ? base + ' ' + timeVal : base;
     }
 
+    // Organizátoři akce (2026-08-28, na žádost) - výběr 1-5 lidí podle ooo_id, ne Discord
+    // role. Kdo je tu zapsaný, dostane v backendu scope 'event' (viz requireEventAdminIdentity
+    // v lib/members-row.js) - přístup jen k téhle jedné akci, bez ohledu na to, jestli má
+    // vůbec nějakou Discord roli. Pole viditelné/editovatelné jen pro Radu - Spolupracovník
+    // ani samotný organizátor nesmí přidávat/odebírat další organizátory (backend to stejně
+    // zahodí, tohle je jen UX, ať se to ani nezkouší nabízet).
+    const MAX_ORGANIZATORI = 5;
+    let membersForOrganizatori = [];
+    let selectedOrganizatoriIds = [];
+
+    function loadMembersForOrganizatori() {
+      return fetch(API_BASE + '/api/members')
+        .then(r => r.json())
+        .then(list => {
+          membersForOrganizatori = (list || [])
+            .filter(m => m.roles && m.roles.ooo_id)
+            .map(m => ({ ooo_id: m.roles.ooo_id, jmeno: m.roles['Zobrazované jméno'] || m.roles['Uživatelské jméno'] || m.roles.ooo_id }));
+        })
+        .catch(() => { membersForOrganizatori = []; });
+    }
+
+    function renderOrganizatoriChips() {
+      const container = document.getElementById('organizatori-chips');
+      container.innerHTML = selectedOrganizatoriIds.map(id => {
+        const m = membersForOrganizatori.find(x => x.ooo_id === id);
+        const label = m ? m.jmeno : id;
+        return `<span style="display:inline-flex; align-items:center; gap:6px; background:var(--bg-alt); padding:6px 12px; border-radius:999px; font-size:0.85rem;">
+          ${label}
+          <button type="button" data-remove-organizer="${id}" style="border:none; background:none; cursor:pointer; font-weight:700; font-size:1rem; line-height:1; padding:0;">×</button>
+        </span>`;
+      }).join('');
+      container.querySelectorAll('[data-remove-organizer]').forEach(btn => btn.addEventListener('click', () => {
+        selectedOrganizatoriIds = selectedOrganizatoriIds.filter(id => id !== btn.dataset.removeOrganizer);
+        renderOrganizatoriChips();
+      }));
+    }
+
+    const organizatorSearch = document.getElementById('organizator-search');
+    const organizatorDropdown = document.getElementById('organizator-dropdown');
+    if (organizatorSearch) {
+      organizatorSearch.addEventListener('input', () => {
+        const q = organizatorSearch.value.trim().toLowerCase();
+        if (!q) { organizatorDropdown.style.display = 'none'; return; }
+        const matches = membersForOrganizatori
+          .filter(m => !selectedOrganizatoriIds.includes(m.ooo_id))
+          .filter(m => m.jmeno.toLowerCase().includes(q))
+          .slice(0, 8);
+        organizatorDropdown.innerHTML = matches.map(m => `<div class="autocomplete-item" data-ooo="${m.ooo_id}"><strong>${m.jmeno}</strong></div>`).join('');
+        organizatorDropdown.style.display = matches.length ? 'block' : 'none';
+      });
+      organizatorDropdown.addEventListener('click', (e) => {
+        const item = e.target.closest('.autocomplete-item');
+        if (!item) return;
+        if (selectedOrganizatoriIds.length >= MAX_ORGANIZATORI) { alert('Maximálně ' + MAX_ORGANIZATORI + ' organizátorů.'); return; }
+        selectedOrganizatoriIds.push(item.dataset.ooo);
+        renderOrganizatoriChips();
+        organizatorSearch.value = '';
+        organizatorDropdown.style.display = 'none';
+      });
+      document.addEventListener('click', (e) => { if (!e.target.closest('#organizator-search')) organizatorDropdown.style.display = 'none'; });
+    }
+
     function fillForm(event) {
       EDITABLE_FIELD_IDS.forEach(name => {
         const el = document.getElementById('f-' + name);
@@ -332,6 +404,8 @@
         document.getElementById('f-' + name + '-date').value = date;
         document.getElementById('f-' + name + '-time').value = time;
       });
+      selectedOrganizatoriIds = ((event && event.organizatori) || '').split(',').map(s => s.trim()).filter(Boolean);
+      renderOrganizatoriChips();
     }
 
     function readForm() {
@@ -345,6 +419,7 @@
         const timeVal = document.getElementById('f-' + name + '-time').value;
         out[name] = inputsToCzechDateTime(dateVal, timeVal);
       });
+      if (isRada) out.organizatori = selectedOrganizatoriIds.join(',');
       return out;
     }
 
@@ -824,9 +899,10 @@
         .catch(err => { document.getElementById('event-form-msg').textContent = 'Chyba: ' + err.message; });
     });
 
-    // Přístupová brána - Rada NEBO Spolupracovník / tvůrce (2026-08-25, na žádost - akce
-    // a přihlášky spravují organizátoři, ne jen rada). Frontend gating je jen UX - backend
-    // (requireAdminIdentity) ověřuje roli znovu, nezávisle, u každého volání.
+    // Přístupová brána - Rada, Spolupracovník / tvůrce (2026-08-25, vidí všechny akce), NEBO
+    // organizátor konkrétní akce (2026-08-28, na žádost - vidí jen tu svoji, viz
+    // Akce.organizatori). Frontend gating je jen UX - backend (requireAdminIdentity/
+    // requireEventAdminIdentity) ověřuje oprávnění znovu, nezávisle, u každého volání.
     const loggedUser = getLoggedUser();
     if (!loggedUser || !loggedUser.userId) {
       gateLoading.classList.add('hidden');
@@ -839,11 +915,21 @@
         .then(r => r.json())
         .then(data => {
           gateLoading.classList.add('hidden');
-          if (!data.rada && !data.spolupracovnik) {
+          if (!data.rada && !data.spolupracovnik && !data.organizator) {
             gateDenied.classList.remove('hidden');
           } else {
+            isRada = !!data.rada;
             navAdmin.classList.remove('hidden');
             adminContent.classList.remove('hidden');
+            // Založit novou akci a přiřazovat organizátory smí jen Rada/Spolupracovník -
+            // čistý organizátor bez týhle role akce nezakládá, jen spravuje tu svoji.
+            if (!data.rada && !data.spolupracovnik) {
+              document.getElementById('new-event-card').classList.add('hidden');
+            }
+            if (isRada) {
+              document.getElementById('organizatori-group').classList.remove('hidden');
+              loadMembersForOrganizatori();
+            }
             loadEvents().catch(err => alert('Chyba při načítání akcí: ' + err.message));
           }
         })
