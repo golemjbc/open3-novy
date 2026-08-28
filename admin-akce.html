@@ -92,25 +92,29 @@
       font-size: 0.68rem; font-weight: 700; cursor: help;
       margin-left: 4px; vertical-align: middle;
     }
-    /* Popis akce (2026-08-28, na žádost) - jednoduchá tlačítka nad textareou (tučně/
-       kurzíva zabalí vybraný text do <strong>/<em>, "Konec náhledu" vloží HTML komentář
-       <!--more--> - stejný princip jako WordPressové "more" značka, na webu je neviditelná
-       (je to jen komentář), ale detail-akce.html/akce.html podle ní ví, kde přesně uříznout
-       ochutnávku popisu - místo dosavadního "kde je první <br>" (náhodné, podle toho, kde
-       admin zrovna zalomil řádek). Živý náhled pod textareou ukazuje přesně to, co se
-       uloží (stejná konverze \n → <br> jako panel-save-event/popisToHtml na backendu).
-    */
+    /* Popis akce (2026-08-28, na žádost - "formátuju rovnou v tom okně kde píšu", ne
+       textarea+náhled vedle sebe) - skutečné WYSIWYG contenteditable pole. Tučně/kurzíva
+       přes document.execCommand, Enter vkládá <br> (ne nový <div>/<p> - execCommand
+       insertLineBreak). Ukládaný formát zůstává stejné jednoduché HTML jako dřív
+       (<br>/<strong>/<em>), viz readPopisHtml/panel-save-event popisToHtml - beze změny
+       pro starší akce.
+       "Konec náhledu" - místo aby se do živě editovaného pole vkládal rovnou neviditelný
+       HTML komentář <!--more--> (nespolehlivé - prohlížeče při editaci komentáře v
+       contenteditable nepředvídatelně mažou/přesouvají), vkládá se viditelná značka
+       (span, contenteditable="false" = maže se jako jeden kus, ne znak po znaku). Teprve
+       při ukládání/načítání se převádí na/ze skutečného <!--more--> komentáře (viz
+       readPopisHtml/setPopisEditableFromStored) - to už NENÍ přes live-editing vrstvu,
+       jen jednorázová DOM operace na oddělené kopii, spolehlivé. */
     .popis-toolbar { display: flex; gap: 6px; margin-bottom: 6px; }
     .popis-toolbar .btn { padding: 4px 10px; font-size: 0.8rem; }
-    .popis-preview {
-      color: var(--text-muted); font-size: 0.92rem; line-height: 1.6;
-      border: 1px dashed var(--border); border-radius: var(--radius-sm);
-      padding: 10px 14px; margin-top: 4px; min-height: 24px;
+    .popis-editable {
+      min-height: 140px; line-height: 1.6; white-space: pre-wrap;
     }
-    .popis-preview .popis-more-marker {
+    .popis-editable:empty::before { content: attr(data-placeholder); color: var(--text-muted); }
+    .popis-editable .popis-more-marker {
       display: inline-block; color: var(--primary); font-weight: 700; font-size: 0.72rem;
-      text-transform: uppercase; letter-spacing: 0.03em; border-top: 1px dashed var(--primary);
-      width: 100%; padding-top: 4px; margin: 6px 0;
+      text-transform: uppercase; letter-spacing: 0.03em; background: var(--bg-alt);
+      border-radius: 999px; padding: 2px 10px; margin: 2px 0; cursor: default; user-select: none;
     }
     /* Nadpisky skupin ve formuláři akce (2026-08-25, na žádost - "srovnej mi to logicky,
        datumy k sobě, částky k sobě") - stejná pole, jen rozdělená do jasně pojmenovaných
@@ -277,9 +281,7 @@
               <button type="button" class="btn btn-outline btn-sm" data-popis-cmd="italic" title="Kurzíva"><em>I</em></button>
               <button type="button" class="btn btn-outline btn-sm" data-popis-cmd="more" title="Vloží značku, kde končí náhled/ochutnávka popisu na webu">Konec náhledu</button>
             </div>
-            <textarea id="f-popis" class="form-control" rows="6"></textarea>
-            <p class="form-hint">Náhled toho, jak to bude vypadat na webu:</p>
-            <div id="f-popis-preview" class="popis-preview"></div>
+            <div id="f-popis" class="form-control popis-editable" contenteditable="true" data-placeholder="Popis akce…"></div>
           </div>
 
           <div class="form-section-label">Fotky</div>
@@ -341,8 +343,10 @@
     let editingEventId = null;
     let isRada = false;
 
+    // "popis" NENÍ v tomhle seznamu (2026-08-28) - má vlastní contenteditable pole
+    // (WYSIWYG, ne obyčejný textarea s .value), viz setPopisEditableFromStored/readPopisHtml.
     const EDITABLE_FIELD_IDS = [
-      'nazev', 'popis', 'místo', 'lokalita_presna',
+      'nazev', 'místo', 'lokalita_presna',
       'cena', 'jednorazova', 'zaloha', 'doplatek', 'ucet', 'IBAN', 'discord_role_required', 'kapacita',
     ];
 
@@ -444,7 +448,7 @@
       });
       selectedOrganizatoriIds = ((event && event.organizatori) || '').split(',').map(s => s.trim()).filter(Boolean);
       renderOrganizatoriChips();
-      updatePopisPreview();
+      setPopisEditableFromStored(event && event.popis);
     }
 
     function readForm() {
@@ -458,38 +462,89 @@
         const timeVal = document.getElementById('f-' + name + '-time').value;
         out[name] = inputsToCzechDateTime(dateVal, timeVal);
       });
+      out.popis = readPopisHtml();
       if (isRada) out.organizatori = selectedOrganizatoriIds.join(',');
       return out;
     }
 
-    // Popis akce - toolbar + živý náhled (2026-08-28, viz komentář u .popis-toolbar v
-    // <style> výš). popisPreviewHtml zrcadlí panel-save-event/popisToHtml na backendu
-    // (\n → <br>), ať náhled odpovídá tomu, co se doopravdy uloží.
-    function popisPreviewHtml(text) {
-      const html = (text || '').trim().replace(/\r\n/g, '\n').split('\n').join('<br>');
-      return html.replace(/<!--\s*more\s*-->/gi, '<span class="popis-more-marker">— konec náhledu —</span>');
+    // Popis akce - WYSIWYG contenteditable (2026-08-28, viz komentář u .popis-editable
+    // v <style> výš pro důvod "proč ne rovnou HTML komentář při editaci").
+    const popisEditable = document.getElementById('f-popis');
+
+    function insertMoreMarkerAtCursor() {
+      const marker = document.createElement('span');
+      marker.className = 'popis-more-marker';
+      marker.contentEditable = 'false';
+      marker.textContent = '⟨ konec náhledu ⟩';
+      const sel = window.getSelection();
+      if (sel.rangeCount && popisEditable.contains(sel.getRangeAt(0).commonAncestorContainer)) {
+        const range = sel.getRangeAt(0);
+        range.deleteContents();
+        range.insertNode(marker);
+        range.setStartAfter(marker);
+        range.setEndAfter(marker);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      } else {
+        popisEditable.appendChild(marker);
+      }
     }
 
-    const popisTextarea = document.getElementById('f-popis');
-    const popisPreview = document.getElementById('f-popis-preview');
-    function updatePopisPreview() { popisPreview.innerHTML = popisPreviewHtml(popisTextarea.value); }
-    if (popisTextarea) {
-      popisTextarea.addEventListener('input', updatePopisPreview);
-      document.querySelectorAll('[data-popis-cmd]').forEach(btn => btn.addEventListener('click', () => {
-        const cmd = btn.dataset.popisCmd;
-        const start = popisTextarea.selectionStart;
-        const end = popisTextarea.selectionEnd;
-        const value = popisTextarea.value;
-        const selected = value.slice(start, end);
-        let insertText, cursorOffset;
-        if (cmd === 'bold') { insertText = `<strong>${selected}</strong>`; cursorOffset = selected ? insertText.length : '<strong>'.length; }
-        else if (cmd === 'italic') { insertText = `<em>${selected}</em>`; cursorOffset = selected ? insertText.length : '<em>'.length; }
-        else { insertText = '<!--more-->'; cursorOffset = insertText.length; }
-        popisTextarea.value = value.slice(0, start) + insertText + value.slice(end);
-        popisTextarea.focus();
-        popisTextarea.selectionStart = popisTextarea.selectionEnd = start + cursorOffset;
-        updatePopisPreview();
-      }));
+    // Čte se z ODDĚLENÉ kopie DOMu (ne z živě editovaného pole) - viditelná značka se tu
+    // nahradí skutečným Comment uzlem, což .innerHTML spolehlivě serializuje jako
+    // "<!--more-->" text, přesně ten formát, co detail-akce.html/akce.html hledají.
+    function readPopisHtml() {
+      const clone = popisEditable.cloneNode(true);
+      clone.querySelectorAll('.popis-more-marker').forEach(m => m.replaceWith(document.createComment('more')));
+      return clone.innerHTML.trim();
+    }
+
+    // Opačný směr při načtení existující akce - "<!--more-->" v uloženém HTML se
+    // nahradí viditelnou značkou, ať s ní jde v poli normálně pracovat (vidět/smazat).
+    function setPopisEditableFromStored(html) {
+      const temp = document.createElement('div');
+      temp.innerHTML = html || '';
+      const walker = document.createTreeWalker(temp, NodeFilter.SHOW_COMMENT);
+      const toReplace = [];
+      let node;
+      while ((node = walker.nextNode())) {
+        if (node.nodeValue.trim().toLowerCase() === 'more') toReplace.push(node);
+      }
+      toReplace.forEach(commentNode => {
+        const marker = document.createElement('span');
+        marker.className = 'popis-more-marker';
+        marker.contentEditable = 'false';
+        marker.textContent = '⟨ konec náhledu ⟩';
+        commentNode.replaceWith(marker);
+      });
+      popisEditable.innerHTML = temp.innerHTML;
+    }
+
+    if (popisEditable) {
+      // Tlačítka nesmí "ukrást" fokus/výběr z pole před vlastním kliknutím - jinak by
+      // execCommand/insertMoreMarkerAtCursor už neměly, na co reagovat.
+      document.querySelectorAll('[data-popis-cmd]').forEach(btn => {
+        btn.addEventListener('mousedown', (e) => e.preventDefault());
+        btn.addEventListener('click', () => {
+          const cmd = btn.dataset.popisCmd;
+          popisEditable.focus();
+          if (cmd === 'bold') document.execCommand('bold');
+          else if (cmd === 'italic') document.execCommand('italic');
+          else insertMoreMarkerAtCursor();
+        });
+      });
+      // Enter = <br> (jeden zalomený řádek), ne nový odstavcový <div>/<p> - odpovídá
+      // formátu, co web umí zobrazit (viz .event-description .prose br v style.css).
+      popisEditable.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); document.execCommand('insertLineBreak'); }
+      });
+      // Vložení jen jako čistý text (2026-08-28) - vkládání naformátovaného textu z
+      // Wordu/Googlu Docs by jinak protáhlo do popisu cizí styly/tagy, co web neumí.
+      popisEditable.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+        document.execCommand('insertText', false, text);
+      });
     }
 
     // Fotky (2026-08-24) - titulní (jedna) + album (víc, max 10), stejný base64 vzorec
