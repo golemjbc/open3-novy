@@ -56,7 +56,11 @@ function initAdminNavLink(user) {
   })
     .then(r => r.json())
     .then(data => {
-      const isAdmin = !!(data.ok && (data.rada || data.spolupracovnik));
+      // Organizátor (2026-08-28) vidí jen admin-akce.html (jediná stránka s
+      // requireEventAdminIdentity fallbackem), ale položka v menu je společná pro
+      // všechny tři admin stránky, tak ji musí odemknout stejně jako rada/spolupracovník -
+      // jinak se organizátor bez Rada/Spolupracovník role vůbec neklikne na svoji akci.
+      const isAdmin = !!(data.ok && (data.rada || data.spolupracovnik || data.organizator));
       nav.style.display = isAdmin ? '' : 'none';
       localStorage.setItem(cacheKey, isAdmin ? '1' : '0');
     })
