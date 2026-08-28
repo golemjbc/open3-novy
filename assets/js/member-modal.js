@@ -216,8 +216,7 @@ function renderMemberModal(body, data) {
       questionnaireHtml += `
         <div class="member-patron-actions">
           ${hasExistingPatron ? `
-            <div>Patron: <strong>${escapeHtml(q.patron_kdo_historicky)}</strong>
-              ${q.patron_normalized && q.patron_normalized !== q.patron_kdo_historicky ? ` <span class="member-modal-contact">(dnes: ${escapeHtml(q.patron_normalized)})</span>` : ''}
+            <div>Patron: <strong>${escapeHtml(q.patron_normalized || q.patron_kdo_historicky)}</strong>
               <button type="button" class="member-link" id="member-change-patron-toggle" style="margin-left:8px;">Změnit</button>
             </div>
           ` : ''}
