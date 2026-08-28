@@ -10,14 +10,92 @@ const DISCORD_AUTH_URL =
 const GOOGLE_CLIENT_ID = '16887022098-fp2i853o893838s0390v763j8m1davj4.apps.googleusercontent.com';
 const GOOGLE_VERIFY_URL = API_BASE + '/api/verify-google';
 
-function getLoggedUser() {
+function getRealLoggedUser() {
   const raw = localStorage.getItem('oooUser');
   if (!raw) return null;
   try { return JSON.parse(raw); } catch (e) { return null; }
 }
 
+// "Zobrazit jako" / ghost mode (2026-08-28, na žádost - podpora: "co mi nejde" jde ověřit
+// tak, že admin uvidí web přesně očima toho člověka). Cíleně jen Discord identita - Google
+// cestu backend ověřuje skutečným tokenem (viz Identitní model v BACKEND-AZURE-FUNCTIONS.md),
+// takže "vydávat se" za Google účet bez zásahu do backendu vůbec nejde a nezkoušíme to.
+// sessionStorage (ne localStorage) záměrně - drží se jen v týhle kartě, zavření karty/
+// odhlášení ho samo smaže, nemůže tak omylem "prosáknout" do jiné karty/dalšího přihlášení.
+const GHOST_KEY = 'oooGhostTarget';
+
+function getGhostTarget() {
+  try { return JSON.parse(sessionStorage.getItem(GHOST_KEY) || 'null'); } catch (e) { return null; }
+}
+
+function setGhostTarget(target) { sessionStorage.setItem(GHOST_KEY, JSON.stringify(target)); }
+function clearGhostTarget() { sessionStorage.removeItem(GHOST_KEY); }
+
+// getLoggedUser() je to, co čte úplně každá stránka (kdo jsem, co je "moje") - v ghost
+// modu proto vrací CÍLOVÉHO uživatele, ne skutečně přihlášeného admina, ať se web chová
+// 1:1 stejně, jako by ho otevřel on sám (žádná stránka se kvůli tomu nemusí upravovat
+// zvlášť). Skutečná admin identita jde zjistit přes getRealLoggedUser(), používá to jen
+// banner níž (na "Ukončit náhled").
+function getLoggedUser() {
+  const ghost = getGhostTarget();
+  if (ghost) return { userId: ghost.discord_id, userName: ghost.jmeno + ' (náhled)', avatarUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==', provider: 'discord' };
+  return getRealLoggedUser();
+}
+
 function isGoogleUser(user) {
   return !!(user && (user.provider === 'google' || /^google_/.test(user.userId || '')));
+}
+
+// Bezpečnostní pojistka ghost modu - "jen vidět, ne klikat". I když getLoggedUser() výš
+// vrací cizí identitu, backend u Discord cesty dnes věří poslanému user_id bez ověření
+// (viz riziko #1 v BEZPECNOST-A-RIZIKA.md) - kdyby admin v náhledu omylem klikl na
+// "Přihlásit se"/"Zrušit účast"/formulář, ve skutečnosti by to odeslal ZA toho člověka.
+// Proto se v ghost modu smí projít na backend jen explicitně vyjmenované READ endpointy
+// (allowlist, ne blocklist - bezpečnější default, kdyby se na něco zapomnělo).
+const GHOST_SAFE_ENDPOINTS = new Set([
+  'events', 'members', 'my-registrations', 'get-deposit-info', 'my-profile', 'my-roles',
+  'panel-list-events', 'panel-list-members', 'panel-list-registrations', 'panel-list-questionnaires',
+  'panel-list-fio-payments', 'panel-member-detail', 'panel-gallery-list', 'panel-gallery-legacy-events',
+]);
+const _oooRealFetch = window.fetch.bind(window);
+window.fetch = function (input, init) {
+  const ghost = getGhostTarget();
+  if (ghost) {
+    const url = typeof input === 'string' ? input : (input && input.url) || '';
+    if (url.startsWith(API_BASE)) {
+      const path = url.slice(API_BASE.length).split('?')[0];
+      const name = path.replace(/^\/api\//, '');
+      if (!GHOST_SAFE_ENDPOINTS.has(name)) {
+        console.warn('Ghost mode: zablokovaný pokus o zápis přes', name);
+        return Promise.resolve(new Response(JSON.stringify({ ok: false, error: 'Prohlížecí režim (náhled za uživatele) - tahle akce je záměrně zakázaná, ukonči náhled tlačítkem nahoře.' }), { status: 423, headers: { 'Content-Type': 'application/json' } }));
+      }
+    }
+  }
+  return _oooRealFetch(input, init);
+};
+
+function ghostBannerEnsure() {
+  const ghost = getGhostTarget();
+  const existing = document.getElementById('ooo-ghost-banner');
+  if (!ghost) { if (existing) existing.remove(); document.body.classList.remove('ooo-ghost-active'); return; }
+  if (existing) return;
+  const escDiv = document.createElement('div');
+  escDiv.textContent = ghost.jmeno || ghost.discord_id;
+  const safeName = escDiv.innerHTML;
+  const bar = document.createElement('div');
+  bar.id = 'ooo-ghost-banner';
+  bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#3d2a00;color:#ffd580;font-size:0.85rem;font-weight:600;padding:9px 14px;display:flex;gap:10px;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.25);';
+  bar.innerHTML = `<span>👻 Prohlížíš web očima uživatele <strong>${safeName}</strong> - jen náhled, akce jsou zakázané.</span>
+    <button type="button" id="ooo-ghost-exit" style="background:#ffd580;color:#3d2a00;border:none;border-radius:6px;padding:4px 10px;font-weight:700;cursor:pointer;">Ukončit náhled</button>`;
+  document.body.prepend(bar);
+  document.body.classList.add('ooo-ghost-active');
+  const style = document.createElement('style');
+  style.textContent = 'body.ooo-ghost-active { padding-top: 40px; } body.ooo-ghost-active .site-header { top: 40px; }';
+  document.head.appendChild(style);
+  document.getElementById('ooo-ghost-exit').addEventListener('click', () => {
+    clearGhostTarget();
+    location.reload();
+  });
 }
 
 // Tělo požadavku na identitu pro backend (2026-08-25, na žádost - "stačila by na to jedna
@@ -89,6 +167,8 @@ function applyAdminTabsVisibility(data) {
 }
 
 function initAuthUI() {
+  ghostBannerEnsure();
+
   const userInfo = document.getElementById('user-info');
   const userName = document.getElementById('user-name');
   const userAvatar = document.getElementById('user-avatar');
@@ -145,6 +225,7 @@ function initAuthUI() {
     loginBtn.textContent = 'Přihlásit';
     loginBtn.dataset.mode = 'login';
     localStorage.removeItem('oooUser');
+    clearGhostTarget();
     initAdminNavLink(null);
   }
 
