@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta name="referrer" content="no-referrer">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OOO Community - Otevři se. Poznej se. Propoj se.">
+  <meta property="og:title" content="Nápověda — OOO Community">
+  <meta property="og:description" content="Eventy, Seznamování, Umění, Výzkum, ... Přidej se do komunity!">
+  <meta property="og:image" content="https://open3.cz/assets/images/LogoMETA.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://open3.cz/admin-napoveda.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="OOO Community">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://open3.cz/assets/images/LogoMETA.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="favicon.ico">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <title>Nápověda — OOO Community</title>
+  <style>
+    .hidden { display: none !important; }
+
+    /* Nápověda (2026-08-29, na žádost - "přidej popisy funkcí admin panelu") - matice
+       oprávnění + karty s tím, co která sekce umí. Stejné třídy jako zbytek admin panelu
+       (.admin-card, .admin-responsive-table), jen s vlastním obsahem. */
+    .help-matrix-wrap { overflow-x: auto; }
+    table.help-matrix { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 0.88rem; }
+    table.help-matrix th, table.help-matrix td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    table.help-matrix thead th { font-size: 0.76rem; text-transform: uppercase; color: var(--text-muted); border-bottom: 2px solid var(--border); }
+    table.help-matrix tbody th { white-space: nowrap; font-weight: 700; }
+    .help-pill {
+      display: inline-flex; align-items: center; gap: 6px; font-size: 0.76rem; font-weight: 700;
+      padding: 3px 10px 3px 8px; border-radius: 999px; white-space: nowrap;
+    }
+    .help-pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; flex: none; }
+    .help-pill.full { background: #e3f3e9; color: #1f7a4f; }
+    .help-pill.full::before { background: #1f7a4f; }
+    .help-pill.scoped { background: #fdf1de; color: #9a5b06; }
+    .help-pill.scoped::before { background: #9a5b06; }
+    .help-pill.none { color: var(--text-muted); font-weight: 500; }
+    .help-pill.none::before { display: none; }
+
+    .help-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .help-card h3 { margin: 0 0 4px; font-size: 1.05rem; }
+    .help-card .help-who { font-size: 0.76rem; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; margin: 0 0 12px; }
+    .help-card ul { margin: 0; padding-left: 18px; }
+    .help-card li { font-size: 0.88rem; line-height: 1.55; margin-bottom: 6px; color: var(--text); }
+    .help-card li:last-child { margin-bottom: 0; }
+    .help-card li.help-no { color: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <script src="assets/js/age-gate.js"></script>
+
+  <header class="site-header">
+    <div class="container">
+      <button class="nav-toggle" id="nav-toggle" aria-label="Menu">☰</button>
+      <a class="brand" href="index.html"><img src="assets/images/OOOlogo.png" alt="OOO logo"> <span>OOO Community</span></a>
+      <nav>
+        <ul class="nav-links" id="nav-links">
+          <li><a href="index.html">Domů</a></li>
+          <li><a href="akce.html">Akce</a></li>
+          <li><a href="galerie.html">Galerie</a></li>
+          <li><a href="pravidla.html">Pravidla</a></li>
+          <li><a href="contact.html">Kontakt</a></li>
+          <li id="nav-admin" class="hidden" data-self-managed="1"><a href="admin-akce.html">Administrace</a></li>
+        </ul>
+      </nav>
+      <div class="header-actions">
+        <div id="user-info"><img id="user-avatar" src="" alt=""><span id="user-name"></span></div>
+        <a id="login-button" href="#" class="btn btn-primary btn-sm">Přihlásit</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="section">
+    <div class="container">
+      <span class="eyebrow">Pro radu, patrony a organizátory</span>
+      <h1>Nápověda</h1>
+
+      <div id="gate-loading" class="status-panel info">Ověřuji oprávnění…</div>
+
+      <div id="gate-denied" class="access-denied hidden">
+        <h3>Nemáš oprávnění</h3>
+        <p>Tahle stránka je pro radu, spolupracovníky, patrony a organizátory akcí.</p>
+      </div>
+
+      <div id="admin-content" class="hidden">
+        <div class="admin-tabs">
+          <a id="tab-akce" href="admin-akce.html">Akce a přihlášky</a>
+          <a id="tab-dotazniky" href="admin-dotazniky.html">Fronta dotazníků</a>
+          <a id="tab-clenove" href="admin-clenove.html">Přehled členů</a>
+          <a id="tab-platby" href="admin-platby.html">Platby</a>
+          <a id="tab-galerie" href="admin-galerie.html">Fotogalerie</a>
+          <a id="tab-napoveda" href="admin-napoveda.html" class="active">Nápověda</a>
+        </div>
+
+        <div class="admin-card">
+          <h3>Kdo kam může</h3>
+          <p class="form-hint" style="margin-top:-6px; margin-bottom:14px;">Rada a Spolupracovník vidí věci napříč všemi akcemi. Organizátor vidí jen tu jednu akci, ke které je přiřazený v poli „Organizátoři".</p>
+          <div class="help-matrix-wrap">
+            <table class="help-matrix">
+              <thead>
+                <tr><th>Sekce</th><th>Rada</th><th>Spolupracovník</th><th>Patron</th><th>Organizátor</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">Akce a přihlášky</th>
+                  <td><span class="help-pill full">Plný</span></td>
+                  <td><span class="help-pill full">Plný</span></td>
+                  <td><span class="help-pill none">—</span></td>
+                  <td><span class="help-pill scoped">Jen svoje akce</span></td>
+                </tr>
+                <tr>
+                  <th scope="row">Fronta dotazníků</th>
+                  <td><span class="help-pill full">Plný</span></td>
+                  <td><span class="help-pill none">—</span></td>
+                  <td><span class="help-pill full">Plný</span></td>
+                  <td><span class="help-pill none">—</span></td>
+                </tr>
+                <tr>
+                  <th scope="row">Přehled členů</th>
+                  <td><span class="help-pill full">Plný</span></td>
+                  <td><span class="help-pill none">—</span></td>
+                  <td><span class="help-pill none">—</span></td>
+                  <td><span class="help-pill none">—</span></td>
+                </tr>
+                <tr>
+                  <th scope="row">Platby (FIO)</th>
+                  <td><span class="help-pill full">Plný</span></td>
+                  <td><span class="help-pill none">—</span></td>
+                  <td><span class="help-pill none">—</span></td>
+                  <td><span class="help-pill none">—</span></td>
+                </tr>
+                <tr>
+                  <th scope="row">Fotogalerie</th>
+                  <td><span class="help-pill full">Plný</span></td>
+                  <td><span class="help-pill full">Plný</span></td>
+                  <td><span class="help-pill none">—</span></td>
+                  <td><span class="help-pill scoped">Jen svoje akce</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="form-hint" style="margin-top:14px;">Rada a Spolupracovník jsou role přiřazené na Discordu, stejně tak Patron. Organizátor je jediný, co se nastavuje přímo na webu - v poli „Organizátoři" u dané akce (jen Rada to smí nastavit).</p>
+        </div>
+
+        <div class="form-section-label">Co která sekce umí</div>
+        <div class="help-grid">
+          <div class="help-card admin-card">
+            <h3>Akce a přihlášky</h3>
+            <p class="help-who">Rada, Spolupracovník, Organizátor (jen svoje akce)</p>
+            <ul>
+              <li>Založení nové akce (typ A/B/C, rok) - číslo akce se dopočítá samo. <span class="help-no">Jen Rada/Spolupracovník.</span></li>
+              <li>Editace názvu, místa, lokality, kapacity, vyžadované Discord role, termínů, ceny/zálohy/doplatku/účtu, popisu (formátování tučně/kurzíva přímo v poli, tlačítko „Konec náhledu" určuje, kde se uřízne ochutnávka na webu) a fotek.</li>
+              <li>Přiřazení až 5 organizátorů ke konkrétní akci. <span class="help-no">Jen Rada.</span></li>
+              <li>Přehled přihlášených, ruční nastavení doplatku, zrušení účasti s vygenerováním QR platby na vratku.</li>
+              <li class="help-no">Smazání akce - jen Rada/Spolupracovník.</li>
+            </ul>
+          </div>
+          <div class="help-card admin-card">
+            <h3>Fronta dotazníků</h3>
+            <p class="help-who">Rada, Patron</p>
+            <ul>
+              <li>Seznam vyplněných vstupních dotazníků (typ B/C) čekajících na rozhodnutí, s filtrem podle patrona / bez kontaktu / bez setkání.</li>
+              <li>Detail: profil, odpovědi, historie akcí, stav přístupu k typům A/B/C.</li>
+              <li>Schválení nebo zamítnutí, přiřazení patrona, poznámky - funguje i u starých osiřelých záznamů z Google Forms bez napojení na profil.</li>
+              <li>Vyřízené (schválené/zamítnuté) se v přehledu dál nezobrazují.</li>
+            </ul>
+          </div>
+          <div class="help-card admin-card">
+            <h3>Přehled členů</h3>
+            <p class="help-who">Jen Rada</p>
+            <ul>
+              <li>Kompletní seznam členů - jméno, Discord, kontakt, role.</li>
+              <li>Fulltextové hledání a filtr podle role.</li>
+              <li>Klik na jméno otevře detail (stejné okno jako z fronty dotazníků).</li>
+              <li>„👻 Zobrazit jako" u Discord účtů - otevře web přesně očima daného člověka (jen náhled, nejde za něj nic odeslat). Popsáno níž.</li>
+            </ul>
+          </div>
+          <div class="help-card admin-card">
+            <h3>Platby (FIO)</h3>
+            <p class="help-who">Jen Rada</p>
+            <ul>
+              <li>Automatické párování bankovních plateb podle variabilního symbolu.</li>
+              <li>Ruční přiřazení/oprava platby, která se nespárovala sama.</li>
+              <li>Přehled historie stažených transakcí z účtu.</li>
+            </ul>
+          </div>
+          <div class="help-card admin-card">
+            <h3>Fotogalerie</h3>
+            <p class="help-who">Rada, Spolupracovník, Organizátor (jen svoje akce)</p>
+            <ul>
+              <li>Výběr akce (i starších z roku 2025, mimo běžný registrační systém) a nahrání fotek/videí.</li>
+              <li>Označení fotky jako veřejná/neveřejná, přiřazení podalba, nastavení titulní fotky akce.</li>
+              <li>Otočení fotky o 90°, trvalé smazání.</li>
+            </ul>
+          </div>
+          <div class="help-card admin-card">
+            <h3>👻 Zobrazit jako (ghost mode)</h3>
+            <p class="help-who">Jen Rada, tlačítko v Přehledu členů</p>
+            <ul>
+              <li>Otevře web přesně tak, jak ho vidí vybraný člověk (Discord účty zatím, Google zatím nejde) - užitečné pro podporu, "co mu/jí nejde".</li>
+              <li>Nahoře svítí pruh s upozorněním a tlačítkem „Ukončit náhled".</li>
+              <li>Je to jen náhled - odeslání jakékoliv akce (registrace, zrušení, formulář...) je v náhledu zablokované.</li>
+              <li>Drží se jen v aktuální kartě prohlížeče, zavřením karty/odhlášením zmizí samo.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-bottom">© 2026 OOO Community z.s. — Design: Adam</div>
+    </div>
+  </footer>
+
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/profile-modal.js"></script>
+  <script>
+    function identityPayload() { return getIdentityPayload(getLoggedUser()); }
+
+    const gateLoading = document.getElementById('gate-loading');
+    const gateDenied = document.getElementById('gate-denied');
+    const adminContent = document.getElementById('admin-content');
+    const navAdmin = document.getElementById('nav-admin');
+
+    // Přístupová brána - kdokoliv, kdo má přístup aspoň do jedné admin sekce (na rozdíl
+    // od ostatních admin-*.html stránek tahle nikomu nic nezapisuje, jen vysvětluje, co
+    // kde je - proto nejširší možný okruh, ne jen jedna konkrétní role).
+    const loggedUser = getLoggedUser();
+    if (!loggedUser || !loggedUser.userId) {
+      gateLoading.classList.add('hidden');
+      gateDenied.classList.remove('hidden');
+    } else {
+      fetch(API_BASE + '/api/my-roles', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(identityPayload()),
+      })
+        .then(r => r.json())
+        .then(data => {
+          gateLoading.classList.add('hidden');
+          if (!data.rada && !data.spolupracovnik && !data.patron && !data.organizator) {
+            gateDenied.classList.remove('hidden');
+          } else {
+            navAdmin.classList.remove('hidden');
+            adminContent.classList.remove('hidden');
+            applyAdminTabsVisibility(data);
+          }
+        })
+        .catch(() => {
+          gateLoading.classList.add('hidden');
+          gateDenied.classList.remove('hidden');
+        });
+    }
+  </script>
+</body>
+</html>

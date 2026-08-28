@@ -171,6 +171,7 @@ function applyAdminTabsVisibility(data) {
     'tab-clenove': data.rada,
     'tab-platby': data.rada,
     'tab-galerie': data.rada || data.spolupracovnik || data.organizator,
+    'tab-napoveda': data.rada || data.spolupracovnik || data.patron || data.organizator,
   };
   Object.entries(rules).forEach(([id, visible]) => {
     const el = document.getElementById(id);
