@@ -53,7 +53,11 @@ function isGoogleUser(user) {
 // Proto se v ghost modu smí projít na backend jen explicitně vyjmenované READ endpointy
 // (allowlist, ne blocklist - bezpečnější default, kdyby se na něco zapomnělo).
 const GHOST_SAFE_ENDPOINTS = new Set([
-  'events', 'members', 'my-registrations', 'get-deposit-info', 'my-profile', 'my-roles',
+  // Veřejné/vlastní čtení (co běžný uživatel vidí procházením webu):
+  'events', 'members', 'my-registrations', 'get-deposit-info', 'get-questionnaire', 'my-profile', 'my-roles',
+  'event-gallery', 'gallery-events',
+  // Admin čtení (pro případ, že by se v náhledu omylem otevřela admin stránka - i tak
+  // to zůstává jen ČTENÍ, žádný z panel-*-list/detail endpointů nic nezapisuje):
   'panel-list-events', 'panel-list-members', 'panel-list-registrations', 'panel-list-questionnaires',
   'panel-list-fio-payments', 'panel-member-detail', 'panel-gallery-list', 'panel-gallery-legacy-events',
 ]);
