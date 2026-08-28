@@ -193,11 +193,17 @@
         if (urlMatch) discordLinkHtml = `<p class="discord-link-inline">💬 <a href="${urlMatch[0]}" target="_blank">Diskuze a dotazy na Discordu</a></p>`;
       }
 
-      // Ochutnávka popisu = text do prvního <br> (přirozený úvodní odstavec),
-      // jen když popis nemá žádný <br> vůbec, padneme na bezpečné oříznutí délky
+      // Ochutnávka popisu (2026-08-28: přednostně explicitní značka <!--more--> vložená
+      // z admin-akce.html tlačítkem "Konec náhledu" - stejný princip jako WordPress
+      // "more" tag, neviditelná na webu, je to jen HTML komentář. U starších akcí bez
+      // téhle značky zůstává původní chování jako záloha: text do prvního <br>, a když
+      // popis nemá žádný <br> vůbec, bezpečné oříznutí délky.
+      const moreMatch = (event.popis || '').match(/<!--\s*more\s*-->/i);
       const brMatch = (event.popis || '').match(/<br\s*\/?>/i);
       let leadText;
-      if (brMatch) {
+      if (moreMatch) {
+        leadText = event.popis.slice(0, moreMatch.index).replace(/<[^>]+>/g, '').trim();
+      } else if (brMatch) {
         leadText = event.popis.slice(0, brMatch.index).replace(/<[^>]+>/g, '').trim();
       } else {
         const plain = (event.popis || '').replace(/<[^>]+>/g, '').trim();

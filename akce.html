@@ -234,9 +234,14 @@
             const soon = isSoon(e);
             const img = getSmartImageUrl(e.obrazek);
 
+            // Ochutnávka popisu (2026-08-28: přednostně <!--more--> značka z admin-akce.html,
+            // stejná logika i důvod jako v detail-akce.html - viz komentář tam).
+            const moreMatch = (e.popis || '').match(/<!--\s*more\s*-->/i);
             const brMatch = (e.popis || '').match(/<br\s*\/?>/i);
             let descText;
-            if (brMatch) {
+            if (moreMatch) {
+              descText = e.popis.slice(0, moreMatch.index).replace(/<[^>]+>/g, '').trim();
+            } else if (brMatch) {
               descText = e.popis.slice(0, brMatch.index).replace(/<[^>]+>/g, '').trim();
             } else {
               const plain = (e.popis || '').replace(/<[^>]+>/g, '').trim();

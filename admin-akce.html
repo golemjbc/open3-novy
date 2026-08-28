@@ -79,10 +79,9 @@
     }
     .admin-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
     .admin-form-grid .form-group { margin-bottom: 0; }
-    /* Organizátoři (2026-08-28) - na žádost přes celou šířku, ne jako běžné pole vedle
-       "Vyžadovaná Discord role": s chipy + autocomplete roste na výšku podle počtu lidí,
-       vedle kratšího pole to v mřížce vypadalo křivě a při přidávání "ujíždělo". */
-    #organizatori-group { grid-column: 1 / -1; }
+    /* Organizátoři (2026-08-28) - zpátky vedle "Vyžadovaná Discord role" (na žádost),
+       teď zmenšené - hint je od poslední úpravy jen ikonka, ne odstavec, takže pole je
+       výrazně nižší a vedle kratšího souseda už tolik nevadí. */
     /* Vysvětlivky v Základním info (2026-08-28, na žádost - "šedé texty zbytečně zabírají
        místo, dělá to nepřehledný") - místo trvale vypsaného .form-hint odstavce jen malá
        ikonka "?" u popisky, text se ukáže přes nativní title tooltip až po najetí myší. */
@@ -92,6 +91,26 @@
       background: var(--border); color: var(--text-muted);
       font-size: 0.68rem; font-weight: 700; cursor: help;
       margin-left: 4px; vertical-align: middle;
+    }
+    /* Popis akce (2026-08-28, na žádost) - jednoduchá tlačítka nad textareou (tučně/
+       kurzíva zabalí vybraný text do <strong>/<em>, "Konec náhledu" vloží HTML komentář
+       <!--more--> - stejný princip jako WordPressové "more" značka, na webu je neviditelná
+       (je to jen komentář), ale detail-akce.html/akce.html podle ní ví, kde přesně uříznout
+       ochutnávku popisu - místo dosavadního "kde je první <br>" (náhodné, podle toho, kde
+       admin zrovna zalomil řádek). Živý náhled pod textareou ukazuje přesně to, co se
+       uloží (stejná konverze \n → <br> jako panel-save-event/popisToHtml na backendu).
+    */
+    .popis-toolbar { display: flex; gap: 6px; margin-bottom: 6px; }
+    .popis-toolbar .btn { padding: 4px 10px; font-size: 0.8rem; }
+    .popis-preview {
+      color: var(--text-muted); font-size: 0.92rem; line-height: 1.6;
+      border: 1px dashed var(--border); border-radius: var(--radius-sm);
+      padding: 10px 14px; margin-top: 4px; min-height: 24px;
+    }
+    .popis-preview .popis-more-marker {
+      display: inline-block; color: var(--primary); font-weight: 700; font-size: 0.72rem;
+      text-transform: uppercase; letter-spacing: 0.03em; border-top: 1px dashed var(--primary);
+      width: 100%; padding-top: 4px; margin: 6px 0;
     }
     /* Nadpisky skupin ve formuláři akce (2026-08-25, na žádost - "srovnej mi to logicky,
        datumy k sobě, částky k sobě") - stejná pole, jen rozdělená do jasně pojmenovaných
@@ -252,8 +271,15 @@
           </div>
           <div class="form-section-label">Popis</div>
           <div class="form-group">
-            <label class="form-label">Popis (nové řádky se uloží jako zalomení)</label>
+            <label class="form-label">Popis (nové řádky se uloží jako zalomení) <span class="hint-icon" title="Konec náhledu určuje, kolik textu se ukáže na kartě akce/nahoře na stránce s tlačítkem &quot;Číst dál&quot; - zbytek se ukáže až po rozkliknutí.">?</span></label>
+            <div class="popis-toolbar">
+              <button type="button" class="btn btn-outline btn-sm" data-popis-cmd="bold" title="Tučně"><strong>T</strong></button>
+              <button type="button" class="btn btn-outline btn-sm" data-popis-cmd="italic" title="Kurzíva"><em>I</em></button>
+              <button type="button" class="btn btn-outline btn-sm" data-popis-cmd="more" title="Vloží značku, kde končí náhled/ochutnávka popisu na webu">Konec náhledu</button>
+            </div>
             <textarea id="f-popis" class="form-control" rows="6"></textarea>
+            <p class="form-hint">Náhled toho, jak to bude vypadat na webu:</p>
+            <div id="f-popis-preview" class="popis-preview"></div>
           </div>
 
           <div class="form-section-label">Fotky</div>
@@ -370,9 +396,9 @@
       container.innerHTML = selectedOrganizatoriIds.map(id => {
         const m = membersForOrganizatori.find(x => x.ooo_id === id);
         const label = m ? m.jmeno : id;
-        return `<span style="display:inline-flex; align-items:center; gap:6px; background:var(--bg-alt); padding:6px 12px; border-radius:999px; font-size:0.85rem;">
+        return `<span style="display:inline-flex; align-items:center; gap:4px; background:var(--bg-alt); padding:3px 8px; border-radius:999px; font-size:0.76rem;">
           ${label}
-          <button type="button" data-remove-organizer="${id}" style="border:none; background:none; cursor:pointer; font-weight:700; font-size:1rem; line-height:1; padding:0;">×</button>
+          <button type="button" data-remove-organizer="${id}" style="border:none; background:none; cursor:pointer; font-weight:700; font-size:0.9rem; line-height:1; padding:0;">×</button>
         </span>`;
       }).join('');
       container.querySelectorAll('[data-remove-organizer]').forEach(btn => btn.addEventListener('click', () => {
@@ -418,6 +444,7 @@
       });
       selectedOrganizatoriIds = ((event && event.organizatori) || '').split(',').map(s => s.trim()).filter(Boolean);
       renderOrganizatoriChips();
+      updatePopisPreview();
     }
 
     function readForm() {
@@ -433,6 +460,36 @@
       });
       if (isRada) out.organizatori = selectedOrganizatoriIds.join(',');
       return out;
+    }
+
+    // Popis akce - toolbar + živý náhled (2026-08-28, viz komentář u .popis-toolbar v
+    // <style> výš). popisPreviewHtml zrcadlí panel-save-event/popisToHtml na backendu
+    // (\n → <br>), ať náhled odpovídá tomu, co se doopravdy uloží.
+    function popisPreviewHtml(text) {
+      const html = (text || '').trim().replace(/\r\n/g, '\n').split('\n').join('<br>');
+      return html.replace(/<!--\s*more\s*-->/gi, '<span class="popis-more-marker">— konec náhledu —</span>');
+    }
+
+    const popisTextarea = document.getElementById('f-popis');
+    const popisPreview = document.getElementById('f-popis-preview');
+    function updatePopisPreview() { popisPreview.innerHTML = popisPreviewHtml(popisTextarea.value); }
+    if (popisTextarea) {
+      popisTextarea.addEventListener('input', updatePopisPreview);
+      document.querySelectorAll('[data-popis-cmd]').forEach(btn => btn.addEventListener('click', () => {
+        const cmd = btn.dataset.popisCmd;
+        const start = popisTextarea.selectionStart;
+        const end = popisTextarea.selectionEnd;
+        const value = popisTextarea.value;
+        const selected = value.slice(start, end);
+        let insertText, cursorOffset;
+        if (cmd === 'bold') { insertText = `<strong>${selected}</strong>`; cursorOffset = selected ? insertText.length : '<strong>'.length; }
+        else if (cmd === 'italic') { insertText = `<em>${selected}</em>`; cursorOffset = selected ? insertText.length : '<em>'.length; }
+        else { insertText = '<!--more-->'; cursorOffset = insertText.length; }
+        popisTextarea.value = value.slice(0, start) + insertText + value.slice(end);
+        popisTextarea.focus();
+        popisTextarea.selectionStart = popisTextarea.selectionEnd = start + cursorOffset;
+        updatePopisPreview();
+      }));
     }
 
     // Fotky (2026-08-24) - titulní (jedna) + album (víc, max 10), stejný base64 vzorec
