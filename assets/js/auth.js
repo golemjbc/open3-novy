@@ -67,6 +67,27 @@ function initAdminNavLink(user) {
     .catch(() => {});
 }
 
+// Skrytí tabů v ".admin-tabs" (Akce a přihlášky / Fronta dotazníků / Přehled členů /
+// Platby / Fotogalerie), na které volající přes my-roles beztak nemá právo - dřív byly
+// tyhle odkazy natvrdo v HTML na všech pěti admin-*.html a klikem na nedostupný tab
+// zmizelo celé menu (stránka gate-denied). Volá se z gate-success větve na každé
+// admin-*.html stránce zvlášť (2026-08-28, hlášeno - "kliknu na cokoliv jiného než akce
+// a přihlášky a zmizí mi menu"), protože to, co je "dostupné", se liší podle role a
+// stránky ho i tak už zjišťovala sama přes vlastní my-roles volání.
+function applyAdminTabsVisibility(data) {
+  const rules = {
+    'tab-akce': data.rada || data.spolupracovnik || data.organizator,
+    'tab-dotazniky': data.rada || data.patron,
+    'tab-clenove': data.rada,
+    'tab-platby': data.rada,
+    'tab-galerie': data.rada || data.patron || data.organizator,
+  };
+  Object.entries(rules).forEach(([id, visible]) => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('hidden', !visible);
+  });
+}
+
 function initAuthUI() {
   const userInfo = document.getElementById('user-info');
   const userName = document.getElementById('user-name');

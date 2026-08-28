@@ -80,16 +80,16 @@
 
       <div id="gate-denied" class="access-denied hidden">
         <h3>Nemáš oprávnění</h3>
-        <p>Tahle stránka je pro radu a organizátory akcí. Přihlas se prosím přes tlačítko v hlavičce.</p>
+        <p>Tahle stránka je jen pro radu. Přihlas se prosím přes tlačítko v hlavičce účtem s touhle rolí.</p>
       </div>
 
       <div id="admin-content" class="hidden">
         <div class="admin-tabs">
-          <a href="admin-akce.html">Akce a přihlášky</a>
-          <a href="admin-dotazniky.html">Fronta dotazníků</a>
-          <a href="admin-clenove.html">Přehled členů</a>
-          <a href="admin-platby.html" class="active">Platby</a>
-          <a href="admin-galerie.html">Fotogalerie</a>
+          <a id="tab-akce" href="admin-akce.html">Akce a přihlášky</a>
+          <a id="tab-dotazniky" href="admin-dotazniky.html">Fronta dotazníků</a>
+          <a id="tab-clenove" href="admin-clenove.html">Přehled členů</a>
+          <a id="tab-platby" href="admin-platby.html" class="active">Platby</a>
+          <a id="tab-galerie" href="admin-galerie.html">Fotogalerie</a>
         </div>
 
         <div id="fio-token-notice" class="status-panel hidden" style="margin-bottom:16px;"></div>
@@ -314,8 +314,8 @@
         .catch(err => { msg.textContent = 'Chyba: ' + err.message; });
     });
 
-    // Přístupová brána - Rada NEBO Spolupracovník / tvůrce (stejná dvojice jako
-    // admin-akce.html - platby patří ke stejné agendě jako akce a přihlášky).
+    // Přístupová brána - jen Rada (2026-08-28: Spolupracovník / tvůrce zúžen jen na Akce
+    // a přihlášky, FIO platby přes celý účet nejsou "jedna akce" - viz panel-list-fio-payments).
     const loggedUser = getLoggedUser();
     if (!loggedUser || !loggedUser.userId) {
       gateLoading.classList.add('hidden');
@@ -327,11 +327,12 @@
         .then(r => r.json())
         .then(data => {
           gateLoading.classList.add('hidden');
-          if (!data.rada && !data.spolupracovnik) {
+          if (!data.rada) {
             gateDenied.classList.remove('hidden');
           } else {
             navAdmin.classList.remove('hidden');
             adminContent.classList.remove('hidden');
+            applyAdminTabsVisibility(data);
             Promise.all([loadEventsForSelect(), loadPayments()]).catch(err => alert('Chyba při načítání: ' + err.message));
           }
         })

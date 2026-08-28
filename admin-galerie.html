@@ -83,11 +83,11 @@
 
       <div id="admin-content" class="hidden">
         <div class="admin-tabs">
-          <a href="admin-akce.html">Akce a přihlášky</a>
-          <a href="admin-dotazniky.html">Fronta dotazníků</a>
-          <a href="admin-clenove.html">Přehled členů</a>
-          <a href="admin-platby.html">Platby</a>
-          <a href="admin-galerie.html" class="active">Fotogalerie</a>
+          <a id="tab-akce" href="admin-akce.html">Akce a přihlášky</a>
+          <a id="tab-dotazniky" href="admin-dotazniky.html">Fronta dotazníků</a>
+          <a id="tab-clenove" href="admin-clenove.html">Přehled členů</a>
+          <a id="tab-platby" href="admin-platby.html">Platby</a>
+          <a id="tab-galerie" href="admin-galerie.html" class="active">Fotogalerie</a>
         </div>
 
         <div class="admin-card">
@@ -332,8 +332,11 @@
       loadGallery();
     });
 
-    // Přístupová brána - Rada, Patron NEBO Spolupracovník / tvůrce (2026-08-26, na žádost -
-    // nahrávat fotky smí širší okruh lidí, ne jen ti, co spravují samotné akce/dotazníky).
+    // Přístupová brána - Rada, Patron NEBO organizátor konkrétní akce (2026-08-28: dřív tu
+    // byl i Spolupracovník / tvůrce, ale ten byl zúžen jen na Akce a přihlášky - nahrávat
+    // fotky k VLASTNÍ akci teď místo toho smí organizátor, viz panel-gallery-upload).
+    // panel-list-events organizátorovi vrátí jen jeho akci, takže výběr akce níž se sám
+    // omezí - není potřeba nic extra filtrovat na frontendu.
     const loggedUser = getLoggedUser();
     if (!loggedUser || !loggedUser.userId) {
       gateLoading.classList.add('hidden');
@@ -345,11 +348,12 @@
         .then(r => r.json())
         .then(data => {
           gateLoading.classList.add('hidden');
-          if (!data.rada && !data.spolupracovnik && !data.patron) {
+          if (!data.rada && !data.patron && !data.organizator) {
             gateDenied.classList.remove('hidden');
           } else {
             navAdmin.classList.remove('hidden');
             adminContent.classList.remove('hidden');
+            applyAdminTabsVisibility(data);
             loadEventsForSelect().catch(err => alert('Chyba při načítání akcí: ' + err.message));
           }
         })

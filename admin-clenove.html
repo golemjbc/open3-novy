@@ -64,11 +64,11 @@
 
       <div id="admin-content" class="hidden">
         <div class="admin-tabs">
-          <a href="admin-akce.html">Akce a přihlášky</a>
-          <a href="admin-dotazniky.html">Fronta dotazníků</a>
-          <a href="admin-clenove.html" class="active">Přehled členů</a>
-          <a href="admin-platby.html">Platby</a>
-          <a href="admin-galerie.html">Fotogalerie</a>
+          <a id="tab-akce" href="admin-akce.html">Akce a přihlášky</a>
+          <a id="tab-dotazniky" href="admin-dotazniky.html">Fronta dotazníků</a>
+          <a id="tab-clenove" href="admin-clenove.html" class="active">Přehled členů</a>
+          <a id="tab-platby" href="admin-platby.html">Platby</a>
+          <a id="tab-galerie" href="admin-galerie.html">Fotogalerie</a>
         </div>
 
         <div class="admin-card">
@@ -200,6 +200,7 @@
           } else {
             navAdmin.classList.remove('hidden');
             adminContent.classList.remove('hidden');
+            applyAdminTabsVisibility(data);
             loadMembers().catch(err => alert('Chyba při načítání: ' + err.message));
           }
         })

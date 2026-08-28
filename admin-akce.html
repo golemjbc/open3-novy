@@ -148,11 +148,11 @@
 
       <div id="admin-content" class="hidden">
         <div class="admin-tabs">
-          <a href="admin-akce.html" class="active">Akce a přihlášky</a>
-          <a href="admin-dotazniky.html">Fronta dotazníků</a>
-          <a href="admin-clenove.html">Přehled členů</a>
-          <a href="admin-platby.html">Platby</a>
-          <a href="admin-galerie.html">Fotogalerie</a>
+          <a id="tab-akce" href="admin-akce.html" class="active">Akce a přihlášky</a>
+          <a id="tab-dotazniky" href="admin-dotazniky.html">Fronta dotazníků</a>
+          <a id="tab-clenove" href="admin-clenove.html">Přehled členů</a>
+          <a id="tab-platby" href="admin-platby.html">Platby</a>
+          <a id="tab-galerie" href="admin-galerie.html">Fotogalerie</a>
         </div>
 
         <div class="admin-event-card" id="new-event-card">
@@ -921,6 +921,7 @@
             isRada = !!data.rada;
             navAdmin.classList.remove('hidden');
             adminContent.classList.remove('hidden');
+            applyAdminTabsVisibility(data);
             // Založit novou akci a přiřazovat organizátory smí jen Rada/Spolupracovník -
             // čistý organizátor bez týhle role akce nezakládá, jen spravuje tu svoji.
             if (!data.rada && !data.spolupracovnik) {
