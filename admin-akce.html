@@ -83,6 +83,16 @@
        "Vyžadovaná Discord role": s chipy + autocomplete roste na výšku podle počtu lidí,
        vedle kratšího pole to v mřížce vypadalo křivě a při přidávání "ujíždělo". */
     #organizatori-group { grid-column: 1 / -1; }
+    /* Vysvětlivky v Základním info (2026-08-28, na žádost - "šedé texty zbytečně zabírají
+       místo, dělá to nepřehledný") - místo trvale vypsaného .form-hint odstavce jen malá
+       ikonka "?" u popisky, text se ukáže přes nativní title tooltip až po najetí myší. */
+    .hint-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 15px; height: 15px; border-radius: 50%;
+      background: var(--border); color: var(--text-muted);
+      font-size: 0.68rem; font-weight: 700; cursor: help;
+      margin-left: 4px; vertical-align: middle;
+    }
     /* Nadpisky skupin ve formuláři akce (2026-08-25, na žádost - "srovnej mi to logicky,
        datumy k sobě, částky k sobě") - stejná pole, jen rozdělená do jasně pojmenovaných
        bloků (Základní info / Termíny / Platba / Popis / Fotky) místo jednoho dlouhého
@@ -187,20 +197,18 @@
             <div class="form-group"><label class="form-label">Název</label><input id="f-nazev" class="form-control"></div>
             <div class="form-group"><label class="form-label">Místo</label><input id="f-místo" class="form-control"></div>
             <div class="form-group"><label class="form-label">Lokalita (přesná adresa, po platbě)</label><input id="f-lokalita_presna" class="form-control"></div>
-            <div class="form-group"><label class="form-label">Kapacita (počet lidí, nepovinné)</label><input id="f-kapacita" class="form-control" inputmode="numeric" placeholder="např. 20"><p class="form-hint">Na webu se z toho nikdy neukáže číslo, jen orientační "zaplněnost" (Spousta prostoru / Začíná se plnit / ... / Obsazeno). Prázdné pole = zaplněnost se na webu vůbec nezobrazuje.</p></div>
+            <div class="form-group"><label class="form-label">Kapacita (počet lidí, nepovinné) <span class="hint-icon" title="Na webu se z toho nikdy neukáže číslo, jen orientační &quot;zaplněnost&quot; (Spousta prostoru / Začíná se plnit / ... / Obsazeno). Prázdné pole = zaplněnost se na webu vůbec nezobrazuje.">?</span></label><input id="f-kapacita" class="form-control" inputmode="numeric" placeholder="např. 20"></div>
             <div class="form-group">
-              <label class="form-label">Vyžadovaná Discord role (přesný název sloupce)</label>
+              <label class="form-label">Vyžadovaná Discord role (přesný název sloupce) <span class="hint-icon" title="Předvyplní se podle typu akce. Víc rolí odděl čárkou - stačí, když má člověk aspoň jednu z nich.">?</span></label>
               <input id="f-discord_role_required" class="form-control">
-              <p class="form-hint">Předvyplní se podle typu akce. Víc rolí odděl čárkou - stačí, když má člověk aspoň jednu z nich.</p>
             </div>
             <div class="form-group hidden" id="organizatori-group">
-              <label class="form-label">Organizátoři (jen Rada může měnit)</label>
+              <label class="form-label">Organizátoři (jen Rada může měnit) <span class="hint-icon" title="Až 5 lidí. Kdo je tu zapsaný, uvidí v administraci jen tuhle jednu akci - i bez role Rada/Spolupracovník.">?</span></label>
               <div id="organizatori-chips" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;"></div>
               <div class="autocomplete-wrap">
                 <input type="text" id="organizator-search" class="form-control" placeholder="Napiš jméno…" autocomplete="off">
                 <div id="organizator-dropdown" class="autocomplete-dropdown"></div>
               </div>
-              <p class="form-hint">Až 5 lidí. Kdo je tu zapsaný, uvidí v administraci jen tuhle jednu akci - i bez role Rada/Spolupracovník.</p>
             </div>
           </div>
 
