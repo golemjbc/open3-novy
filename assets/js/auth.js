@@ -221,6 +221,27 @@ function initAuthUI() {
     loginBtn.style.display = 'none';
   }
 
+  // U hlavičky se dřív ukazovalo Discord "username" (identifikační přezdívka, viz
+  // login-callback) místo "Zobrazované jméno" z tabulky members (2026-08-28, na žádost -
+  // "u avatara mám identifikační jméno a ne zobrazované"). Přepíše se dodatečně přes
+  // my-profile (ten už "Zobrazované jméno" umí vrátit), ne rovnou při loginu - ať se
+  // nemusí přihlašovací flow (Discord i Google) samo měnit. V ghost modu se přeskočí -
+  // tam už getLoggedUser() vrací jméno cíle rovnou.
+  function refreshDisplayName(user) {
+    if (getGhostTarget() || !user || !user.userId) return;
+    fetch(API_BASE + '/api/my-profile', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(getIdentityPayload(user)),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.ok || !data.jmeno || data.jmeno === user.userName) return;
+        user.userName = data.jmeno;
+        localStorage.setItem('oooUser', JSON.stringify(user));
+        if (userName) userName.textContent = user.userName;
+      })
+      .catch(() => {});
+  }
+
   function setLoggedOut() {
     userInfo.style.display = 'none';
     userInfo.onclick = null;
@@ -236,12 +257,14 @@ function initAuthUI() {
   const stored = getLoggedUser();
   if (stored && stored.userId) setLoggedIn(stored); else setLoggedOut();
   initAdminNavLink(stored);
+  refreshDisplayName(stored);
 
   window.addEventListener('message', function (event) {
     const data = event.data;
     if (!data || data.type !== 'ooo-discord-login') return;
     localStorage.setItem('oooUser', JSON.stringify(data.user));
     setLoggedIn(data.user);
+    refreshDisplayName(data.user);
     initAdminNavLink(data.user);
     if (typeof window.onOooLogin === 'function') window.onOooLogin(data.user);
   });
@@ -308,6 +331,7 @@ function initAuthUI() {
             overlay.remove();
             setLoggedIn(user);
             initAdminNavLink(user);
+            refreshDisplayName(user);
             if (typeof window.onOooLogin === 'function') window.onOooLogin(user);
           } catch (err) {
             alert('Chyba při ověřování: ' + err.message);
