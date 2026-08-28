@@ -78,7 +78,7 @@
 
       <div id="gate-denied" class="access-denied hidden">
         <h3>Nemáš oprávnění</h3>
-        <p>Tahle stránka je pro radu, patrony a organizátory akcí.</p>
+        <p>Tahle stránka je pro radu, spolupracovníky a organizátory akcí.</p>
       </div>
 
       <div id="admin-content" class="hidden">
@@ -332,11 +332,10 @@
       loadGallery();
     });
 
-    // Přístupová brána - Rada, Patron NEBO organizátor konkrétní akce (2026-08-28: dřív tu
-    // byl i Spolupracovník / tvůrce, ale ten byl zúžen jen na Akce a přihlášky - nahrávat
-    // fotky k VLASTNÍ akci teď místo toho smí organizátor, viz panel-gallery-upload).
-    // panel-list-events organizátorovi vrátí jen jeho akci, takže výběr akce níž se sám
-    // omezí - není potřeba nic extra filtrovat na frontendu.
+    // Přístupová brána - Rada, Spolupracovník / tvůrce NEBO organizátor konkrétní akce
+    // (2026-08-29: znovu jako Akce a přihlášky - Patron odebrán, na žádost). panel-list-events
+    // organizátorovi vrátí jen jeho akci, takže výběr akce níž se sám omezí - není potřeba
+    // nic extra filtrovat na frontendu.
     const loggedUser = getLoggedUser();
     if (!loggedUser || !loggedUser.userId) {
       gateLoading.classList.add('hidden');
@@ -348,7 +347,7 @@
         .then(r => r.json())
         .then(data => {
           gateLoading.classList.add('hidden');
-          if (!data.rada && !data.patron && !data.organizator) {
+          if (!data.rada && !data.spolupracovnik && !data.organizator) {
             gateDenied.classList.remove('hidden');
           } else {
             navAdmin.classList.remove('hidden');
