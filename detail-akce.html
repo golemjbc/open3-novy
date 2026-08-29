@@ -146,6 +146,7 @@
           pageBody.innerHTML = '<div class="empty-state">Akce s ID ' + eventId + ' nebyla nalezena.</div>';
           return;
         }
+        logActivity('event_detail', event.event_id + ' - ' + (event.nazev || ''));
 
         // 🔒 Kontrola oprávnění - stejná logika jako na produkci (přihlášení + discord_role_required)
         const loggedUser = getLoggedUser();

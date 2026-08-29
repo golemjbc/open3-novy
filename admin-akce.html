@@ -1047,6 +1047,7 @@
             navAdmin.classList.remove('hidden');
             adminContent.classList.remove('hidden');
             applyAdminTabsVisibility(data);
+            logActivity('admin_page', 'akce');
             // Založit novou akci a přiřazovat organizátory smí jen Rada/Spolupracovník -
             // čistý organizátor bez týhle role akce nezakládá, jen spravuje tu svoji.
             if (!data.rada && !data.spolupracovnik) {

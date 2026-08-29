@@ -334,6 +334,7 @@
             navAdmin.classList.remove('hidden');
             adminContent.classList.remove('hidden');
             applyAdminTabsVisibility(data);
+            logActivity('admin_page', 'platby');
             Promise.all([loadEventsForSelect(), loadPayments()]).catch(err => alert('Chyba při načítání: ' + err.message));
           }
         })

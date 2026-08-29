@@ -354,6 +354,7 @@
             navAdmin.classList.remove('hidden');
             adminContent.classList.remove('hidden');
             applyAdminTabsVisibility(data);
+            logActivity('admin_page', 'galerie');
             loadEventsForSelect().catch(err => alert('Chyba při načítání akcí: ' + err.message));
           }
         })

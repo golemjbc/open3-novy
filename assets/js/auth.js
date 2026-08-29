@@ -112,6 +112,22 @@ function getIdentityPayload(user) {
   return isGoogleUser(user) ? { credential: user.credential } : { discord_user_id: user.userId };
 }
 
+// Lehké logování aktivity (2026-08-29, na žádost - "přehled kdo se kdy přihlásil, kdo si
+// otevírá jaký detail akce a kdo chodí do administrace") - jen fire-and-forget POST na
+// /api/log-activity, co si to zapíše do Application Insights (viz komentář tam pro
+// důvod "proč ne Sheet"). V ghost modu se NEVOLÁ vůbec - jinak by se admin, co si
+// prohlíží web očima jiného člověka, v logu tvářil jako ten druhý člověk (matoucí,
+// vypadalo by to jako jeho aktivita).
+function logActivity(type, detail) {
+  if (getGhostTarget()) return;
+  const user = getRealLoggedUser();
+  if (!user || !user.userId) return;
+  fetch(API_BASE + '/api/log-activity', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ who: user.userId, jmeno: user.userName, type, detail }),
+  }).catch(() => {});
+}
+
 // Položka "Administrace" v hlavičce (2026-08-25, oprava - "zobrazuje se se zpožděním").
 // Dřív to KAŽDÁ stránka zjišťovala vlastní kopií stejného kódu přes /api/members, což
 // stahuje do prohlížeče celý seznam všech ~360 členů jen kvůli jedné vlastní řádce -
@@ -275,6 +291,7 @@ function initAuthUI() {
     setLoggedIn(data.user);
     refreshDisplayName(data.user);
     initAdminNavLink(data.user);
+    logActivity('login', 'discord');
     if (typeof window.onOooLogin === 'function') window.onOooLogin(data.user);
   });
 
@@ -341,6 +358,7 @@ function initAuthUI() {
             setLoggedIn(user);
             initAdminNavLink(user);
             refreshDisplayName(user);
+            logActivity('login', 'google');
             if (typeof window.onOooLogin === 'function') window.onOooLogin(user);
           } catch (err) {
             alert('Chyba při ověřování: ' + err.message);

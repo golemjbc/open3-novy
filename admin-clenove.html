@@ -212,6 +212,7 @@
             navAdmin.classList.remove('hidden');
             adminContent.classList.remove('hidden');
             applyAdminTabsVisibility(data);
+            logActivity('admin_page', 'clenove');
             loadMembers().catch(err => alert('Chyba při načítání: ' + err.message));
           }
         })
