@@ -806,7 +806,14 @@
           // ať je hned vidět, o kterou akci jde, ne jen její kód.
           const eventMeta = allEvents.find(e => e.event_id === eventId);
           const eventLabel = eventMeta ? `${eventMeta.nazev} (${eventId})` : eventId;
-          document.getElementById('registrations-title').textContent = 'Přihlášky — ' + eventLabel;
+          // Počet účastníků (2026-08-30, na žádost) - "typ_ucasti" je "par" u přihlášky
+          // za dva (viz detail-akce.html, kde se to samé počítá i pro výši doplatku u
+          // jednorázových plateb), jinak "single" - počítá se jen z aktivních přihlášek,
+          // odhlášení se do počtu účastníků nezapočítávají.
+          const active = data.registrations.filter(r => !r.odhlaseno_datum);
+          const participantCount = active.reduce((sum, r) => sum + (r.typ_ucasti === 'par' ? 2 : 1), 0);
+          document.getElementById('registrations-title').textContent =
+            `Přihlášky — ${eventLabel} · ${active.length} přihlášek · ${participantCount} účastníků`;
           const body = document.getElementById('registrations-body');
           if (!data.registrations.length) {
             body.innerHTML = '<p class="form-hint">Zatím nikdo přihlášený.</p>';
