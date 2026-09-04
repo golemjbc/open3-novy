@@ -317,6 +317,7 @@
 
         <div id="registrations-card" class="admin-event-card hidden">
           <h3 id="registrations-title">Přihlášky</h3>
+          <div id="registrations-meta" class="admin-event-meta"></div>
           <div id="registrations-body"></div>
         </div>
       </div>
@@ -704,7 +705,7 @@
       container.innerHTML = allEvents.map(e => `
         <div class="admin-event-card" style="${e.is_past ? 'opacity:0.6;' : ''}">
           <h3>${e.nazev || e.event_id}${e.is_past ? ' <span class="form-hint" style="font-weight:400;">(proběhlo)</span>' : ''}</h3>
-          <div class="admin-event-meta">${e.event_id} · typ ${e.typ_akce} · ${e.registrations_count} přihlášek (záloha OK: ${e.deposit_ok_count}, doplatek OK: ${e.doplatek_ok_count})</div>
+          <div class="admin-event-meta">${e.event_id} · typ ${e.typ_akce} · ${e.registrations_count} přihlášek / ${e.participants_count} účastníků (záloha OK: ${e.deposit_ok_count}, doplatek OK: ${e.doplatek_ok_count})</div>
           <div class="admin-event-actions">
             <button class="btn btn-outline btn-sm" data-action="edit" data-event="${e.event_id}">Upravit</button>
             <button class="btn btn-outline btn-sm" data-action="registrations" data-event="${e.event_id}">Přihlášky</button>
@@ -806,14 +807,16 @@
           // ať je hned vidět, o kterou akci jde, ne jen její kód.
           const eventMeta = allEvents.find(e => e.event_id === eventId);
           const eventLabel = eventMeta ? `${eventMeta.nazev} (${eventId})` : eventId;
-          // Počet účastníků (2026-08-30, na žádost) - "typ_ucasti" je "par" u přihlášky
-          // za dva (viz detail-akce.html, kde se to samé počítá i pro výši doplatku u
-          // jednorázových plateb), jinak "single" - počítá se jen z aktivních přihlášek,
-          // odhlášení se do počtu účastníků nezapočítávají.
+          document.getElementById('registrations-title').textContent = 'Přihlášky — ' + eventLabel;
+          // Počet účastníků (2026-08-30, na žádost - "jsou tam i páry a ty se počítají za
+          // dva") - "typ_ucasti" je "par" u přihlášky za dva (stejná logika jako v
+          // panel-list-events/detail-akce.html), počítá se jen z aktivních přihlášek,
+          // odhlášení se nezapočítávají. Samostatný řádek pod titulkem, stejný vizuální
+          // styl (.admin-event-meta) jako u seznamu akcí výš, ne narvané do nadpisu.
           const active = data.registrations.filter(r => !r.odhlaseno_datum);
           const participantCount = active.reduce((sum, r) => sum + (r.typ_ucasti === 'par' ? 2 : 1), 0);
-          document.getElementById('registrations-title').textContent =
-            `Přihlášky — ${eventLabel} · ${active.length} přihlášek · ${participantCount} účastníků`;
+          document.getElementById('registrations-meta').textContent =
+            `${active.length} přihlášek / ${participantCount} účastníků`;
           const body = document.getElementById('registrations-body');
           if (!data.registrations.length) {
             body.innerHTML = '<p class="form-hint">Zatím nikdo přihlášený.</p>';
