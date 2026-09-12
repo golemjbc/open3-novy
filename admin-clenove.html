@@ -125,7 +125,7 @@
             <tbody>
               ${list.map(m => `
                 <tr>
-                  <td data-label="Jméno"><button type="button" class="member-link" data-ooo="${m.ooo_id || ''}" data-discord="${m.discord_id || ''}">${m.jmeno || m.discord_username || m.ooo_id || m.discord_id}</button></td>
+                  <td data-label="Jméno"><button type="button" class="member-link" data-ooo="${m.ooo_id || ''}" data-discord="${m.discord_id || ''}">${m.jmeno || m.discord_username || m.email || m.ooo_id || m.discord_id}</button></td>
                   <td data-label="Discord">${m.discord_username ? '@' + m.discord_username : ''}</td>
                   <td data-label="Kontakt">${m.email || ''}${m.telefon ? ' · ' + m.telefon : ''}</td>
                   <td data-label="Role" class="member-roles-cell">${Object.keys(m.roles || {}).join(', ')}</td>

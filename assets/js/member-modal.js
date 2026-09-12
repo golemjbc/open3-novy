@@ -243,7 +243,7 @@ function renderMemberModal(body, data) {
     <div class="member-modal-header">
       ${photoUrl ? `<img src="${photoUrl}" alt="" class="member-modal-photo" id="member-modal-photo-el" title="Klikni pro zvětšení">` : '<div class="member-modal-photo member-modal-photo-empty"></div>'}
       <div>
-        <h3>${escapeHtml(data.jmeno || data.ooo_id)}</h3>
+        <h3>${escapeHtml(data.jmeno || data.email || data.ooo_id)}</h3>
         <p class="member-modal-contact">
           ${data.discord_username ? '@' + escapeHtml(data.discord_username) + ' · ' : ''}
           ${escapeHtml(data.email || '')}${data.telefon ? ' · ' + escapeHtml(data.telefon) : ''}
@@ -291,7 +291,7 @@ function renderMemberModal(body, data) {
   }
   if (approveBtn) {
     approveBtn.addEventListener('click', async () => {
-      if (!confirm(`Opravdu schválit dotazník uživatele ${data.jmeno || data.ooo_id}?`)) return;
+      if (!confirm(`Opravdu schválit dotazník uživatele ${data.jmeno || data.email || data.ooo_id}?`)) return;
       msgEl.textContent = 'Ukládám…';
       const identity = memberModalIdentityPayload();
       try {
@@ -309,7 +309,7 @@ function renderMemberModal(body, data) {
   }
   if (rejectBtn) {
     rejectBtn.addEventListener('click', async () => {
-      if (!confirm(`Opravdu zamítnout dotazník uživatele ${data.jmeno || data.ooo_id}?`)) return;
+      if (!confirm(`Opravdu zamítnout dotazník uživatele ${data.jmeno || data.email || data.ooo_id}?`)) return;
       msgEl.textContent = 'Ukládám…';
       const identity = memberModalIdentityPayload();
       try {

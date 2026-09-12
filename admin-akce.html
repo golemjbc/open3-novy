@@ -828,7 +828,7 @@
                   <tbody>
                     ${data.registrations.map((r, i) => `
                       <tr${r.odhlaseno_datum ? ' class="reg-row-cancelled"' : ''}>
-                        <td data-label="Jméno">${(r.ooo_id || r.user_id) ? `<button type="button" class="member-link" data-ooo="${r.ooo_id || ''}" data-discord="${r.user_id || ''}">${r.jmeno || r.ooo_id || r.user_id}</button>` : (r.jmeno || '—')}</td>
+                        <td data-label="Jméno">${(r.ooo_id || r.user_id) ? `<button type="button" class="member-link" data-ooo="${r.ooo_id || ''}" data-discord="${r.user_id || ''}">${r.jmeno || r.email || r.ooo_id || r.user_id}</button>` : (r.jmeno || '—')}</td>
                         <td data-label="ooo_id" style="font-size:0.8rem; color:var(--text-muted); font-variant-numeric:tabular-nums;">${r.ooo_id || (r.user_id ? '—' : '')}</td>
                         <td data-label="Kontakt">${r.email || ''}${r.telefon ? ' · ' + r.telefon : ''}</td>
                         <td data-label="Typ účasti">${r.typ_ucasti || ''}</td>
@@ -848,7 +848,7 @@
                         })}</td>
                         <td data-label="Účast">${r.odhlaseno_datum
                           ? `Zrušeno ${r.odhlaseno_datum}${r.vraceno_castka ? ' (vráceno ' + r.vraceno_castka + ' Kč)' : ''}`
-                          : `<button class="btn btn-outline btn-sm" data-cancel="1" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}" data-jmeno="${(r.jmeno || r.ooo_id || r.user_id || '').replace(/"/g, '&quot;')}" data-deposit="${(r.deposit_status || '').toUpperCase() === 'OK' ? (r.deposit || 0) : 0}" data-doplatek="${(r.doplatek_status || '').toUpperCase() === 'OK' ? (r.doplatek || 0) : 0}">Zrušit účast</button>`}
+                          : `<button class="btn btn-outline btn-sm" data-cancel="1" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}" data-jmeno="${(r.jmeno || r.email || r.ooo_id || r.user_id || '').replace(/"/g, '&quot;')}" data-deposit="${(r.deposit_status || '').toUpperCase() === 'OK' ? (r.deposit || 0) : 0}" data-doplatek="${(r.doplatek_status || '').toUpperCase() === 'OK' ? (r.doplatek || 0) : 0}">Zrušit účast</button>`}
                         </td>
                       </tr>
                     `).join('')}
