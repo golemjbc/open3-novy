@@ -149,7 +149,10 @@ function initAdminNavLink(user) {
   const cacheKey = 'oooIsAdmin_' + user.userId;
   if (localStorage.getItem(cacheKey) === '1') nav.style.display = '';
   const payload = isGoogleUser(user) ? { credential: user.credential } : { discord_user_id: user.userId };
-  fetch(API_BASE + '/api/my-roles', {
+  // Vrací se fetch promise (2026-09-12, oprava "duplicitní členové") - volající ji může
+  // počkat před dalším voláním, co by jinak souběžně taky zakládalo/hledalo řádek v
+  // members (viz refreshDisplayName níž a fix v lib/members-row.js findOrCreateMemberRow).
+  return fetch(API_BASE + '/api/my-roles', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
   })
     .then(r => r.json())
@@ -281,16 +284,20 @@ function initAuthUI() {
 
   const stored = getLoggedUser();
   if (stored && stored.userId) setLoggedIn(stored); else setLoggedOut();
-  initAdminNavLink(stored);
-  refreshDisplayName(stored);
+  // initAdminNavLink a refreshDisplayName obě volají endpointy, co (pro Google cestu)
+  // umí založit nový řádek v members, když ještě neexistuje (findOrCreateMemberRow) -
+  // spuštěné souběžně (ne za sebou) závodily o vytvoření řádku a duplikovaly ho (nález
+  // 2026-09-12, "duplicitní členové" - viz oprava v lib/members-row.js). Řetězení přes
+  // .finally() na všech třech místech v týhle funkci to řeší u zdroje (frontend), zámek
+  // v findOrCreateMemberRow to řeší i u zdroje (backend) - obojí pro jistotu.
+  Promise.resolve(initAdminNavLink(stored)).finally(() => refreshDisplayName(stored));
 
   window.addEventListener('message', function (event) {
     const data = event.data;
     if (!data || data.type !== 'ooo-discord-login') return;
     localStorage.setItem('oooUser', JSON.stringify(data.user));
     setLoggedIn(data.user);
-    refreshDisplayName(data.user);
-    initAdminNavLink(data.user);
+    Promise.resolve(initAdminNavLink(data.user)).finally(() => refreshDisplayName(data.user));
     logActivity('login', 'discord');
     if (typeof window.onOooLogin === 'function') window.onOooLogin(data.user);
   });
@@ -356,8 +363,7 @@ function initAuthUI() {
             localStorage.setItem('oooUser', JSON.stringify(user));
             overlay.remove();
             setLoggedIn(user);
-            initAdminNavLink(user);
-            refreshDisplayName(user);
+            Promise.resolve(initAdminNavLink(user)).finally(() => refreshDisplayName(user));
             logActivity('login', 'google');
             if (typeof window.onOooLogin === 'function') window.onOooLogin(user);
           } catch (err) {
