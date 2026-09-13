@@ -473,77 +473,23 @@
       }
       function hidePanel(id) { document.getElementById(id).classList.add('hidden'); }
 
-      // "Přidat do kalendáře" (2026-09-13, na žádost) - .ics soubor postavený přímo v
-      // prohlížeči (stejná logika jako backend lib/ics.js, jen v JS - žádný nový
-      // endpoint není potřeba, tlačítko se objeví přesně ve chvíli, kdy se ukáže i
-      // podrobné místo konání). DTSTART/DTEND jako "místní" čas s TZID=Europe/Prague,
-      // ne UTC - Google/Apple/Outlook kalendáře to v praxi bez problému respektují i
-      // bez VTIMEZONE bloku, žádný ruční přepočet CET/CEST offsetu.
-      function parseCzechDateTimeIcs(str) {
-        const s = (str || '').toString().trim();
-        if (!s) return null;
-        const [datePart, timePart] = s.split(' ');
-        const dParts = (datePart || '').split('.');
-        if (dParts.length < 3) return null;
-        const day = parseInt(dParts[0], 10), month = parseInt(dParts[1], 10), year = parseInt(dParts[2], 10);
-        if (!day || !month || !year) return null;
-        let hour = 0, minute = 0;
-        if (timePart) {
-          const t = timePart.split(':');
-          hour = parseInt(t[0], 10) || 0;
-          minute = parseInt(t[1], 10) || 0;
-        }
-        return { year, month, day, hour, minute };
-      }
-      function icsPad(n) { return n.toString().padStart(2, '0'); }
-      function formatIcsLocal(dt) { return `${dt.year}${icsPad(dt.month)}${icsPad(dt.day)}T${icsPad(dt.hour)}${icsPad(dt.minute)}00`; }
-      function addIcsHours(dt, hours) {
-        const d = new Date(Date.UTC(dt.year, dt.month - 1, dt.day, dt.hour, dt.minute));
-        d.setUTCHours(d.getUTCHours() + hours);
-        return { year: d.getUTCFullYear(), month: d.getUTCMonth() + 1, day: d.getUTCDate(), hour: d.getUTCHours(), minute: d.getUTCMinutes() };
-      }
-      function escapeIcsText(str) {
-        return (str || '').toString().replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
-      }
-      function toIcsUtcTimestamp(date) {
-        return date.getUTCFullYear() + icsPad(date.getUTCMonth() + 1) + icsPad(date.getUTCDate())
-          + 'T' + icsPad(date.getUTCHours()) + icsPad(date.getUTCMinutes()) + icsPad(date.getUTCSeconds()) + 'Z';
-      }
-      function downloadEventIcs() {
-        const start = parseCzechDateTimeIcs(event['datum od']);
-        if (!start) return;
-        const end = parseCzechDateTimeIcs(event.datum_do) || addIcsHours(start, 3);
-        const description = (event.popis || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-        const location = (event.lokalita_presna || event['místo'] || '').toString().trim();
-        const lines = [
-          'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//OOO Community//cs', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
-          'BEGIN:VEVENT',
-          `UID:${event.event_id}@open3.cz`,
-          `DTSTAMP:${toIcsUtcTimestamp(new Date())}`,
-          `DTSTART;TZID=Europe/Prague:${formatIcsLocal(start)}`,
-          `DTEND;TZID=Europe/Prague:${formatIcsLocal(end)}`,
-          `SUMMARY:${escapeIcsText(event.nazev || event.event_id)}`,
-          location ? `LOCATION:${escapeIcsText(location)}` : null,
-          description ? `DESCRIPTION:${escapeIcsText(description)}` : null,
-          'END:VEVENT', 'END:VCALENDAR',
-        ].filter(Boolean).join('\r\n');
-        const blob = new Blob([lines], { type: 'text/calendar;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${(event.nazev || event.event_id).replace(/[^\p{L}\p{N}]+/gu, '-')}.ics`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      // "Přidat do kalendáře" (2026-09-13, na žádost; opraveno 2026-09-13 - "na
+      // mobilní Opeře nefunguje") - PŮVODNĚ .ics stavěný přímo v prohlížeči jako
+      // blob: URL + JS klik na <a download>. Spousta mobilních prohlížečů (Opera
+      // Mobile, historicky i Safari) tenhle trik neumí spolehlivě spustit. Teď je to
+      // obyčejný odkaz na server (/api/event-ics), co vrátí .ics se skutečnou hlavičkou
+      // Content-Type: text/calendar - to telefon pozná spolehlivě napříč prohlížeči a
+      // nabídne otevření v kalendáři, žádný JS trik není potřeba.
+      function eventIcsUrl() {
+        return `${API_BASE}/api/event-ics?event_id=${encodeURIComponent(event.event_id)}`;
       }
       function addToCalendarButtonHtml() {
-        if (!parseCzechDateTimeIcs(event['datum od'])) return '';
+        if (!/^\d{1,2}\.\d{1,2}\.\d{4}/.test((event['datum od'] || '').toString().trim())) return '';
         return `
-          <button type="button" class="btn-calendar" onclick="downloadEventIcs()">
+          <a href="${eventIcsUrl()}" class="btn-calendar">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="3"/><path d="M3 9.5h18M8 3v3M16 3v3"/><path d="M8.5 14l2 2 4.5-4.5"/></svg>
             Přidat do kalendáře
-          </button>
+          </a>
         `;
       }
 
