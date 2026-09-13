@@ -624,6 +624,12 @@ p { margin: 0 0 16px; color: var(--text-muted); }
 .saved-msg.show { opacity: 1; }
 .saved-msg.error { color: #b42318; }
 
+/* Plynulé zobrazení/schování volitelného pole (2026-09-13) - grid-template-rows
+   0fr → 1fr místo height:auto, ať jde animovat i neznámou výšku obsahu. */
+.reveal { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.2s ease; }
+.reveal.open { grid-template-rows: 1fr; }
+.reveal > div { overflow: hidden; }
+
 .access-denied {
   max-width: 480px;
   margin: 80px auto;

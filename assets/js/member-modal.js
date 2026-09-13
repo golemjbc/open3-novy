@@ -226,7 +226,7 @@ function renderMemberModal(body, data) {
     questionnaireHtml += `
       <div class="member-q-fields">
         ${field('Přezdívka v dotazníku', q.jmeno_prezdivka)}
-        ${field('Profily', q.profily)}
+        ${field('Amatéři', q.profil_amateri)}
         ${field('Upřesnění', q.upresneni)}
         ${field('Lokalita', q.lokalita)}
         ${field('Sociálně-demografické', q.socialne_demograficke)}
