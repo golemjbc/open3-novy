@@ -837,18 +837,12 @@
             body.innerHTML = '<p class="form-hint">Zatím nikdo přihlášený.</p>';
           } else {
             // Čekací listina (2026-09-13): aktivní účastníci první (beze změny pořadí),
-            // náhradníci až za nimi, seřazení podle ruční priority (nižší = dřív), bez
-            // nastavené priority podle pořadí přihlášky (stabilní řazení - jen se
-            // odsunou dozadu, nemíchají se mezi sebou navzájem).
+            // náhradníci až za nimi, mezi sebou v pořadí, jak se přihlásili (bez ruční
+            // priority - na žádost "to zvládám v hlavě", 2026-09-13).
             const sortedRegistrations = data.registrations.map((r, i) => ({ r, i })).sort((a, b) => {
               const aWait = a.r.nahradnik && !a.r.odhlaseno_datum;
               const bWait = b.r.nahradnik && !b.r.odhlaseno_datum;
               if (aWait !== bWait) return aWait ? 1 : -1;
-              if (aWait && bWait) {
-                const aP = a.r.nahradnik_priorita !== '' ? Number(a.r.nahradnik_priorita) : Infinity;
-                const bP = b.r.nahradnik_priorita !== '' ? Number(b.r.nahradnik_priorita) : Infinity;
-                if (aP !== bP) return aP - bP;
-              }
               return a.i - b.i;
             }).map(x => x.r);
 
@@ -881,8 +875,6 @@
                           ? `Zrušeno ${r.odhlaseno_datum}${r.vraceno_castka ? ' (vráceno ' + r.vraceno_castka + ' Kč)' : ''}`
                           : (r.nahradnik ? `
                             <div style="display:flex; flex-wrap:wrap; align-items:center; gap:6px;">
-                              <input type="number" min="0" step="1" class="doplatek-input" style="width:64px;" placeholder="pořadí" value="${r.nahradnik_priorita || ''}" data-priorita-ooo="${r.ooo_id || ''}" data-priorita-user="${r.user_id || ''}">
-                              <button type="button" class="pay-icon-btn" data-set-priorita="1" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}" title="Uložit pořadí">✓</button>
                               <button type="button" class="btn btn-outline btn-sm" data-promote="1" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}" data-jmeno="${(r.jmeno || r.email || r.ooo_id || r.user_id || '').replace(/"/g, '&quot;')}">Povýšit</button>
                               <button class="btn btn-outline btn-sm" data-cancel="1" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}" data-jmeno="${(r.jmeno || r.email || r.ooo_id || r.user_id || '').replace(/"/g, '&quot;')}" data-deposit="0" data-doplatek="0">Zrušit účast</button>
                             </div>
@@ -895,26 +887,6 @@
               </div>
             `;
             body.querySelectorAll('.member-link[data-ooo]').forEach(btn => btn.addEventListener('click', () => openMemberModal(btn.dataset.ooo, btn.dataset.discord)));
-            // Nastavit prioritu na čekačce (2026-09-13, na žádost - "ručně někomu přidat
-            // prioritu") - prázdné pole = smazat prioritu (zpátky na pořadí podle času).
-            body.querySelectorAll('[data-set-priorita]').forEach(btn => btn.addEventListener('click', () => {
-              const input = body.querySelector(`[data-priorita-ooo="${btn.dataset.ooo}"][data-priorita-user="${btn.dataset.user}"]`);
-              const value = input ? input.value.trim() : '';
-              fetch(API_BASE + '/api/panel-update-registration', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  ...identityPayload(), event_id: eventId,
-                  ooo_id: btn.dataset.ooo || undefined, user_id: btn.dataset.user || undefined,
-                  field: 'nahradnik_priorita', value,
-                }),
-              })
-                .then(r => r.json())
-                .then(res => {
-                  if (!res.ok) { alert('Chyba: ' + (res.error || 'neznámá')); return; }
-                  loadRegistrations(eventId);
-                })
-                .catch(err => alert('Chyba: ' + err.message));
-            }));
             // Povýšit z čekačky (2026-09-13, na žádost) - kapacita se tu záměrně
             // nekontroluje, admin může povýšit i nad kapacitu, pokud chce.
             body.querySelectorAll('[data-promote]').forEach(btn => btn.addEventListener('click', () => {
