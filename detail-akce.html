@@ -635,15 +635,16 @@
         document.getElementById('registration-block').classList.add('hidden');
 
         // Přesné místo konání (2026-09-13, na žádost - "pokud už ho viděli v mailu nebo
-        // zprávě, mělo by být vidět i na webu") - `lokalita_presna` je stejné pole, co
-        // dostávají e-maily/DM, viz backend lib/registration-email.js a notify-payment
-        // (přesně stejná pravidla PROČ zrovna teď - akce zdarma hned, placené až po
-        // potvrzení doplatku - viz komentáře tam). Dokud tahle podmínka nesedí, na webu
-        // se adresa neukazuje, ale text aspoň řekne, že přijde na Discord/e-mail.
+        // zprávě, mělo by být vidět i na webu"; opraveno tentýž den - "stačí zaplatit
+        // zálohu, je to stejné jako s přiřazením role účastníka, doplatek je jen
+        // detail") - `lokalita_presna` je stejné pole, co dostávají e-maily/DM (viz
+        // notify-payment), ale veřejné /api/events ho posílá VŽDY bez ohledu na platbu
+        // (zjištěno 2026-09-13) - `addressKnown` je proto čistě frontendová clona, ne
+        // skutečné utajení dat. Záloha stačí (`depositOK`), doplatek se do týhle
+        // podmínky vůbec nepočítá - stejné pravidlo jako u role účastníka
+        // (discord-sync.py: DEPOSIT OK už dává roli, doplatek je jen zbývající částka).
         const presnaAdresa = (event.lokalita_presna || '').toString().trim();
-        const addressKnown = isFreeEvent
-          || doplatekOK
-          || (event.jednorazova === 'ano' && depositOK);
+        const addressKnown = depositOK || doplatekOK;
 
         if (isFreeEvent) {
           showPanel('registration-info', `
@@ -653,11 +654,11 @@
           `);
           return;
         }
-        if (addressKnown || (depositOK && doplatekOK)) {
+        if (doplatekOK || (event.jednorazova === 'ano' && depositOK) || (depositOK && doplatekOK)) {
           showPanel('payment-complete', `
             <h4 style="margin-top:0;">Akce zaplacena ✅</h4>
             <p style="margin:0;">Máš všechny platby v pořádku. Uvidíme se na akci!</p>
-            ${presnaAdresa ? `<p style="margin:8px 0 0;"><strong>Přesné místo konání:</strong> ${presnaAdresa}</p>` : ''}
+            ${addressKnown && presnaAdresa ? `<p style="margin:8px 0 0;"><strong>Přesné místo konání:</strong> ${presnaAdresa}</p>` : ''}
             ${addToCalendarButtonHtml()}
           `);
           return;
@@ -665,7 +666,10 @@
         if (event.jednorazova !== 'ano' && depositOK && !doplatekOK) {
           showPanel('registration-info', `
             <strong>✅ Záloha zaplacena!</strong> Doplatek: ${p.doplatek || 'bude upřesněno'}
-            <p class="form-hint" style="margin:8px 0 0;">Přesné místo konání ti pošleme na Discord a e-mailem, jakmile bude doplatek potvrzený.</p>
+            ${addressKnown && presnaAdresa
+              ? `<p style="margin:8px 0 0;"><strong>Přesné místo konání:</strong> ${presnaAdresa}</p>`
+              : `<p class="form-hint" style="margin:8px 0 0;">Přesné místo konání ti pošleme na Discord a e-mailem.</p>`}
+            ${addToCalendarButtonHtml()}
           `);
           loadPaymentInfo(id, userName, p.typ_ucasti, 'final', idParam);
           return;
