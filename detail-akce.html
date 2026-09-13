@@ -643,7 +643,10 @@
         // skutečné utajení dat. Záloha stačí (`depositOK`), doplatek se do týhle
         // podmínky vůbec nepočítá - stejné pravidlo jako u role účastníka
         // (discord-sync.py: DEPOSIT OK už dává roli, doplatek je jen zbývající částka).
-        const presnaAdresa = (event.lokalita_presna || '').toString().trim();
+        // Skutečné odřádkování ("\n" mezi adresou a GPS) se v <p> bez převodu ztratí a
+        // text splyne do jedné slitiny (nahlášeno 2026-09-13) - stejný fix jako backend
+        // lib/registration-email.js (nl2br).
+        const presnaAdresa = (event.lokalita_presna || '').toString().trim().replace(/\r?\n/g, '<br>');
         const addressKnown = depositOK || doplatekOK;
 
         if (isFreeEvent) {
