@@ -230,7 +230,9 @@
             // se chová logicky stejně jako Google (na výslovnou žádost) - uvidí akci i bez
             // role, po pokusu o registraci ho čeká stejný dotazníkový flow.
             const canBypassRoleCheck = (e.typ_akce === 'B' && isGoogleUser(loggedUser)) || e.typ_akce === 'C';
-            const canSee = isLoggedIn && (isPublicEvent || canBypassRoleCheck || userHasRequiredRole(requiredRoles, myRoles));
+            // Typ A je teď veřejný i bez přihlášení (2026-09-14, stejná změna jako v
+            // detail-akce.html - viz komentář tam) - isPublicEvent proto mimo isLoggedIn.
+            const canSee = isPublicEvent || (isLoggedIn && (canBypassRoleCheck || userHasRequiredRole(requiredRoles, myRoles)));
             const soon = isSoon(e);
             const img = getSmartImageUrl(e.obrazek);
 

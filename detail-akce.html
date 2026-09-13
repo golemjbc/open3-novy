@@ -162,7 +162,12 @@
         // akce.html, viz komentář tam. Bez role musí na detail vůbec vidět, jinak se
         // nikdy nedostane k registraci/formuláři, co ho k roli teprve navede.
         const canBypassRoleCheck = (event.typ_akce === 'B' && isGoogleUser(loggedUser)) || event.typ_akce === 'C';
-        const hasAccess = isLoggedIn && (isPublicEvent || canBypassRoleCheck || userHasRequiredRole(requiredRoles, myRoles));
+        // Typ A (veřejná akce) je teď dostupný i bez přihlášení (2026-09-14, na žádost -
+        // "detail akce typu A by měl být dostupný i bez přihlášení, B a C jen po
+        // přihlášení") - proto je isPublicEvent MIMO isLoggedIn podmínku, ne uvnitř jako
+        // dřív (dřív "veřejná" znamenalo jen "bez ohledu na roli", přihlášení se pořád
+        // vyžadovalo pro všechny typy stejně).
+        const hasAccess = isPublicEvent || (isLoggedIn && (canBypassRoleCheck || userHasRequiredRole(requiredRoles, myRoles)));
 
         if (!hasAccess) {
           pageBody.innerHTML = `
@@ -288,6 +293,19 @@
                   hasRoleForCurrentUser = userHasRequiredRole(event.discord_role_required || '', myRolesHere);
                 }
                 const usesUnifiedForm = (isGoogleUser && isSupportedByGoogle) || (isDiscordUser && event.typ_akce === 'C' && !hasRoleForCurrentUser);
+
+                // Anonymní návštěvník (2026-09-14, na žádost - typ A jde teď zobrazit i bez
+                // přihlášení) - dřív se tenhle blok vůbec nevyrenderoval, protože hasAccess
+                // nahoře přihlášení vyžadovalo pro VŠECHNY typy akcí. Bez týhle výjimky by se
+                // ukázal nativní Discord formulář (viz fallback níž) a odeslání by šlo s
+                // prázdným user_id - výzva k přihlášení místo toho, ať je jasné, co udělat.
+                if (!currentUser) {
+                  return `
+                    <div id="registration-block" class="status-panel info">
+                      <h4 style="margin-top:0;">Přihlas se pro přihlášení na akci</h4>
+                      <p style="margin-bottom:0;">Prohlížení je bez přihlášení v pořádku, ale k samotné přihlášce na akci se musíš nejdřív přihlásit (tlačítko v hlavičce).</p>
+                    </div>`;
+                }
 
                 if (isGoogleUser && !isSupportedByGoogle) {
                   return `
