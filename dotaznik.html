@@ -426,16 +426,65 @@
               : (data.discord_cta_url
                 ? `<p style="margin:12px 0 8px;" class="form-hint">V mezičase se zkus připojit na Discord - pokud se to nepovede, patron ti s tím pomůže na schůzce.</p><a href="${data.discord_cta_url}" target="_blank" class="btn btn-primary">Zkusit propojit Discord</a>`
                 : '');
+            // Kontakt s patronem přes jinou platformu (2026-09-13, na žádost) - hlavní
+            // slovo má Discord, tohle je jen nepovinná záložní cesta. Telefon/Instagram
+            // se ukládají do stejných sloupců members, co používá i registrace na akci
+            // (register-event-google) - žádná nová data, jen další místo k zápisu.
+            const contactHtml = `
+              <div style="margin-top:18px; padding-top:18px; border-top:1px solid var(--border);">
+                <p style="margin-bottom:8px;"><strong style="color:var(--text);">Ozve se přes Discord</strong> — sleduj prosím i Žádosti o zprávy, kdyby vás ještě nespároval jako přátele.</p>
+                <label class="form-label">Chceš být kontaktován/a i na jiné platformě?</label>
+                <div class="contact-fields">
+                  <div class="input-icon">
+                    <svg class="wa-ico" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5.06-1.33A10 10 0 1 0 12 2Zm0 18.1a8.06 8.06 0 0 1-4.13-1.13l-.3-.18-3 .78.8-2.93-.2-.3A8.1 8.1 0 1 1 12 20.1Zm4.44-6.07c-.24-.12-1.44-.71-1.66-.79-.22-.08-.39-.12-.55.12-.16.24-.63.79-.78.95-.14.16-.29.18-.53.06-.24-.12-1.02-.38-1.94-1.2-.72-.64-1.2-1.43-1.34-1.67-.14-.24-.02-.37.1-.49.11-.11.24-.29.36-.43.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.55-1.33-.76-1.82-.2-.48-.4-.42-.55-.42h-.47c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.7 2.6 4.12 3.64.58.25 1.03.4 1.38.51.58.18 1.11.16 1.53.1.47-.07 1.44-.59 1.64-1.15.2-.57.2-1.05.14-1.15-.06-.1-.22-.16-.46-.28Z"/></svg>
+                    <input class="form-control" type="tel" id="contact-wa" placeholder="WhatsApp — telefonní číslo">
+                  </div>
+                  <div class="input-icon">
+                    <svg class="ig-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg>
+                    <input class="form-control" type="text" id="contact-ig" placeholder="Instagram — @tvuj_profil">
+                  </div>
+                </div>
+                <div style="margin-top:14px; display:flex; align-items:center;">
+                  <button type="button" class="btn btn-outline btn-sm" id="contact-save-btn">Uložit</button>
+                  <span class="saved-msg" id="contact-saved-msg">✓ Uloženo</span>
+                </div>
+              </div>
+            `;
             resultPanel.innerHTML = data.updated ? `
               <h4 style="margin-top:0;">Změny uložené!</h4>
               <p>Dotazník jsme aktualizovali. Patron si ho prohlédne a ozve se ti, abyste si domluvili osobní nebo online popovídání o tom, jak to na akcích chodí a co můžeš očekávat.</p>
               ${discordHtml}
+              ${contactHtml}
             ` : `
               <h4 style="margin-top:0;">Díky za vyplnění!</h4>
               <p>Dotazník máme. Patron si ho prohlédne a ozve se ti, abyste si domluvili osobní nebo online popovídání o tom, jak to na akcích chodí a co můžeš očekávat.</p>
               ${discordHtml}
+              ${contactHtml}
             `;
             resultPanel.classList.remove('hidden');
+
+            document.getElementById('contact-save-btn').addEventListener('click', function () {
+              const btn = this;
+              const msg = document.getElementById('contact-saved-msg');
+              const telefon = document.getElementById('contact-wa').value.trim();
+              const instagram = document.getElementById('contact-ig').value.trim();
+              btn.disabled = true;
+              fetch(API_BASE + '/api/update-contact-info', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...identityPayload(), telefon, instagram }),
+              })
+                .then(r => r.json())
+                .then(res => {
+                  btn.disabled = false;
+                  if (!res.ok) { alert('Chyba při ukládání: ' + (res.error || 'neznámá')); return; }
+                  msg.classList.add('show');
+                })
+                .catch(err => {
+                  btn.disabled = false;
+                  alert('Chyba při ukládání: ' + err.message);
+                });
+            });
           })
           .catch(err => {
             console.error('Odeslání dotazníku selhalo:', err);

@@ -602,6 +602,27 @@ p { margin: 0 0 16px; color: var(--text-muted); }
 .status-panel .qr-info div { margin-bottom: 4px; }
 .status-panel h4 { margin-bottom: 8px; }
 
+/* Kontakt s patronem přes jinou platformu (2026-09-13, na žádost) - ikona + pole v
+   jednom rámečku, stejné pole se používá pro WhatsApp (tel) i Instagram (text). */
+.contact-fields { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.input-icon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  padding: 0 14px;
+}
+.input-icon:focus-within { border-color: var(--primary); }
+.input-icon svg { flex-shrink: 0; }
+.input-icon .wa-ico { color: #25D366; }
+.input-icon .ig-ico { color: var(--primary); }
+.input-icon .form-control { flex: 1; border: none; padding: 11px 0; background: none; }
+.input-icon .form-control:focus { outline: none; }
+.saved-msg { font-size: 0.85rem; font-weight: 600; color: var(--success); margin-left: 12px; opacity: 0; transition: opacity 0.2s ease; }
+.saved-msg.show { opacity: 1; }
+
 .access-denied {
   max-width: 480px;
   margin: 80px auto;
