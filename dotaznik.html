@@ -264,6 +264,24 @@
     function openContactModal() {
       ensureContactModalDom();
       document.getElementById('contact-modal-overlay').classList.remove('hidden');
+      // Předvyplnění z profilu (2026-09-13, na žádost - "IG a číslo už někde mít můžeš,
+      // tak je tam můžeš načíst") - telefon/instagram se stejně už dneska ukládá do
+      // members (např. při registraci na akci), tak ať to člověk nemusí psát znovu,
+      // pokud to systém už zná. Nekritické - selže-li fetch, pole zůstanou prázdná.
+      fetch(API_BASE + '/api/my-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(identityPayload()),
+      })
+        .then(r => r.json())
+        .then(profile => {
+          if (!profile.ok) return;
+          const waInput = document.getElementById('contact-wa');
+          const igInput = document.getElementById('contact-ig');
+          if (profile.telefon && waInput && !waInput.value) waInput.value = profile.telefon;
+          if (profile.instagram && igInput && !igInput.value) igInput.value = profile.instagram;
+        })
+        .catch(err => console.error('Načtení profilu pro kontaktní pole selhalo:', err));
     }
 
     function closeContactModal() {

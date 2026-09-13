@@ -50,18 +50,56 @@ function closeMemberModal() {
   if (overlay) overlay.classList.add('hidden');
 }
 
-// Klik na fotku ji zvětší přes celé okno, další klik zavře (2026-08-24, na žádost).
-function toggleMemberPhotoLightbox(src) {
+// Klik na fotku ji zvětší přes celé okno (2026-08-24) - rozšířeno 2026-09-13 (na žádost -
+// "někteří přidávají víc fotek, ale nikde je nezobrazujeme") o galerii všech fotek
+// nahraných k dotazníku, se šipkami vpřed/vzad. Klik mimo fotku (na tmavé pozadí) zavře,
+// klik na samotnou fotku už ne (dřív zavíral první klik odkudkoliv, což je matoucí, když
+// má člověk co pomocí šipek listovat).
+function openMemberPhotoGallery(photos, startIndex) {
   const existing = document.getElementById('member-photo-lightbox');
-  if (existing) { existing.remove(); return; }
+  if (existing) existing.remove();
+  if (!photos.length) return;
+
+  let idx = startIndex || 0;
   const lightbox = document.createElement('div');
   lightbox.id = 'member-photo-lightbox';
   lightbox.className = 'member-photo-lightbox';
-  const img = document.createElement('img');
-  img.src = src;
-  lightbox.appendChild(img);
-  lightbox.addEventListener('click', () => lightbox.remove());
+  lightbox.innerHTML = `
+    <img alt="">
+    ${photos.length > 1 ? `
+      <button type="button" class="member-photo-lightbox-nav prev" aria-label="Předchozí">‹</button>
+      <button type="button" class="member-photo-lightbox-nav next" aria-label="Další">›</button>
+      <div class="member-photo-lightbox-counter"></div>
+    ` : ''}
+  `;
   document.body.appendChild(lightbox);
+
+  function render() {
+    lightbox.querySelector('img').src = photos[idx];
+    const counter = lightbox.querySelector('.member-photo-lightbox-counter');
+    if (counter) counter.textContent = (idx + 1) + ' / ' + photos.length;
+  }
+  render();
+
+  lightbox.addEventListener('click', (e) => { if (e.target === lightbox) lightbox.remove(); });
+  const prevBtn = lightbox.querySelector('.prev');
+  const nextBtn = lightbox.querySelector('.next');
+  if (prevBtn) prevBtn.addEventListener('click', () => { idx = (idx - 1 + photos.length) % photos.length; render(); });
+  if (nextBtn) nextBtn.addEventListener('click', () => { idx = (idx + 1) % photos.length; render(); });
+  document.addEventListener('keydown', function onKey(e) {
+    if (!document.getElementById('member-photo-lightbox')) { document.removeEventListener('keydown', onKey); return; }
+    if (e.key === 'Escape') lightbox.remove();
+    if (e.key === 'ArrowLeft' && prevBtn) prevBtn.click();
+    if (e.key === 'ArrowRight' && nextBtn) nextBtn.click();
+  });
+}
+
+// Čeština má tři tvary počtu ("1 další fotka" / "2-4 další fotky" / "5+ dalších fotek") -
+// `extraCount` je počet fotek NAD tu už zobrazenou v hlavičce, ne celkový počet.
+function memberPhotoCountLabel(extraCount) {
+  if (extraCount === 1) return '+1 další fotka';
+  if (extraCount >= 2 && extraCount <= 4) return `+${extraCount} další fotky`;
+  return `+${extraCount} dalších fotek`;
 }
 
 function escapeHtml(str) {
@@ -135,9 +173,16 @@ function renderMemberModal(body, data) {
   // 2026-08-24 - "pořád nenačítá fotky" - opraveno: server ji teď stáhne sám přes vlastní
   // servisní účet a pošle jako data URL, foto_data_url funguje vždy). Starý přímý odkaz
   // zůstává jen jako záloha, kdyby se stažení na serveru z nějakého důvodu nepovedlo.
-  const photoUrl = data.questionnaire.exists
-    ? (data.questionnaire.foto_data_url || (data.questionnaire.foto_url.length ? memberModalImageUrl(data.questionnaire.foto_url[0]) : null))
-    : null;
+  // Galerie všech fotek (2026-09-13, na žádost - "někteří přidávají víc fotek, ale
+  // nikde je nezobrazujeme") - `foto_data_urls` je pole ve STEJNÉM pořadí jako
+  // `foto_url` (server zkusil stáhnout každou zvlášť); kde se stažení nepovedlo (null),
+  // spadne se pro TU KONKRÉTNÍ fotku na starý přímý odkaz, ne na zahození celé fotky.
+  const allPhotos = data.questionnaire.exists
+    ? (data.questionnaire.foto_url || []).map((u, i) =>
+        (data.questionnaire.foto_data_urls && data.questionnaire.foto_data_urls[i]) || memberModalImageUrl(u))
+      .filter(Boolean)
+    : [];
+  const photoUrl = allPhotos.length ? allPhotos[0] : null;
 
   // Osiřelý dotazník (bez napojení na profil) nemá koho by se stav přístupu/historie
   // týkaly - access je od backendu null.
@@ -241,7 +286,10 @@ function renderMemberModal(body, data) {
 
   body.innerHTML = `
     <div class="member-modal-header">
-      ${photoUrl ? `<img src="${photoUrl}" alt="" class="member-modal-photo" id="member-modal-photo-el" title="Klikni pro zvětšení">` : '<div class="member-modal-photo member-modal-photo-empty"></div>'}
+      <div>
+        ${photoUrl ? `<img src="${photoUrl}" alt="" class="member-modal-photo" id="member-modal-photo-el" title="Klikni pro zvětšení">` : '<div class="member-modal-photo member-modal-photo-empty"></div>'}
+        ${allPhotos.length > 1 ? `<button type="button" class="member-photo-count" id="member-photo-count-el">${memberPhotoCountLabel(allPhotos.length - 1)}</button>` : ''}
+      </div>
       <div>
         <h3>${escapeHtml(data.jmeno || data.email || data.ooo_id)}</h3>
         <p class="member-modal-contact">
@@ -270,7 +318,9 @@ function renderMemberModal(body, data) {
   `;
 
   const photoEl = document.getElementById('member-modal-photo-el');
-  if (photoEl) photoEl.addEventListener('click', () => toggleMemberPhotoLightbox(photoEl.src));
+  if (photoEl) photoEl.addEventListener('click', () => openMemberPhotoGallery(allPhotos, 0));
+  const photoCountEl = document.getElementById('member-photo-count-el');
+  if (photoCountEl) photoCountEl.addEventListener('click', () => openMemberPhotoGallery(allPhotos, 0));
 
   const sendMessageBtn = document.getElementById('member-send-message-btn');
   if (sendMessageBtn) {
