@@ -123,6 +123,23 @@
     // data-label na každém <td> - na mobilu (viz style.css .admin-responsive-table) se
     // řádek změní na kartu s popisky místo vodorovného posouvání (2026-08-24, na žádost -
     // "grafika dotazníku na mobilu je nepřehledná, jak se musí posouvat do strany").
+    // Timestamp má dva různé tvary v datech (2026-09-13, na žádost - "divný zápis
+    // času") - starší import z Google Forms je už hezky česky ("22.10.2024 14:31:12"),
+    // nové zápisy (submit-questionnaire) ukládají syrové new Date().toISOString()
+    // ("2026-09-13T18:14:45.069Z" - UTC, ne pražský čas). ISO tvar se pozná podle "T"
+    // uprostřed a přeformátuje, český tvar se nechá beze změny.
+    function formatTimestamp(raw) {
+      const value = (raw || '').toString().trim();
+      if (!value) return '';
+      if (!value.includes('T')) return value;
+      const date = new Date(value);
+      if (isNaN(date.getTime())) return value;
+      return date.toLocaleString('cs-CZ', {
+        timeZone: 'Europe/Prague', day: 'numeric', month: 'numeric', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      });
+    }
+
     function renderQuestionnaires(list) {
       const body = document.getElementById('questionnaires-body');
       if (!list.length) { body.innerHTML = '<p class="form-hint">Nic nenalezeno.</p>'; return; }
@@ -136,8 +153,9 @@
                   <td data-label="Jméno">
                     <button type="button" class="member-link" data-ooo="${q.ooo_id || ''}" data-row-index="${q.row_index}">${q.jmeno_prezdivka || q.discord_jmeno_historicke || '(bez jména)'}</button>
                     ${!q.ooo_id ? ' <span class="member-roles-cell" title="Starý import bez napojení na profil">(starý dotazník)</span>' : ''}
+                    ${q.discord_username ? `<div class="form-hint" style="margin-top:2px;">@${q.discord_username}</div>` : ''}
                   </td>
-                  <td data-label="Vyplněno">${q.timestamp || ''}</td>
+                  <td data-label="Vyplněno">${formatTimestamp(q.timestamp)}</td>
                   <td data-label="Patron" title="${(q.patron_kdo_historicky || '').replace(/"/g, '&quot;')}">${q.patron_normalized || q.patron_kdo_historicky || '—'}</td>
                   <td data-label="Kontakt">${q.probehl_kontakt ? '✓' : '✗'}</td>
                   <td data-label="Setkání">${q.osobni_setkani ? '✓' : '✗'}</td>
