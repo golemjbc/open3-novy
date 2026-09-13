@@ -151,8 +151,9 @@
               ${list.map(q => `
                 <tr>
                   <td data-label="Jméno">
-                    <button type="button" class="member-link" data-ooo="${q.ooo_id || ''}" data-row-index="${q.row_index}">${q.jmeno_prezdivka || q.discord_jmeno_historicke || '(bez jména)'}${q.discord_username ? ` / @${q.discord_username}` : ''}</button>
+                    <button type="button" class="member-link" data-ooo="${q.ooo_id || ''}" data-row-index="${q.row_index}">${q.jmeno_prezdivka || q.discord_jmeno_historicke || '(bez jména)'}</button>
                     ${!q.ooo_id ? ' <span class="member-roles-cell" title="Starý import bez napojení na profil">(starý dotazník)</span>' : ''}
+                    ${(q.discord_jmeno || q.discord_username) ? `<div class="form-hint" style="margin-top:2px;">${[q.discord_jmeno, q.discord_username ? '@' + q.discord_username : ''].filter(Boolean).join(' / ')}</div>` : ''}
                   </td>
                   <td data-label="Vyplněno">${formatTimestamp(q.timestamp)}</td>
                   <td data-label="Patron" title="${(q.patron_kdo_historicky || '').replace(/"/g, '&quot;')}">${q.patron_normalized || q.patron_kdo_historicky || '—'}</td>
