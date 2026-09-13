@@ -634,12 +634,26 @@
 
         document.getElementById('registration-block').classList.add('hidden');
 
+        // Přesné místo konání (2026-09-13, na žádost - "pokud už ho viděli v mailu nebo
+        // zprávě, mělo by být vidět i na webu") - `lokalita_presna` je stejné pole, co
+        // dostávají e-maily/DM, viz backend lib/registration-email.js a notify-payment
+        // (přesně stejná pravidla PROČ zrovna teď - akce zdarma hned, placené až po
+        // potvrzení doplatku - viz komentáře tam). Dokud tahle podmínka nesedí, na webu
+        // se adresa neukazuje, ale text aspoň řekne, že přijde na Discord/e-mail.
+        const presnaAdresa = (event.lokalita_presna || '').toString().trim();
+        const addressKnown = isFreeEvent
+          || doplatekOK
+          || (event.jednorazova === 'ano' && depositOK);
+
         if (isFreeEvent) {
-          showPanel('registration-info', `<strong>🎉 Jsi přihlášený na akci zdarma!</strong>${addToCalendarButtonHtml()}`);
+          showPanel('registration-info', `
+            <strong>🎉 Jsi přihlášený na akci zdarma!</strong>
+            ${presnaAdresa ? `<p style="margin:8px 0 0;"><strong>Přesné místo konání:</strong> ${presnaAdresa}</p>` : ''}
+            ${addToCalendarButtonHtml()}
+          `);
           return;
         }
-        if (doplatekOK || (isFreeEvent === false && event.jednorazova === 'ano' && depositOK) || (depositOK && doplatekOK)) {
-          const presnaAdresa = (event.lokalita_presna || '').toString().trim();
+        if (addressKnown || (depositOK && doplatekOK)) {
           showPanel('payment-complete', `
             <h4 style="margin-top:0;">Akce zaplacena ✅</h4>
             <p style="margin:0;">Máš všechny platby v pořádku. Uvidíme se na akci!</p>
@@ -649,12 +663,18 @@
           return;
         }
         if (event.jednorazova !== 'ano' && depositOK && !doplatekOK) {
-          showPanel('registration-info', '<strong>✅ Záloha zaplacena!</strong> Doplatek: ' + (p.doplatek || 'bude upřesněno'));
+          showPanel('registration-info', `
+            <strong>✅ Záloha zaplacena!</strong> Doplatek: ${p.doplatek || 'bude upřesněno'}
+            <p class="form-hint" style="margin:8px 0 0;">Přesné místo konání ti pošleme na Discord a e-mailem, jakmile bude doplatek potvrzený.</p>
+          `);
           loadPaymentInfo(id, userName, p.typ_ucasti, 'final', idParam);
           return;
         }
         const paymentType = (event.jednorazova === 'ano') ? 'final' : 'deposit';
-        showPanel('registration-info', '<strong>Jsi přihlášen!</strong> Tvá přihláška byla úspěšně zaregistrována.');
+        showPanel('registration-info', `
+          <strong>Jsi přihlášen!</strong> Tvá přihláška byla úspěšně zaregistrována.
+          <p class="form-hint" style="margin:8px 0 0;">Přesné místo konání ti pošleme na Discord a e-mailem, jakmile bude platba potvrzená.</p>
+        `);
         loadPaymentInfo(id, userName, p.typ_ucasti, paymentType, idParam);
       }
 
