@@ -624,6 +624,26 @@ p { margin: 0 0 16px; color: var(--text-muted); }
 .saved-msg.show { opacity: 1; }
 .saved-msg.error { color: #b42318; }
 
+/* "Přidat do kalendáře" (2026-09-13) - jemné pilulkové tlačítko s dvoubarevným
+   okrajem (stejný gradient jako .btn-primary), ať vypadá jako malý bonus, ne jako
+   další velké CTA vedle "Akce zaplacena". */
+.btn-calendar {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-top: 12px;
+  padding: 9px 18px 9px 16px;
+  border-radius: 999px;
+  border: 1.5px solid transparent;
+  background: linear-gradient(var(--surface), var(--surface)) padding-box,
+              var(--gradient) border-box;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 0.86rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.btn-calendar:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(10, 16, 69, 0.12); }
+.btn-calendar svg { flex-shrink: 0; }
+
 /* Plynulé zobrazení/schování volitelného pole (2026-09-13) - grid-template-rows
    0fr → 1fr místo height:auto, ať jde animovat i neznámou výšku obsahu. */
 .reveal { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.2s ease; }
