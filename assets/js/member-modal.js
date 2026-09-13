@@ -250,6 +250,19 @@ function renderMemberModal(body, data) {
         </p>
       </div>
     </div>
+    ${data.ooo_id ? `
+    <div class="member-notes-section">
+      <div>
+        <label class="member-notes-label" for="member-message-text">Poslat zprávu přes bota</label>
+        <textarea id="member-message-text" placeholder="Např. Snažím se tě kontaktovat na Discordu, ozvi se prosím…" maxlength="1900"></textarea>
+        <p class="form-hint" style="margin-top:4px;">Odešle se jako DM (a e-mailem, pokud ho máme) - na konec se připojí tvoje jméno, ať adresát ví, s kým mluví. Bot obchází Discordí "Žádosti o zprávy", takže zpráva přijde rovnou do schránky.</p>
+      </div>
+      <div>
+        <button type="button" class="btn btn-outline btn-sm" id="member-send-message-btn">Odeslat zprávu</button>
+        <p class="member-modal-msg" id="member-message-msg"></p>
+      </div>
+    </div>
+    ` : ''}
     ${data.access ? `<div class="member-access-list">${accessRows}</div>` : ''}
     ${data.access ? `<h4>Historie akcí</h4><ul class="member-history-list">${historyRows}</ul>` : ''}
     <h4>Dotazník</h4>
@@ -258,6 +271,34 @@ function renderMemberModal(body, data) {
 
   const photoEl = document.getElementById('member-modal-photo-el');
   if (photoEl) photoEl.addEventListener('click', () => toggleMemberPhotoLightbox(photoEl.src));
+
+  const sendMessageBtn = document.getElementById('member-send-message-btn');
+  if (sendMessageBtn) {
+    sendMessageBtn.addEventListener('click', async () => {
+      const textEl = document.getElementById('member-message-text');
+      const msgEl = document.getElementById('member-message-msg');
+      const text = textEl.value.trim();
+      if (!text) { msgEl.textContent = 'Napiš prosím nějaký text.'; return; }
+      sendMessageBtn.disabled = true;
+      msgEl.textContent = 'Odesílám…';
+      const identity = memberModalIdentityPayload();
+      try {
+        const res = await fetch(API_BASE + '/api/panel-send-message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...identity, ooo_id: data.ooo_id, message: text }),
+        });
+        const resData = await res.json();
+        if (!res.ok || !resData.ok) { msgEl.textContent = resData.error || 'Nepodařilo se odeslat.'; return; }
+        msgEl.textContent = resData.dmOk ? 'Odesláno (Discord DM).' : 'Odesláno e-mailem (Discord DM se nepodařilo doručit).';
+        textEl.value = '';
+      } catch (err) {
+        msgEl.textContent = 'Chyba: ' + err.message;
+      } finally {
+        sendMessageBtn.disabled = false;
+      }
+    });
+  }
 
   const changePatronToggle = document.getElementById('member-change-patron-toggle');
   if (changePatronToggle) {
