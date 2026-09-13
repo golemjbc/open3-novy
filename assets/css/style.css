@@ -622,6 +622,7 @@ p { margin: 0 0 16px; color: var(--text-muted); }
 .input-icon .form-control:focus { outline: none; }
 .saved-msg { font-size: 0.85rem; font-weight: 600; color: var(--success); margin-left: 12px; opacity: 0; transition: opacity 0.2s ease; }
 .saved-msg.show { opacity: 1; }
+.saved-msg.error { color: #b42318; }
 
 .access-denied {
   max-width: 480px;

@@ -249,12 +249,37 @@
       document.getElementById('contact-modal-close').addEventListener('click', closeContactModal);
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeContactModal(); });
 
+      // Vyčistí chybovou hlášku, jakmile se něco změní - ať tam nezůstane viset,
+      // i když už člověk problém opravil (2026-09-13, na žádost - "mohu vybrat WA
+      // i IG jako kontakt a vůbec ho tam nezadat a uložit to").
+      const clearContactMsg = () => {
+        const msg = document.getElementById('contact-saved-msg');
+        msg.classList.remove('show', 'error');
+      };
+      document.querySelectorAll('input[name="preferred-contact"]').forEach(r => r.addEventListener('change', clearContactMsg));
+      document.getElementById('contact-wa').addEventListener('input', clearContactMsg);
+      document.getElementById('contact-ig').addEventListener('input', clearContactMsg);
+
       document.getElementById('contact-save-btn').addEventListener('click', function () {
         const btn = this;
         const msg = document.getElementById('contact-saved-msg');
         const telefon = document.getElementById('contact-wa').value.trim();
         const instagram = document.getElementById('contact-ig').value.trim();
         const preferred_contact = document.querySelector('input[name="preferred-contact"]:checked').value;
+
+        // Nemá smysl si vybrat WhatsApp/Instagram jako přednostní kanál a nechat
+        // příslušné pole prázdné - patron by pak neměl kam napsat.
+        if (preferred_contact === 'whatsapp' && !telefon) {
+          msg.textContent = 'Doplň prosím telefonní číslo pro WhatsApp.';
+          msg.classList.add('show', 'error');
+          return;
+        }
+        if (preferred_contact === 'instagram' && !instagram) {
+          msg.textContent = 'Doplň prosím Instagram profil.';
+          msg.classList.add('show', 'error');
+          return;
+        }
+
         btn.disabled = true;
         fetch(API_BASE + '/api/update-contact-info', {
           method: 'POST',
@@ -265,6 +290,8 @@
           .then(res => {
             btn.disabled = false;
             if (!res.ok) { alert('Chyba při ukládání: ' + (res.error || 'neznámá')); return; }
+            msg.classList.remove('error');
+            msg.textContent = '✓ Uloženo';
             msg.classList.add('show');
             setTimeout(closeContactModal, 900);
           })
