@@ -94,6 +94,21 @@ function openMemberPhotoGallery(photos, startIndex) {
   });
 }
 
+// Preferovaný kontakt (2026-09-13, na žádost - "měl by mít možnost vybrat preferenci,
+// jak chce kontaktovat primárně") - prázdná/neznámá hodnota = Discord (výchozí, stejně
+// jako ve formuláři na dotaznik.html). Zobrazuje se jako malý barevný štítek hned pod
+// kontaktní řádkou, ať patron na první pohled vidí, kudy má zkusit napsat jako první.
+function memberPreferredContactBadge(pref) {
+  const value = pref || 'discord';
+  const icons = {
+    discord: '<svg viewBox="0 0 24 24" fill="none"><path d="M20.3 6.3c-1.4-.65-2.9-1.12-4.5-1.4a.1.1 0 0 0-.1.05c-.2.35-.4.8-.55 1.15a16.6 16.6 0 0 0-5 0 8 8 0 0 0-.55-1.15.1.1 0 0 0-.1-.05c-1.6.28-3.1.75-4.5 1.4a.1.1 0 0 0-.05.04C2.3 10 1.6 13.6 1.9 17.1a.1.1 0 0 0 .04.07 17 17 0 0 0 5.1 2.55.1.1 0 0 0 .11-.04c.4-.53.74-1.1 1.03-1.7a.1.1 0 0 0-.05-.14 11 11 0 0 1-1.58-.75.1.1 0 0 1-.01-.16l.31-.24a.1.1 0 0 1 .1-.01c3.3 1.5 6.88 1.5 10.15 0a.1.1 0 0 1 .1.01l.31.24a.1.1 0 0 1-.01.16c-.5.29-1.03.54-1.58.75a.1.1 0 0 0-.05.14c.3.6.65 1.17 1.03 1.7a.1.1 0 0 0 .11.04 17 17 0 0 0 5.1-2.55.1.1 0 0 0 .04-.07c.36-4.05-.6-7.6-2.55-10.76a.08.08 0 0 0-.04-.04ZM8.68 14.9c-.99 0-1.8-.92-1.8-2.04 0-1.13.79-2.04 1.8-2.04 1.02 0 1.82.93 1.8 2.04 0 1.12-.79 2.04-1.8 2.04Zm6.64 0c-.99 0-1.8-.92-1.8-2.04 0-1.13.8-2.04 1.8-2.04 1.02 0 1.82.93 1.8 2.04 0 1.12-.78 2.04-1.8 2.04Z" fill="currentColor"/></svg>',
+    whatsapp: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5.06-1.33A10 10 0 1 0 12 2Zm0 18.1a8.06 8.06 0 0 1-4.13-1.13l-.3-.18-3 .78.8-2.93-.2-.3A8.1 8.1 0 1 1 12 20.1Zm4.44-6.07c-.24-.12-1.44-.71-1.66-.79-.22-.08-.39-.12-.55.12-.16.24-.63.79-.78.95-.14.16-.29.18-.53.06-.24-.12-1.02-.38-1.94-1.2-.72-.64-1.2-1.43-1.34-1.67-.14-.24-.02-.37.1-.49.11-.11.24-.29.36-.43.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.55-1.33-.76-1.82-.2-.48-.4-.42-.55-.42h-.47c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.7 2.6 4.12 3.64.58.25 1.03.4 1.38.51.58.18 1.11.16 1.53.1.47-.07 1.44-.59 1.64-1.15.2-.57.2-1.05.14-1.15-.06-.1-.22-.16-.46-.28Z"/></svg>',
+    instagram: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg>',
+  };
+  const labels = { discord: 'Přednostně přes Discord', whatsapp: 'Přednostně přes WhatsApp', instagram: 'Přednostně přes Instagram' };
+  return `<span class="member-preferred-contact ${value}">${icons[value]}${labels[value]}</span>`;
+}
+
 // Čeština má tři tvary počtu ("1 další fotka" / "2-4 další fotky" / "5+ dalších fotek") -
 // `extraCount` je počet fotek NAD tu už zobrazenou v hlavičce, ne celkový počet.
 function memberPhotoCountLabel(extraCount) {
@@ -294,8 +309,9 @@ function renderMemberModal(body, data) {
         <h3>${escapeHtml(data.jmeno || data.email || data.ooo_id)}</h3>
         <p class="member-modal-contact">
           ${data.discord_username ? '@' + escapeHtml(data.discord_username) + ' · ' : ''}
-          ${escapeHtml(data.email || '')}${data.telefon ? ' · ' + escapeHtml(data.telefon) : ''}
+          ${escapeHtml(data.email || '')}${data.telefon ? ' · ' + escapeHtml(data.telefon) : ''}${data.instagram ? ' · ' + escapeHtml(data.instagram) : ''}
         </p>
+        ${data.questionnaire && data.questionnaire.exists ? memberPreferredContactBadge(data.preferred_contact) : ''}
       </div>
     </div>
     ${data.access ? `<div class="member-access-list">${accessRows}</div>` : ''}

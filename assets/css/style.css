@@ -799,6 +799,17 @@ p { margin: 0 0 16px; color: var(--text-muted); }
   width: 88px; height: 88px; border-radius: var(--radius-sm); object-fit: contain; flex-shrink: 0;
   background: var(--bg-alt); border: 1px solid var(--border); cursor: zoom-in;
 }
+.member-preferred-contact {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.78rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 999px;
+  background: var(--bg-alt); margin-top: 6px;
+}
+.member-preferred-contact svg { width: 13px; height: 13px; flex-shrink: 0; }
+.member-preferred-contact.discord { color: var(--sky); }
+.member-preferred-contact.whatsapp { color: #25D366; }
+.member-preferred-contact.instagram { color: var(--primary); }
+
 .member-photo-count {
   display: block; margin-top: 6px; font-size: 0.78rem; font-weight: 600;
   color: var(--primary); cursor: zoom-in; background: none; border: none; padding: 0;
