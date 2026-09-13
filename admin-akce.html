@@ -320,6 +320,17 @@
           <div id="registrations-meta" class="admin-event-meta"></div>
           <div id="registrations-body"></div>
         </div>
+
+        <div id="event-message-card" class="admin-event-card hidden">
+          <h3 id="event-message-title">Odeslat zprávu účastníkům</h3>
+          <p class="form-hint">Zpráva se pošle přes bota (DM) a e-mailem všem aktivně přihlášeným na tuhle akci, včetně jejich partnerů. Vhodné na připomenutí nebo rychlou změnu.</p>
+          <textarea id="event-message-text" rows="5" placeholder="Např. Připomínáme, že akce začíná už zítra v 18:00…" maxlength="1900" style="width:100%; margin-top:8px;"></textarea>
+          <div style="margin-top:12px; display:flex; align-items:center; gap:12px;">
+            <button type="button" class="btn btn-primary btn-sm" id="event-message-send-btn">Odeslat zprávu</button>
+            <button type="button" class="btn btn-outline btn-sm" id="event-message-cancel-btn">Zavřít</button>
+            <p class="form-hint" id="event-message-msg" style="margin:0;"></p>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -709,6 +720,7 @@
           <div class="admin-event-actions">
             <button class="btn btn-outline btn-sm" data-action="edit" data-event="${e.event_id}">Upravit</button>
             <button class="btn btn-outline btn-sm" data-action="registrations" data-event="${e.event_id}">Přihlášky</button>
+            <button class="btn btn-outline btn-sm" data-action="message" data-event="${e.event_id}" data-nazev="${(e.nazev || e.event_id).replace(/"/g, '&quot;')}">Odeslat zprávu</button>
             <button class="btn btn-outline btn-sm" data-action="copy" data-event="${e.event_id}">Kopírovat jako novou akci</button>
             <button class="btn btn-outline btn-sm" data-action="delete" data-event="${e.event_id}" data-nazev="${(e.nazev || e.event_id).replace(/"/g, '&quot;')}" style="margin-left:auto; color:#b42318; border-color:#b42318;">Zrušit akci</button>
           </div>
@@ -720,6 +732,9 @@
       }));
       container.querySelectorAll('[data-action="registrations"]').forEach(btn => btn.addEventListener('click', () => {
         loadRegistrations(btn.dataset.event);
+      }));
+      container.querySelectorAll('[data-action="message"]').forEach(btn => btn.addEventListener('click', () => {
+        openEventMessageCard(btn.dataset.event, btn.dataset.nazev);
       }));
       container.querySelectorAll('[data-action="copy"]').forEach(btn => btn.addEventListener('click', () => {
         const event = allEvents.find(e => e.event_id === btn.dataset.event);
@@ -916,6 +931,48 @@
         })
         .catch(err => alert('Chyba: ' + err.message));
     }
+
+    // Hromadná zpráva účastníkům akce (2026-09-13, na žádost - "na připomenutí nebo
+    // rychlou změnu") - stejný kompoziční vzorec jako karta Přihlášky výš (skrytá karta,
+    // co se ukáže/naplní po kliknutí, ne modální okno).
+    function openEventMessageCard(eventId, nazev) {
+      const card = document.getElementById('event-message-card');
+      document.getElementById('event-message-title').textContent = `Odeslat zprávu — ${nazev} (${eventId})`;
+      document.getElementById('event-message-text').value = '';
+      document.getElementById('event-message-msg').textContent = '';
+      card.dataset.event = eventId;
+      card.classList.remove('hidden');
+      card.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    document.getElementById('event-message-cancel-btn').addEventListener('click', () => {
+      document.getElementById('event-message-card').classList.add('hidden');
+    });
+
+    document.getElementById('event-message-send-btn').addEventListener('click', () => {
+      const card = document.getElementById('event-message-card');
+      const eventId = card.dataset.event;
+      const textEl = document.getElementById('event-message-text');
+      const msgEl = document.getElementById('event-message-msg');
+      const text = textEl.value.trim();
+      if (!text) { msgEl.textContent = 'Napiš prosím nějaký text.'; return; }
+      if (!confirm('Odeslat tuhle zprávu VŠEM aktivním účastníkům dané akce (přes bota a e-mailem)?')) return;
+      const btn = document.getElementById('event-message-send-btn');
+      btn.disabled = true;
+      msgEl.textContent = 'Odesílám…';
+      fetch(API_BASE + '/api/panel-send-event-message', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...identityPayload(), event_id: eventId, message: text }),
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (!data.ok) { msgEl.textContent = 'Chyba: ' + (data.error || 'neznámá'); return; }
+          msgEl.textContent = `Odesláno ${data.sent} z ${data.recipients} příjemců${data.failed ? ` (${data.failed} se nepodařilo doručit)` : ''}.`;
+          textEl.value = '';
+        })
+        .catch(err => { msgEl.textContent = 'Chyba: ' + err.message; })
+        .finally(() => { btn.disabled = false; });
+    });
 
     // Zrušit účast (2026-08-25) - spočítá, co bylo zaplaceno (jen podle deposit_status/
     // doplatek_status = OK, žádné napojení na bankovní výpis zatím není), necha
