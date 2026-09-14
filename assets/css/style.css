@@ -624,25 +624,27 @@ p { margin: 0 0 16px; color: var(--text-muted); }
 .saved-msg.show { opacity: 1; }
 .saved-msg.error { color: #b42318; }
 
-/* "Přidat do kalendáře" (2026-09-13) - jemné pilulkové tlačítko s dvoubarevným
-   okrajem (stejný gradient jako .btn-primary), ať vypadá jako malý bonus, ne jako
-   další velké CTA vedle "Akce zaplacena". */
+/* "Přidat do kalendáře" (2026-09-13/14) - dvě rovnocenné pilulky vedle sebe (Google
+   Kalendář / Apple+Outlook přes .ics), ať je hned jasné, že jde o dvě rovnocenné
+   možnosti, ne hlavní akce + drobný odkaz vedle. */
+.btn-calendar-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
 .btn-calendar {
   display: inline-flex; align-items: center; gap: 8px;
-  margin-top: 12px;
   padding: 9px 18px 9px 16px;
   border-radius: 999px;
-  border: 1.5px solid transparent;
-  background: linear-gradient(var(--surface), var(--surface)) padding-box,
-              var(--gradient) border-box;
-  color: var(--primary);
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
   font-weight: 600;
   font-size: 0.86rem;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
 .btn-calendar:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(10, 16, 69, 0.12); }
 .btn-calendar svg { flex-shrink: 0; }
+.btn-calendar--google:hover { border-color: #4285F4; }
+.btn-calendar--ics { color: var(--primary); }
+.btn-calendar--ics:hover { border-color: var(--primary); }
 
 /* Plynulé zobrazení/schování volitelného pole (2026-09-13) - grid-template-rows
    0fr → 1fr místo height:auto, ať jde animovat i neznámou výšku obsahu. */
