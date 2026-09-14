@@ -31,58 +31,58 @@
 
     .prubeh-hint { font-size: 0.8rem; color: var(--text-muted); margin: -8px 0 18px; }
 
-    /* Kanban - JEDEN sdílený proces (2026-09-14, přepracováno na žádost - "chci jeden
-       společný proces a v něm se budou lidé přesouvat"). Sloupec = fáze procesu, karta
-       = osoba, karta sedí ve sloupci podle svého AKTUÁLNÍHO stavu - žádný samostatný
-       "krokoměr" na kartu jako v předchozí verzi, pozice ve sdíleném procesu mluví sama
-       za sebe. Vodorovné posouvání na úzkém displeji (mobil), ne zalamování - pořadí
-       sloupců (= pořadí procesu) musí zůstat čitelné zleva doprava.
-       Prefix .prubeh-kb* na všem, ať se to nepotká s ničím sdíleným (viz stará poznámka
-       o kolizi .step). */
-    .prubeh-board { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 6px; align-items: flex-start; }
-    .prubeh-kb-col { flex: 0 0 260px; background: var(--bg-alt); border-radius: var(--radius); padding: 12px; }
-    .prubeh-kb-col-head {
-      display: flex; align-items: center; justify-content: space-between; gap: 8px;
-      font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em;
-      padding: 4px 6px 10px; color: var(--text-muted);
+    /* Svislý řetěz pevných kroků (2026-09-14, potřetí přepracováno na žádost - "svislá
+       osa, na té jsou jasně dané kroky co se má stát, přibývají jednotlivé zprávy...
+       není důležitý kdy ale stavy jestli nastaly nebo ne"). Barevná propojená "pilulka"
+       na hlavičku kroku - inspirováno vlastní infografikou uživatele (řetěz kroků na
+       mapě systému). Každý krok ukazuje VŠECHNY relevantní lidi rozdělené na ✅ hotovo /
+       ⏳ čeká - člověk se tak objeví ve VÍC krocích najednou (jednou hotovo, jednou čeká),
+       ne jen v jednom "aktuálním" boxu jako předchozí kanban verze.
+       Prefix .prubeh-fl* na všem (flow), ať se nic nepotká se sdílenými styly. */
+    .prubeh-flow { display: flex; flex-direction: column; gap: 0; max-width: 720px; }
+    .prubeh-fl-connector { width: 3px; height: 20px; background: var(--border); margin-left: 22px; }
+    .prubeh-fl-step { display: flex; flex-direction: column; gap: 10px; }
+    .prubeh-fl-pill {
+      display: inline-flex; align-items: center; gap: 10px; align-self: flex-start;
+      padding: 8px 18px 8px 14px; border-radius: 999px; font-weight: 800; font-size: 0.95rem;
+      color: #fff; box-shadow: 0 2px 6px rgba(10,16,69,0.15);
     }
-    .prubeh-kb-col-count {
-      font-size: 0.76rem; font-weight: 800; min-width: 22px; height: 22px; padding: 0 6px;
-      border-radius: 999px; display: inline-flex; align-items: center; justify-content: center;
-      background: var(--surface); font-variant-numeric: tabular-nums;
+    .prubeh-fl-pill .prubeh-fl-num {
+      width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,0.25);
+      display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0;
     }
-    .prubeh-kb-col[data-stage="ceka_zalohu"] .prubeh-kb-col-head,
-    .prubeh-kb-col[data-stage="ceka_doplatek"] .prubeh-kb-col-head { color: var(--warning); }
-    .prubeh-kb-col[data-stage="hotovo"] .prubeh-kb-col-head { color: var(--success); }
-    .prubeh-kb-col[data-stage="cekacka"] .prubeh-kb-col-head { color: var(--info); }
-    .prubeh-kb-col[data-stage="zruseno"] .prubeh-kb-col-head { color: var(--danger); }
-    .prubeh-kb-col[data-stage="ceka_zalohu"] .prubeh-kb-col-count,
-    .prubeh-kb-col[data-stage="ceka_doplatek"] .prubeh-kb-col-count { background: var(--warning-bg); color: var(--warning); }
-    .prubeh-kb-col[data-stage="hotovo"] .prubeh-kb-col-count { background: var(--success-bg); color: var(--success); }
-    .prubeh-kb-col[data-stage="cekacka"] .prubeh-kb-col-count { background: var(--info-bg); color: var(--info); }
-    .prubeh-kb-col[data-stage="zruseno"] .prubeh-kb-col-count { background: var(--danger-bg); color: var(--danger); }
-    .prubeh-kb-col-body { display: flex; flex-direction: column; gap: 10px; min-height: 40px; }
-    .prubeh-kb-empty { font-size: 0.76rem; color: var(--text-muted); font-style: italic; padding: 8px 6px; }
+    .prubeh-fl-step[data-key="registrace"] .prubeh-fl-pill { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); }
+    .prubeh-fl-step[data-key="zaloha"] .prubeh-fl-pill,
+    .prubeh-fl-step[data-key="platba"] .prubeh-fl-pill { background: linear-gradient(135deg, #d98a1f, var(--warning)); }
+    .prubeh-fl-step[data-key="doplatek"] .prubeh-fl-pill { background: linear-gradient(135deg, #c9670a, #9c4e05); }
+    .prubeh-fl-step[data-key="hotovo"] .prubeh-fl-pill { background: linear-gradient(135deg, #1a9c67, var(--success)); }
+    .prubeh-fl-step[data-key="cekacka"] .prubeh-fl-pill { background: linear-gradient(135deg, #2f8fc7, var(--info)); }
+    .prubeh-fl-step[data-key="zruseno"] .prubeh-fl-pill { background: linear-gradient(135deg, #cf4a40, var(--danger)); }
 
-    .prubeh-kcard {
-      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
-      padding: 12px 13px; display: flex; flex-direction: column; gap: 8px; border-left: 3px solid var(--border);
+    .prubeh-fl-body {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 14px 16px; margin-left: 8px; display: flex; flex-direction: column; gap: 10px;
     }
-    .prubeh-kb-col[data-stage="ceka_zalohu"] .prubeh-kcard, .prubeh-kb-col[data-stage="ceka_doplatek"] .prubeh-kcard { border-left-color: var(--warning); }
-    .prubeh-kb-col[data-stage="hotovo"] .prubeh-kcard { border-left-color: var(--success); }
-    .prubeh-kb-col[data-stage="cekacka"] .prubeh-kcard { border-left-color: var(--info); }
-    .prubeh-kb-col[data-stage="zruseno"] .prubeh-kcard { border-left-color: var(--danger); opacity: 0.72; }
-    .prubeh-kname { font-weight: 700; font-size: 0.92rem; }
-    .prubeh-ksub { font-size: 0.72rem; color: var(--text-muted); }
+    .prubeh-fl-group-label { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); margin-bottom: 4px; }
+    .prubeh-fl-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .prubeh-fl-chip {
+      font-size: 0.78rem; padding: 4px 10px; border-radius: 999px; background: var(--bg-alt);
+      display: inline-flex; align-items: center; gap: 5px;
+    }
+    .prubeh-fl-chip.done { background: var(--success-bg); color: var(--success); font-weight: 600; }
+    .prubeh-fl-chip.pending { background: var(--warning-bg); color: var(--warning); }
+    .prubeh-fl-empty { font-size: 0.78rem; color: var(--text-muted); font-style: italic; }
 
-    .prubeh-kmsgs { list-style: none; margin: 2px 0 0; padding: 8px 0 0; border-top: 1px dashed var(--border); display: flex; flex-direction: column; gap: 6px; }
-    .prubeh-kmsg { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; }
-    .prubeh-kmsg .icon { width: 15px; height: 15px; flex-shrink: 0; display: flex; }
-    .prubeh-kmsg .icon svg { width: 100%; height: 100%; }
-    .prubeh-kmsg .icon.fail svg { opacity: 0.35; filter: grayscale(1); }
-    .prubeh-kmsg .type { font-weight: 600; color: var(--text); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .prubeh-kmsg .ts { color: var(--text-muted); font-size: 0.68rem; flex-shrink: 0; }
-    .prubeh-kmsgs-empty { font-size: 0.7rem; color: var(--text-muted); font-style: italic; padding-top: 8px; border-top: 1px dashed var(--border); }
+    .prubeh-fl-msgs { list-style: none; margin: 6px 0 0; padding: 10px 0 0; border-top: 1px dashed var(--border); display: flex; flex-direction: column; gap: 7px; }
+    .prubeh-fl-msg { display: flex; align-items: center; gap: 7px; font-size: 0.78rem; }
+    .prubeh-fl-msg .icon { width: 16px; height: 16px; flex-shrink: 0; display: flex; }
+    .prubeh-fl-msg .icon svg { width: 100%; height: 100%; }
+    .prubeh-fl-msg .icon.fail svg { opacity: 0.35; filter: grayscale(1); }
+    .prubeh-fl-msg .who { font-weight: 600; }
+    .prubeh-fl-msg .ts { color: var(--text-muted); font-size: 0.72rem; margin-left: auto; flex-shrink: 0; }
+
+    .prubeh-fl-side { display: flex; flex-direction: column; gap: 14px; margin-top: 22px; }
+    .prubeh-fl-side-title { font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); margin-bottom: 10px; }
   </style>
 </head>
 <body>
@@ -168,15 +168,13 @@
     function loadEventsForSelect() {
       return fetch(API_BASE + '/api/panel-list-events', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...identityPayload(), include_archived: true }),
+        body: JSON.stringify(identityPayload()),
       }).then(r => r.json()).then(data => {
         if (!data.ok) throw new Error(data.error || 'Chyba při načítání akcí.');
         eventSelect.innerHTML = '<option value="">— vyber akci —</option>' +
           data.events.map(e => `<option value="${e.event_id}">${e.nazev || e.event_id} (${e.event_id})</option>`).join('');
       });
     }
-
-    const STAGE_LABEL = { ceka_zalohu: 'Čeká na zálohu', ceka_doplatek: 'Čeká na doplatek', hotovo: 'Hotovo', cekacka: 'Na čekačce', zruseno: 'Zrušeno' };
 
     function escapeHtml(str) {
       const d = document.createElement('div'); d.textContent = str || ''; return d.innerHTML;
@@ -196,53 +194,130 @@
     const ICON_DISCORD = '<svg viewBox="0 0 24 24" fill="#5865F2"><path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.076.076 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.548-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.955 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>';
     const ICON_MAIL = '<svg viewBox="0 0 24 24" fill="none" stroke="#EA4335" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="m3 6.5 9 6.5 9-6.5"/></svg>';
 
-    // Kanban sloupce (2026-09-14, přepracováno na žádost - "jeden společný proces, lidé
-    // se v něm přesouvají") - hlavní "cesta" (podle typu akce, viz panel-event-timeline
-    // is_free/has_doplatek) se zobrazuje vždy, i prázdná (ať je vidět tvar procesu).
-    // Čekačka/zrušeno jsou vedlejší "kolejе" - zobrazí se jen když v nich někdo je.
-    function mainStagesFor(eventInfo) {
-      if (eventInfo.is_free) return ['hotovo'];
-      if (eventInfo.has_doplatek) return ['ceka_zalohu', 'ceka_doplatek', 'hotovo'];
-      return ['ceka_zalohu', 'hotovo'];
+    // Pevné kroky procesu podle typu akce (2026-09-14, potřetí přepracováno na žádost -
+    // "svislá osa, jasně dané kroky, přibývají zprávy, není důležité kdy ale jestli
+    // nastaly"). `done(p)` říká, jestli osoba už tenhle krok má za sebou - žádný přepočet
+    // stavu tady, jen čtení `p.stage`, co spočítal server (panel-event-timeline).
+    function stepsFor(eventInfo) {
+      if (eventInfo.is_free) {
+        return [
+          { key: 'registrace', label: 'Registrace', done: () => true },
+          { key: 'hotovo', label: 'Hotovo', done: () => true },
+        ];
+      }
+      if (eventInfo.has_doplatek) {
+        return [
+          { key: 'registrace', label: 'Registrace', done: () => true },
+          { key: 'zaloha', label: 'Záloha', done: p => p.stage === 'ceka_doplatek' || p.stage === 'hotovo' },
+          { key: 'doplatek', label: 'Doplatek', done: p => p.stage === 'hotovo' },
+          { key: 'hotovo', label: 'Hotovo', done: p => p.stage === 'hotovo' },
+        ];
+      }
+      return [
+        { key: 'registrace', label: 'Registrace', done: () => true },
+        { key: 'platba', label: 'Platba', done: p => p.stage === 'hotovo' },
+        { key: 'hotovo', label: 'Hotovo', done: p => p.stage === 'hotovo' },
+      ];
     }
 
-    function renderKMsgs(msgs) {
-      if (!msgs.length) return `<p class="prubeh-kmsgs-empty">Zatím žádné zaznamenané zprávy.</p>`;
-      return `<ul class="prubeh-kmsgs">${msgs.map(m => {
+    // Který typ zprávy patří ke kterému kroku - první klíč z kandidátů, co v tomhle
+    // konkrétním procesu (podle typu akce) skutečně existuje, jinak jde do "Ostatní".
+    const TYPE_TO_STEP_CANDIDATES = {
+      'Registrace': ['registrace'], 'Registrace (partner)': ['registrace'], 'Registrace (Google)': ['registrace'],
+      'Retry registračního e-mailu': ['registrace'],
+      'Záloha potvrzena': ['zaloha'], 'Záloha potvrzena (partner)': ['zaloha'],
+      'Je potřeba doplatek': ['doplatek'], 'Je potřeba doplatek (partner)': ['doplatek'], 'Doplatek': ['doplatek'],
+      'Platba potvrzena': ['platba', 'hotovo'], 'Platba potvrzena (partner)': ['platba', 'hotovo'],
+      'Jsi schválen/a': ['doplatek', 'platba'],
+    };
+    function stepKeyForType(type, stepKeys) {
+      const candidates = TYPE_TO_STEP_CANDIDATES[type] || [];
+      return candidates.find(k => stepKeys.includes(k)) || null;
+    }
+
+    function personLabel(p) {
+      return escapeHtml(p.jmeno) + (p.typ_ucasti === 'par' ? ' (pár)' : '');
+    }
+
+    function renderMsgList(msgs) {
+      if (!msgs.length) return '';
+      return `<ul class="prubeh-fl-msgs">${msgs.map(m => {
         const icons = [];
         if (m.discord_attempted) icons.push(`<span class="icon ${m.discord_sent ? '' : 'fail'}" title="Discord DM ${m.discord_sent ? 'doručeno' : 'selhalo'}">${ICON_DISCORD}</span>`);
         if (m.email_attempted) icons.push(`<span class="icon ${m.email_sent ? '' : 'fail'}" title="E-mail ${m.email_sent ? 'doručen' : 'selhal'}">${ICON_MAIL}</span>`);
-        return `<li class="prubeh-kmsg">${icons.join('')}<span class="type">${escapeHtml(m.type || 'Zpráva')}</span><span class="ts">${formatTs(m.ts)}</span></li>`;
+        return `<li class="prubeh-fl-msg">${icons.join('')}<span class="who">${escapeHtml(m._person || '')}</span> — ${escapeHtml(m.type || 'Zpráva')}<span class="ts">${formatTs(m.ts)}</span></li>`;
       }).join('')}</ul>`;
     }
 
-    function renderKCard(p) {
+    function renderStep(step, idx, mainPeople, prevDone, stepKeys) {
+      const doneList = mainPeople.filter(p => step.done(p));
+      const pendingList = mainPeople.filter(p => !step.done(p) && prevDone(p));
+      const msgs = mainPeople
+        .flatMap(p => (p.messages || []).map(m => ({ ...m, _person: p.jmeno })))
+        .filter(m => stepKeyForType(m.type, stepKeys) === step.key)
+        .sort((a, b) => (b.ts || '').localeCompare(a.ts || ''));
+
+      const chipsHtml = (list, cls, icon) => list.length
+        ? `<div class="prubeh-fl-chips">${list.map(p => `<span class="prubeh-fl-chip ${cls}">${icon} ${personLabel(p)}</span>`).join('')}</div>`
+        : `<p class="prubeh-fl-empty">Nikdo</p>`;
+
       return `
-        <div class="prubeh-kcard">
-          <div class="prubeh-kname">${escapeHtml(p.jmeno)}</div>
-          <div class="prubeh-ksub">${p.username ? '@' + escapeHtml(p.username) + ' · ' : ''}${p.typ_ucasti === 'par' ? 'pár' : 'sólo'}${p.ooo_id ? ' · ' + p.ooo_id : ''}</div>
-          ${renderKMsgs(p.messages || [])}
+        <div class="prubeh-fl-step" data-key="${step.key}">
+          <div class="prubeh-fl-pill"><span class="prubeh-fl-num">${idx + 1}</span>${step.label}</div>
+          <div class="prubeh-fl-body">
+            <div>
+              <div class="prubeh-fl-group-label">✅ Hotovo (${doneList.length})</div>
+              ${chipsHtml(doneList, 'done', '✓')}
+            </div>
+            <div>
+              <div class="prubeh-fl-group-label">⏳ Čeká (${pendingList.length})</div>
+              ${chipsHtml(pendingList, 'pending', '•')}
+            </div>
+            ${renderMsgList(msgs)}
+          </div>
+        </div>`;
+    }
+
+    function renderSideGroup(title, people) {
+      if (!people.length) return '';
+      return `
+        <div>
+          <div class="prubeh-fl-side-title">${title} (${people.length})</div>
+          <div class="prubeh-fl-chips">${people.map(p => `<span class="prubeh-fl-chip">${personLabel(p)}</span>`).join('')}</div>
         </div>`;
     }
 
     function renderAll() {
       if (!currentData) { prubehBody.innerHTML = ''; return; }
       const { event, participants } = currentData;
-      const byStage = {};
-      participants.forEach(p => { (byStage[p.stage] = byStage[p.stage] || []).push(p); });
+      const mainPeople = participants.filter(p => p.stage !== 'cekacka' && p.stage !== 'zruseno');
+      const cekackaPeople = participants.filter(p => p.stage === 'cekacka');
+      const zrusenoPeople = participants.filter(p => p.stage === 'zruseno');
 
-      const columns = [...mainStagesFor(event), ...['cekacka', 'zruseno'].filter(s => (byStage[s] || []).length)];
+      const steps = stepsFor(event);
+      const stepKeys = steps.map(s => s.key);
 
-      const boardHtml = `<div class="prubeh-board">${columns.map(stage => {
-        const people = byStage[stage] || [];
-        return `
-          <div class="prubeh-kb-col" data-stage="${stage}">
-            <div class="prubeh-kb-col-head"><span>${STAGE_LABEL[stage]}</span><span class="prubeh-kb-col-count">${people.length}</span></div>
-            <div class="prubeh-kb-col-body">${people.length ? people.map(renderKCard).join('') : '<p class="prubeh-kb-empty">Nikdo</p>'}</div>
-          </div>`;
-      }).join('')}</div>`;
+      const stepsHtml = steps.map((step, i) => {
+        const prevDone = i === 0 ? () => true : steps[i - 1].done;
+        return renderStep(step, i, mainPeople, prevDone, stepKeys);
+      }).join('<div class="prubeh-fl-connector"></div>');
 
-      prubehBody.innerHTML = boardHtml;
+      // Zprávy, co se nedaly přiřadit k žádnému kroku (zrušení, čekačka, hromadné zprávy) -
+      // zobrazí se u postranních skupin, ne ztracené.
+      const sideMsgsFor = (people) => people
+        .flatMap(p => (p.messages || []).map(m => ({ ...m, _person: p.jmeno })))
+        .filter(m => !stepKeyForType(m.type, stepKeys))
+        .sort((a, b) => (b.ts || '').localeCompare(a.ts || ''));
+
+      const sideHtml = (cekackaPeople.length || zrusenoPeople.length) ? `
+        <div class="prubeh-fl-side">
+          ${renderSideGroup('⏳ Na čekačce', cekackaPeople)}
+          ${cekackaPeople.length ? renderMsgList(sideMsgsFor(cekackaPeople)) : ''}
+          ${renderSideGroup('✕ Zrušeno', zrusenoPeople)}
+          ${zrusenoPeople.length ? renderMsgList(sideMsgsFor(zrusenoPeople)) : ''}
+        </div>` : '';
+
+      prubehBody.innerHTML = `<div class="prubeh-flow">${stepsHtml}</div>${sideHtml}`;
     }
 
     function loadTimeline(eventId) {
