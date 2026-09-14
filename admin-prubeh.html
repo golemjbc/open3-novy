@@ -29,80 +29,60 @@
     .prubeh-scope { --info: #0c5f9e; --info-bg: #e5f2fc; --danger: #b3261e; --danger-bg: #fbe9e7; }
     .prubeh-scope .status-panel.error { background: var(--danger-bg, #fbe9e7); color: var(--danger, #b3261e); }
 
-    .prubeh-summary { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0 22px; }
-    .prubeh-pill {
-      display: inline-flex; align-items: baseline; gap: 7px; padding: 8px 14px; border-radius: 999px;
-      font-size: 0.82rem; font-weight: 700; border: 1.5px solid transparent; cursor: pointer;
-      background: var(--bg-alt); color: var(--text-muted); transition: transform .1s, box-shadow .15s;
-    }
-    .prubeh-pill:hover { transform: translateY(-1px); }
-    .prubeh-pill .n { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
-    .prubeh-pill[data-stage="hotovo"] { background: var(--success-bg); color: var(--success); }
-    .prubeh-pill[data-stage="ceka_zalohu"], .prubeh-pill[data-stage="ceka_doplatek"] { background: var(--warning-bg); color: var(--warning); }
-    .prubeh-pill[data-stage="cekacka"] { background: var(--info-bg); color: var(--info); }
-    .prubeh-pill[data-stage="zruseno"] { background: var(--danger-bg); color: var(--danger); }
-    .prubeh-pill.active { border-color: currentColor; box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 18%, transparent); }
-
-    .prubeh-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
-    .prubeh-card {
-      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 16px 18px; display: flex; flex-direction: column; gap: 12px;
-    }
-    .prubeh-card[data-stage="zruseno"] { opacity: 0.7; }
-    .prubeh-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-    .prubeh-name { font-weight: 700; font-size: 1.02rem; }
-    .prubeh-sub { font-size: 0.76rem; color: var(--text-muted); margin-top: 1px; }
-    .prubeh-ribbon {
-      align-self: flex-start; font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 999px;
-      text-transform: uppercase; letter-spacing: 0.03em;
-    }
-    .prubeh-ribbon.cekacka { background: var(--info-bg); color: var(--info); }
-    .prubeh-ribbon.zruseno { background: var(--danger-bg); color: var(--danger); }
-
-    /* Stepper - vodorovná řada koleček propojených čárou, jedna vizuální "cesta" osoby
-       akcí (Registrace -> Záloha -> Doplatek -> Hotovo, zkráceno podle typu akce).
-       Vlastní prefix .prubeh-step* (2026-09-14, oprava) - obecné .step/.step-dot bez
-       prefixu kolidovalo se sdílenou třídou .step v style.css (číslované kroky "Jak to
-       funguje" na homepage, ::before s counter() a fialovým kolečkem) - obě sady stylů
-       se aplikovaly na stejný element zároveň, vznikaly dvě kolečka nad sebou. */
-    .prubeh-stepper { display: flex; align-items: center; }
-    .prubeh-step { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; position: relative; }
-    .prubeh-step-dot {
-      width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-      font-size: 0.7rem; font-weight: 800; background: var(--bg-alt); color: var(--text-muted);
-      border: 2px solid var(--border); z-index: 1; flex-shrink: 0;
-    }
-    .prubeh-step-label { font-size: 0.68rem; color: var(--text-muted); text-align: center; white-space: nowrap; }
-    .prubeh-step-line { position: absolute; top: 10px; left: -50%; width: 100%; height: 2px; background: var(--border); z-index: 0; }
-    .prubeh-step:first-child .prubeh-step-line { display: none; }
-    .prubeh-step.done .prubeh-step-dot { background: var(--success); border-color: var(--success); color: #fff; }
-    .prubeh-step.done .prubeh-step-line { background: var(--success); }
-    .prubeh-step.done .prubeh-step-label { color: var(--success); font-weight: 600; }
-    .prubeh-step.current .prubeh-step-dot { background: var(--warning-bg); border-color: var(--warning); color: var(--warning); }
-    .prubeh-step.current .prubeh-step-label { color: var(--warning); font-weight: 700; }
-
-    .prubeh-msg-toggle {
-      font-size: 0.78rem; font-weight: 600; color: var(--primary); background: none; border: none;
-      padding: 0; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 5px;
-    }
-    .prubeh-msg-toggle:hover { text-decoration: underline; }
-    .prubeh-msg-toggle .arrow { transition: transform .15s; display: inline-block; }
-    .prubeh-msg-toggle.open .arrow { transform: rotate(90deg); }
-
-    .prubeh-timeline { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-    .prubeh-timeline li {
-      display: flex; align-items: flex-start; gap: 8px; font-size: 0.78rem; padding: 7px 9px;
-      background: var(--bg-alt); border-radius: var(--radius-sm);
-    }
-    .prubeh-timeline .ch { display: flex; gap: 3px; flex-shrink: 0; margin-top: 1px; }
-    .prubeh-timeline .ch span { font-size: 0.85rem; }
-    .prubeh-timeline .ch span.fail { filter: grayscale(1) opacity(0.5); }
-    .prubeh-timeline .body { flex: 1; min-width: 0; }
-    .prubeh-timeline .type { font-weight: 600; }
-    .prubeh-timeline .ts { color: var(--text-muted); font-size: 0.72rem; }
-    .prubeh-empty-msgs { font-size: 0.76rem; color: var(--text-muted); font-style: italic; }
-
     .prubeh-hint { font-size: 0.8rem; color: var(--text-muted); margin: -8px 0 18px; }
+
+    /* Kanban - JEDEN sdílený proces (2026-09-14, přepracováno na žádost - "chci jeden
+       společný proces a v něm se budou lidé přesouvat"). Sloupec = fáze procesu, karta
+       = osoba, karta sedí ve sloupci podle svého AKTUÁLNÍHO stavu - žádný samostatný
+       "krokoměr" na kartu jako v předchozí verzi, pozice ve sdíleném procesu mluví sama
+       za sebe. Vodorovné posouvání na úzkém displeji (mobil), ne zalamování - pořadí
+       sloupců (= pořadí procesu) musí zůstat čitelné zleva doprava.
+       Prefix .prubeh-kb* na všem, ať se to nepotká s ničím sdíleným (viz stará poznámka
+       o kolizi .step). */
+    .prubeh-board { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 6px; align-items: flex-start; }
+    .prubeh-kb-col { flex: 0 0 260px; background: var(--bg-alt); border-radius: var(--radius); padding: 12px; }
+    .prubeh-kb-col-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em;
+      padding: 4px 6px 10px; color: var(--text-muted);
+    }
+    .prubeh-kb-col-count {
+      font-size: 0.76rem; font-weight: 800; min-width: 22px; height: 22px; padding: 0 6px;
+      border-radius: 999px; display: inline-flex; align-items: center; justify-content: center;
+      background: var(--surface); font-variant-numeric: tabular-nums;
+    }
+    .prubeh-kb-col[data-stage="ceka_zalohu"] .prubeh-kb-col-head,
+    .prubeh-kb-col[data-stage="ceka_doplatek"] .prubeh-kb-col-head { color: var(--warning); }
+    .prubeh-kb-col[data-stage="hotovo"] .prubeh-kb-col-head { color: var(--success); }
+    .prubeh-kb-col[data-stage="cekacka"] .prubeh-kb-col-head { color: var(--info); }
+    .prubeh-kb-col[data-stage="zruseno"] .prubeh-kb-col-head { color: var(--danger); }
+    .prubeh-kb-col[data-stage="ceka_zalohu"] .prubeh-kb-col-count,
+    .prubeh-kb-col[data-stage="ceka_doplatek"] .prubeh-kb-col-count { background: var(--warning-bg); color: var(--warning); }
+    .prubeh-kb-col[data-stage="hotovo"] .prubeh-kb-col-count { background: var(--success-bg); color: var(--success); }
+    .prubeh-kb-col[data-stage="cekacka"] .prubeh-kb-col-count { background: var(--info-bg); color: var(--info); }
+    .prubeh-kb-col[data-stage="zruseno"] .prubeh-kb-col-count { background: var(--danger-bg); color: var(--danger); }
+    .prubeh-kb-col-body { display: flex; flex-direction: column; gap: 10px; min-height: 40px; }
+    .prubeh-kb-empty { font-size: 0.76rem; color: var(--text-muted); font-style: italic; padding: 8px 6px; }
+
+    .prubeh-kcard {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 12px 13px; display: flex; flex-direction: column; gap: 8px; border-left: 3px solid var(--border);
+    }
+    .prubeh-kb-col[data-stage="ceka_zalohu"] .prubeh-kcard, .prubeh-kb-col[data-stage="ceka_doplatek"] .prubeh-kcard { border-left-color: var(--warning); }
+    .prubeh-kb-col[data-stage="hotovo"] .prubeh-kcard { border-left-color: var(--success); }
+    .prubeh-kb-col[data-stage="cekacka"] .prubeh-kcard { border-left-color: var(--info); }
+    .prubeh-kb-col[data-stage="zruseno"] .prubeh-kcard { border-left-color: var(--danger); opacity: 0.72; }
+    .prubeh-kname { font-weight: 700; font-size: 0.92rem; }
+    .prubeh-ksub { font-size: 0.72rem; color: var(--text-muted); }
+
+    .prubeh-kmsgs { list-style: none; margin: 2px 0 0; padding: 8px 0 0; border-top: 1px dashed var(--border); display: flex; flex-direction: column; gap: 6px; }
+    .prubeh-kmsg { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; }
+    .prubeh-kmsg .icon { width: 15px; height: 15px; flex-shrink: 0; display: flex; }
+    .prubeh-kmsg .icon svg { width: 100%; height: 100%; }
+    .prubeh-kmsg .icon.fail svg { opacity: 0.35; filter: grayscale(1); }
+    .prubeh-kmsg .type { font-weight: 600; color: var(--text); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .prubeh-kmsg .ts { color: var(--text-muted); font-size: 0.68rem; flex-shrink: 0; }
+    .prubeh-kmsgs-empty { font-size: 0.7rem; color: var(--text-muted); font-style: italic; padding-top: 8px; border-top: 1px dashed var(--border); }
   </style>
 </head>
 <body>
@@ -184,7 +164,6 @@
     const prubehBody = document.getElementById('prubeh-body');
 
     let currentData = null; // { event, participants }
-    let activeStageFilter = null;
 
     function loadEventsForSelect() {
       return fetch(API_BASE + '/api/panel-list-events', {
@@ -209,97 +188,61 @@
       } catch (e) { return iso || ''; }
     }
 
-    // Kroky pipeline podle typu akce - stejné tři možnosti, co umí backend (viz
-    // panel-event-timeline: is_free / has_doplatek), žádný přepočet stavu tady, jen
-    // vykreslení toho, co řekl server.
-    function stepsFor(eventInfo) {
-      if (eventInfo.is_free) return ['Registrace', 'Hotovo'];
-      if (eventInfo.has_doplatek) return ['Registrace', 'Záloha', 'Doplatek'];
-      return ['Registrace', 'Platba'];
-    }
-    function currentStepIndex(stage, steps) {
-      if (stage === 'hotovo') return steps.length - 1;
-      if (stage === 'ceka_doplatek') return 1; // záloha hotová, čeká se na doplatek (poslední krok)
-      return 0; // ceka_zalohu - první krok po registraci ještě neproběhl
-    }
+    // Ikony kanálu doručení (2026-09-14, na žádost - "ikona gmail nebo Discord podle
+    // toho jak byla zpráva doručená") - Discord logo stejné jako u přihlašovacího
+    // tlačítka (assets/js/auth.js), e-mail jako obálka v barvě připomínající Gmail.
+    // Selhané doručení = odbarvená (šedá) ikona, ne úplně skrytá - ať je vidět, že se
+    // o kanál vůbec zkusilo.
+    const ICON_DISCORD = '<svg viewBox="0 0 24 24" fill="#5865F2"><path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.076.076 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.548-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.955 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>';
+    const ICON_MAIL = '<svg viewBox="0 0 24 24" fill="none" stroke="#EA4335" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="m3 6.5 9 6.5 9-6.5"/></svg>';
 
-    function renderStepper(p, eventInfo) {
-      const steps = stepsFor(eventInfo);
-      const curIdx = currentStepIndex(p.stage, steps);
-      return `<div class="prubeh-stepper">${steps.map((label, i) => {
-        const cls = i < curIdx || p.stage === 'hotovo' ? 'done' : (i === curIdx ? 'current' : '');
-        const dot = (i < curIdx || p.stage === 'hotovo') ? '✓' : (i + 1);
-        return `<div class="prubeh-step ${cls}"><span class="prubeh-step-line"></span><span class="prubeh-step-dot">${dot}</span><span class="prubeh-step-label">${label}</span></div>`;
-      }).join('')}</div>`;
+    // Kanban sloupce (2026-09-14, přepracováno na žádost - "jeden společný proces, lidé
+    // se v něm přesouvají") - hlavní "cesta" (podle typu akce, viz panel-event-timeline
+    // is_free/has_doplatek) se zobrazuje vždy, i prázdná (ať je vidět tvar procesu).
+    // Čekačka/zrušeno jsou vedlejší "kolejе" - zobrazí se jen když v nich někdo je.
+    function mainStagesFor(eventInfo) {
+      if (eventInfo.is_free) return ['hotovo'];
+      if (eventInfo.has_doplatek) return ['ceka_zalohu', 'ceka_doplatek', 'hotovo'];
+      return ['ceka_zalohu', 'hotovo'];
     }
 
-    function channelIcons(m) {
-      const parts = [];
-      if (m.discord_attempted) parts.push(`<span title="Discord DM ${m.discord_sent ? 'doručeno' : 'selhalo'}" class="${m.discord_sent ? '' : 'fail'}">💬</span>`);
-      if (m.email_attempted) parts.push(`<span title="E-mail ${m.email_sent ? 'doručen' : 'selhal'}" class="${m.email_sent ? '' : 'fail'}">✉️</span>`);
-      return parts.join('');
+    function renderKMsgs(msgs) {
+      if (!msgs.length) return `<p class="prubeh-kmsgs-empty">Zatím žádné zaznamenané zprávy.</p>`;
+      return `<ul class="prubeh-kmsgs">${msgs.map(m => {
+        const icons = [];
+        if (m.discord_attempted) icons.push(`<span class="icon ${m.discord_sent ? '' : 'fail'}" title="Discord DM ${m.discord_sent ? 'doručeno' : 'selhalo'}">${ICON_DISCORD}</span>`);
+        if (m.email_attempted) icons.push(`<span class="icon ${m.email_sent ? '' : 'fail'}" title="E-mail ${m.email_sent ? 'doručen' : 'selhal'}">${ICON_MAIL}</span>`);
+        return `<li class="prubeh-kmsg">${icons.join('')}<span class="type">${escapeHtml(m.type || 'Zpráva')}</span><span class="ts">${formatTs(m.ts)}</span></li>`;
+      }).join('')}</ul>`;
     }
 
-    function renderCard(p, eventInfo, idx) {
-      const isSpecial = p.stage === 'cekacka' || p.stage === 'zruseno';
-      const ribbon = p.stage === 'cekacka' ? '<span class="prubeh-ribbon cekacka">Na čekačce</span>'
-        : p.stage === 'zruseno' ? '<span class="prubeh-ribbon zruseno">Zrušeno</span>' : '';
-      const msgs = p.messages || [];
-      const timelineHtml = msgs.length
-        ? `<ul class="prubeh-timeline">${msgs.map(m => `
-            <li>
-              <span class="ch">${channelIcons(m)}</span>
-              <span class="body"><span class="type">${escapeHtml(m.type || 'Zpráva')}</span><br><span class="ts">${formatTs(m.ts)}</span></span>
-            </li>`).join('')}</ul>`
-        : `<p class="prubeh-empty-msgs">Zatím žádné zaznamenané zprávy.</p>`;
-
+    function renderKCard(p) {
       return `
-        <div class="prubeh-card" data-stage="${p.stage}">
-          <div class="prubeh-card-head">
-            <div>
-              <div class="prubeh-name">${escapeHtml(p.jmeno)}</div>
-              <div class="prubeh-sub">${p.username ? '@' + escapeHtml(p.username) + ' · ' : ''}${p.typ_ucasti === 'par' ? 'pár' : 'sólo'}${p.ooo_id ? ' · ' + p.ooo_id : ''}</div>
-            </div>
-            ${ribbon}
-          </div>
-          ${isSpecial ? '' : renderStepper(p, eventInfo)}
-          <div>
-            <button type="button" class="prubeh-msg-toggle" data-idx="${idx}"><span class="arrow">▸</span> Zprávy (${msgs.length})</button>
-            <div class="prubeh-timeline-wrap hidden" id="timeline-${idx}">${timelineHtml}</div>
-          </div>
+        <div class="prubeh-kcard">
+          <div class="prubeh-kname">${escapeHtml(p.jmeno)}</div>
+          <div class="prubeh-ksub">${p.username ? '@' + escapeHtml(p.username) + ' · ' : ''}${p.typ_ucasti === 'par' ? 'pár' : 'sólo'}${p.ooo_id ? ' · ' + p.ooo_id : ''}</div>
+          ${renderKMsgs(p.messages || [])}
         </div>`;
     }
 
     function renderAll() {
       if (!currentData) { prubehBody.innerHTML = ''; return; }
       const { event, participants } = currentData;
-      const counts = {};
-      participants.forEach(p => { counts[p.stage] = (counts[p.stage] || 0) + 1; });
+      const byStage = {};
+      participants.forEach(p => { (byStage[p.stage] = byStage[p.stage] || []).push(p); });
 
-      const stagesOrder = ['ceka_zalohu', 'ceka_doplatek', 'hotovo', 'cekacka', 'zruseno'];
-      const summaryHtml = `<div class="prubeh-summary">` +
-        stagesOrder.filter(s => counts[s]).map(s => `
-          <button type="button" class="prubeh-pill ${activeStageFilter === s ? 'active' : ''}" data-stage="${s}">
-            <span class="n">${counts[s]}</span> ${STAGE_LABEL[s]}
-          </button>`).join('') +
-        (activeStageFilter ? `<button type="button" class="prubeh-pill" data-stage="">✕ Zrušit filtr</button>` : '') +
-        `</div>`;
+      const columns = [...mainStagesFor(event), ...['cekacka', 'zruseno'].filter(s => (byStage[s] || []).length)];
 
-      const visible = activeStageFilter ? participants.filter(p => p.stage === activeStageFilter) : participants;
-      const gridHtml = `<div class="prubeh-grid">${visible.map((p, i) => renderCard(p, event, i)).join('')}</div>`;
+      const boardHtml = `<div class="prubeh-board">${columns.map(stage => {
+        const people = byStage[stage] || [];
+        return `
+          <div class="prubeh-kb-col" data-stage="${stage}">
+            <div class="prubeh-kb-col-head"><span>${STAGE_LABEL[stage]}</span><span class="prubeh-kb-col-count">${people.length}</span></div>
+            <div class="prubeh-kb-col-body">${people.length ? people.map(renderKCard).join('') : '<p class="prubeh-kb-empty">Nikdo</p>'}</div>
+          </div>`;
+      }).join('')}</div>`;
 
-      prubehBody.innerHTML = summaryHtml + (visible.length ? gridHtml : '<p class="form-hint">Žádná přihláška v tomhle stavu.</p>');
-
-      prubehBody.querySelectorAll('.prubeh-pill').forEach(btn => {
-        btn.addEventListener('click', () => { activeStageFilter = btn.dataset.stage || null; renderAll(); });
-      });
-      prubehBody.querySelectorAll('.prubeh-msg-toggle').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const wrap = document.getElementById('timeline-' + btn.dataset.idx);
-          wrap.classList.toggle('hidden');
-          btn.classList.toggle('open');
-        });
-      });
+      prubehBody.innerHTML = boardHtml;
     }
 
     function loadTimeline(eventId) {
