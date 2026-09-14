@@ -897,6 +897,10 @@ p { margin: 0 0 16px; color: var(--text-muted); }
 .occupancy-track { height: 7px; border-radius: 999px; background: var(--bg-alt); overflow: hidden; }
 .occupancy-fill { height: 100%; border-radius: 999px; background: var(--gradient); }
 .occupancy-text { font-size: 0.78rem; font-weight: 700; color: var(--primary); margin-top: 5px; }
+.occupancy-full-note {
+  margin-top: 8px; padding: 10px 14px; border-radius: var(--radius-sm);
+  background: var(--bg-alt); color: var(--text); font-size: 0.85rem; line-height: 1.5;
+}
 
 /* Zrušená účast v přehledu přihlášek (2026-08-25) - řádek zůstává, jen prošedlý a
    přeškrtnutý, ať je vidět historie, ne skrytý/smazaný záznam. */

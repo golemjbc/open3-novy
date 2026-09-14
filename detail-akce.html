@@ -85,10 +85,16 @@
     // přichází hotová z backendu (fráze + vizuální %), tady se jen vykreslí.
     function renderOccupancy(obsazenost) {
       if (!obsazenost) return '';
+      // Výzva k přihlášení jako náhradník (2026-09-14, na žádost) - "Obsazeno" tady
+      // neznamená konec, nová přihláška jen automaticky půjde na čekací listinu (viz
+      // register-event(-google), Prihlasky.nahradnik) - tady na detailu, kde je rovnou
+      // formulář, stojí za to napsat to jasně a povzbudivě, ne jen jako drobnou zmínku.
+      const isFull = obsazenost.text === 'Obsazeno';
       return `
         <div class="occupancy">
           <div class="occupancy-track"><div class="occupancy-fill" style="width:${obsazenost.fill}%"></div></div>
           <div class="occupancy-text">Obsazenost: ${obsazenost.text}</div>
+          ${isFull ? `<div class="occupancy-full-note">Akce je momentálně plná — klidně se přihlas jako náhradník. Ozveme se ti, pokud se uvolní místo, a budeme tě kontaktovat.</div>` : ''}
         </div>`;
     }
 
