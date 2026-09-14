@@ -191,7 +191,7 @@
     // jeden dotaz na VŠECHNY registrace najednou (bez eventId filtru), ne po jedné.
     function loadMyRegistrations(loggedUser) {
       if (!loggedUser || !loggedUser.userId) return Promise.resolve(new Set());
-      const body = isGoogleUser(loggedUser) ? { credential: loggedUser.credential } : { user_id: loggedUser.userId };
+      const body = isGoogleUser(loggedUser) ? { credential: loggedUser.credential } : { user_id: loggedUser.discordSession };
       return fetch(API_BASE + '/api/my-registrations', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
       })

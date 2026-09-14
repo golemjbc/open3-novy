@@ -206,7 +206,7 @@
     const isDiscordUser = !!user && !userIsGoogle;
 
     function identityPayload() {
-      return userIsGoogle ? { credential: user.credential } : { discord_user_id: user.userId };
+      return getIdentityPayload(user);
     }
 
     // Vyskakovací okno "Kontakt s patronem" po odeslání dotazníku (2026-09-13, na

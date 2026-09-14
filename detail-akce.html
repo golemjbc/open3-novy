@@ -730,10 +730,10 @@
       (function checkAlreadyRegistered() {
         const storedUserJson = localStorage.getItem('oooUser');
         if (!storedUserJson) return;
-        let userId, userName, provider;
+        let userId, userName, provider, discordSession;
         try {
           const u = JSON.parse(storedUserJson);
-          userId = u.userId; userName = u.userName; provider = u.provider;
+          userId = u.userId; userName = u.userName; provider = u.provider; discordSession = u.discordSession;
         } catch (e) { return; }
         if (!userId) return;
         // Google účty se ověřují výhradně přes credential blok níž (čerstvé, server-side
@@ -742,14 +742,15 @@
         // Discord ID) a u staré/zbylé session mohlo najít cizí/neplatnou registraci, co s
         // aktuálním přihlášením nesouvisí (nahlásila uživatelka 2026-08-23).
         if (isGoogleUser({ provider, userId })) return;
+        if (!discordSession) return; // starší uložená session bez lístku - přihlásit se prosím znovu
 
-        fetch(API_BASE + '/api/my-registrations?user_id=' + encodeURIComponent(userId))
+        fetch(API_BASE + '/api/my-registrations?user_id=' + encodeURIComponent(discordSession))
           .then(r => r.json())
           .then(list => {
             if (!Array.isArray(list)) return;
             const found = list.find(item => item.event_id === event.event_id);
             if (!found) return;
-            renderRegistrationStatus(found, userId, userName, 'user_id');
+            renderRegistrationStatus(found, discordSession, userName, 'user_id');
           })
           .catch(err => console.error('my-registrations error:', err));
       })();
@@ -774,7 +775,7 @@
         const loggedUserForForm = getLoggedUser();
         const isGoogleUserForForm = isGoogleUser(loggedUserForForm);
         const storedCredential = isGoogleUserForForm ? (loggedUserForForm.credential || null) : null;
-        const discordUserIdForForm = (loggedUserForForm && !isGoogleUserForForm) ? loggedUserForForm.userId : null;
+        const discordUserIdForForm = (loggedUserForForm && !isGoogleUserForForm) ? loggedUserForForm.discordSession : null;
         const hasIdentityForForm = !!(storedCredential || discordUserIdForForm);
 
         function updateGoogleSubmitState() {
@@ -930,7 +931,7 @@
         const qp = new URLSearchParams({
           event_id: event.event_id, typ_ucasti: typUcasti,
           user_discord: user?.userName || 'NEPRIHLASENY_USER',
-          partner_discord: partner || '', user_id: user?.userId || '',
+          partner_discord: partner || '', user_id: user?.discordSession || '',
           preference: JSON.stringify(selectedPrefs),
           deposit_amount: depositAmount, doplatek_amount: doplatekAmount,
           jednorazova: event.jednorazova || 'ne'
@@ -954,15 +955,15 @@
 
             if (user?.userId && event.discord_role_zajemce) {
               fetch(API_BASE + '/api/members-register?' +
-                `user_id=${encodeURIComponent(user.userId)}&role_header=${encodeURIComponent(event.discord_role_zajemce)}`)
+                `user_id=${encodeURIComponent(user.userId)}&discord_session=${encodeURIComponent(user.discordSession || '')}&role_header=${encodeURIComponent(event.discord_role_zajemce)}`)
                 .catch(err => console.error('members-register error:', err));
             }
 
             if (user?.userId && !isFreeEvent) {
               if (event.jednorazova === 'ano') {
-                loadPaymentInfo(user.userId, user.userName, typUcasti, 'final');
+                loadPaymentInfo(user.discordSession, user.userName, typUcasti, 'final');
               } else {
-                loadPaymentInfo(user.userId, user.userName, typUcasti, 'deposit');
+                loadPaymentInfo(user.discordSession, user.userName, typUcasti, 'deposit');
               }
             }
           })

@@ -105,11 +105,25 @@ function ghostBannerEnsure() {
 // Tělo požadavku na identitu pro backend (2026-08-25, na žádost - "stačila by na to jedna
 // funkce" - tahle přesná logika byla nezávisle přepsaná na 4 místech: admin-akce.html,
 // admin-clenove.html, admin-dotazniky.html, member-modal.js, profile-modal.js). Google
-// cesta posílá credential (ověří se serverem), Discord cesta jen ID (server si identitu
-// dohledá sám, stejný důvěryhodnostní model jako u zbytku backendu).
+// cesta posílá credential (ověří se serverem). Discord cesta posílá `discordSession` -
+// podepsaný lístek vydaný při loginu (2026-09-14, bezpečnostní oprava, viz
+// BEZPECNOST-A-RIZIKA.md #1) - NE syrové `userId`, tomu server od teď věřit přestal,
+// protože si ho kdokoliv mohl jen vymyslet/opsat.
 function getIdentityPayload(user) {
   if (!user) return null;
-  return isGoogleUser(user) ? { credential: user.credential } : { discord_user_id: user.userId };
+  const ghost = getGhostTarget();
+  if (ghost) {
+    // "Zobrazit jako" (ghost mode) po týhle opravě: posíláme SKUTEČNOU (admin) identitu +
+    // koho chceme vidět - server sám ověří, že admin je Rada, než cizí data vydá (viz
+    // resolveVerifiedDiscordId/resolveApplicantIdentity admin_view_as v lib/members-row.js).
+    // Google admin v ghost modu se nepodporuje (Google cesta žádnou obdobu nemá).
+    const real = getRealLoggedUser();
+    if (real && !isGoogleUser(real) && real.discordSession) {
+      return { discord_user_id: real.discordSession, admin_view_as: ghost.discord_id };
+    }
+    return null;
+  }
+  return isGoogleUser(user) ? { credential: user.credential } : { discord_user_id: user.discordSession };
 }
 
 // Lehké logování aktivity (2026-08-29, na žádost - "přehled kdo se kdy přihlásil, kdo si
@@ -148,7 +162,8 @@ function initAdminNavLink(user) {
   if (!user || !user.userId) { nav.style.display = 'none'; return; }
   const cacheKey = 'oooIsAdmin_' + user.userId;
   if (localStorage.getItem(cacheKey) === '1') nav.style.display = '';
-  const payload = isGoogleUser(user) ? { credential: user.credential } : { discord_user_id: user.userId };
+  const payload = getIdentityPayload(user);
+  if (!payload) { nav.style.display = 'none'; return Promise.resolve(); }
   // Vrací se fetch promise (2026-09-12, oprava "duplicitní členové") - volající ji může
   // počkat před dalším voláním, co by jinak souběžně taky zakládalo/hledalo řádek v
   // members (viz refreshDisplayName níž a fix v lib/members-row.js findOrCreateMemberRow).
