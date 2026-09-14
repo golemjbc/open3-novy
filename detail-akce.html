@@ -499,11 +499,15 @@
         d.setUTCHours(d.getUTCHours() + hours);
         return { year: d.getUTCFullYear(), month: d.getUTCMonth() + 1, day: d.getUTCDate(), hour: d.getUTCHours(), minute: d.getUTCMinutes() };
       }
-      function googleCalendarUrl() {
+      // 🔒 2026-09-14 - bezpečnostní oprava: `presnaAdresa` se teď musí předat zvenku
+      // (z autorizované odpovědi /api/my-registrations), `event.lokalita_presna` už
+      // neexistuje (veřejné /api/events ho přestalo posílat). Bez ní se použije jen
+      // obecné (veřejné) `místo` - stejně jako event-ics dělá na backendu.
+      function googleCalendarUrl(presnaAdresa) {
         const start = parseCzechDateTimeCal(event['datum od']);
         if (!start) return null;
         const end = parseCzechDateTimeCal(event.datum_do) || addCalHours(start, 3);
-        const location = (event.lokalita_presna || event['místo'] || '').toString().replace(/\r?\n/g, ', ').trim();
+        const location = (presnaAdresa || event['místo'] || '').toString().replace(/\r?\n/g, ', ').trim();
         const description = (event.popis || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
         const params = new URLSearchParams({
           action: 'TEMPLATE',
@@ -515,11 +519,13 @@
         });
         return `https://calendar.google.com/calendar/render?${params.toString()}`;
       }
-      function eventIcsUrl() {
-        return `${API_BASE}/api/event-ics?event_id=${encodeURIComponent(event.event_id)}`;
+      function eventIcsUrl(presnaAdresa) {
+        const qp = new URLSearchParams({ event_id: event.event_id });
+        if (presnaAdresa) qp.set('location', presnaAdresa);
+        return `${API_BASE}/api/event-ics?${qp.toString()}`;
       }
-      function addToCalendarButtonHtml() {
-        const gcalUrl = googleCalendarUrl();
+      function addToCalendarButtonHtml(presnaAdresa) {
+        const gcalUrl = googleCalendarUrl(presnaAdresa);
         if (!gcalUrl) return '';
         return `
           <div class="btn-calendar-group">
@@ -527,7 +533,7 @@
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><rect x="3" y="4.5" width="18" height="16" rx="3" stroke="#4285F4" stroke-width="1.8"/><path d="M3 9.5h18" stroke="#4285F4" stroke-width="1.8"/><path d="M8 3v3M16 3v3" stroke="#4285F4" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="14.5" r="2.6" fill="#4285F4"/></svg>
               Google Kalendář
             </a>
-            <a href="${eventIcsUrl()}" class="btn-calendar btn-calendar--ics">
+            <a href="${eventIcsUrl(presnaAdresa)}" class="btn-calendar btn-calendar--ics">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="3"/><path d="M3 9.5h18M8 3v3M16 3v3"/><path d="M12 12.5v4M10 14.5l2 2 2-2"/></svg>
               Apple / Outlook
             </a>
@@ -679,23 +685,23 @@
         // Přesné místo konání (2026-09-13, na žádost - "pokud už ho viděli v mailu nebo
         // zprávě, mělo by být vidět i na webu"; opraveno tentýž den - "stačí zaplatit
         // zálohu, je to stejné jako s přiřazením role účastníka, doplatek je jen
-        // detail") - `lokalita_presna` je stejné pole, co dostávají e-maily/DM (viz
-        // notify-payment), ale veřejné /api/events ho posílá VŽDY bez ohledu na platbu
-        // (zjištěno 2026-09-13) - `addressKnown` je proto čistě frontendová clona, ne
-        // skutečné utajení dat. Záloha stačí (`depositOK`), doplatek se do týhle
-        // podmínky vůbec nepočítá - stejné pravidlo jako u role účastníka
-        // (discord-sync.py: DEPOSIT OK už dává roli, doplatek je jen zbývající částka).
+        // detail"). 🔒 2026-09-14 bezpečnostní oprava: dřív se čtelo z veřejného
+        // `event.lokalita_presna`, co posílalo /api/events úplně všem bez ohledu na
+        // platbu - `addressKnown` byla jen frontendová clona, ne skutečné utajení. Teď
+        // se adresa bere z `found.lokalita_presna` - to pole doplňuje AŽ backend
+        // (/api/my-registrations), a jen do vlastní ověřené přihlášky volajícího, jen
+        // když má zaplaceno (nebo je akce zdarma) - viz stejná podmínka tam.
         // Skutečné odřádkování ("\n" mezi adresou a GPS) se v <p> bez převodu ztratí a
         // text splyne do jedné slitiny (nahlášeno 2026-09-13) - stejný fix jako backend
         // lib/registration-email.js (nl2br).
-        const presnaAdresa = (event.lokalita_presna || '').toString().trim().replace(/\r?\n/g, '<br>');
-        const addressKnown = depositOK || doplatekOK;
+        const presnaAdresaRaw = (found.lokalita_presna || '').toString().trim();
+        const presnaAdresa = presnaAdresaRaw.replace(/\r?\n/g, '<br>');
 
         if (isFreeEvent) {
           showPanel('registration-info', `
             <strong>🎉 Jsi přihlášený na akci zdarma!</strong>
             ${presnaAdresa ? `<p style="margin:8px 0 0;"><strong>Přesné místo konání:</strong> ${presnaAdresa}</p>` : ''}
-            ${addToCalendarButtonHtml()}
+            ${addToCalendarButtonHtml(presnaAdresaRaw)}
           `);
           return;
         }
@@ -703,18 +709,18 @@
           showPanel('payment-complete', `
             <h4 style="margin-top:0;">Akce zaplacena ✅</h4>
             <p style="margin:0;">Máš všechny platby v pořádku. Uvidíme se na akci!</p>
-            ${addressKnown && presnaAdresa ? `<p style="margin:8px 0 0;"><strong>Přesné místo konání:</strong> ${presnaAdresa}</p>` : ''}
-            ${addToCalendarButtonHtml()}
+            ${presnaAdresa ? `<p style="margin:8px 0 0;"><strong>Přesné místo konání:</strong> ${presnaAdresa}</p>` : ''}
+            ${addToCalendarButtonHtml(presnaAdresaRaw)}
           `);
           return;
         }
         if (event.jednorazova !== 'ano' && depositOK && !doplatekOK) {
           showPanel('registration-info', `
             <strong>✅ Záloha zaplacena!</strong> Doplatek: ${p.doplatek || 'bude upřesněno'}
-            ${addressKnown && presnaAdresa
+            ${presnaAdresa
               ? `<p style="margin:8px 0 0;"><strong>Přesné místo konání:</strong> ${presnaAdresa}</p>`
               : `<p class="form-hint" style="margin:8px 0 0;">Přesné místo konání ti pošleme na Discord a e-mailem.</p>`}
-            ${addToCalendarButtonHtml()}
+            ${addToCalendarButtonHtml(presnaAdresaRaw)}
           `);
           loadPaymentInfo(id, userName, p.typ_ucasti, 'final', idParam);
           return;
