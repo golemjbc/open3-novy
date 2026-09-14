@@ -60,22 +60,26 @@
     .prubeh-ribbon.zruseno { background: var(--danger-bg); color: var(--danger); }
 
     /* Stepper - vodorovná řada koleček propojených čárou, jedna vizuální "cesta" osoby
-       akcí (Registrace -> Záloha -> Doplatek -> Hotovo, zkráceno podle typu akce). */
-    .stepper { display: flex; align-items: center; }
-    .step { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; position: relative; }
-    .step-dot {
+       akcí (Registrace -> Záloha -> Doplatek -> Hotovo, zkráceno podle typu akce).
+       Vlastní prefix .prubeh-step* (2026-09-14, oprava) - obecné .step/.step-dot bez
+       prefixu kolidovalo se sdílenou třídou .step v style.css (číslované kroky "Jak to
+       funguje" na homepage, ::before s counter() a fialovým kolečkem) - obě sady stylů
+       se aplikovaly na stejný element zároveň, vznikaly dvě kolečka nad sebou. */
+    .prubeh-stepper { display: flex; align-items: center; }
+    .prubeh-step { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; position: relative; }
+    .prubeh-step-dot {
       width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
       font-size: 0.7rem; font-weight: 800; background: var(--bg-alt); color: var(--text-muted);
       border: 2px solid var(--border); z-index: 1; flex-shrink: 0;
     }
-    .step-label { font-size: 0.68rem; color: var(--text-muted); text-align: center; white-space: nowrap; }
-    .step-line { position: absolute; top: 10px; left: -50%; width: 100%; height: 2px; background: var(--border); z-index: 0; }
-    .step:first-child .step-line { display: none; }
-    .step.done .step-dot { background: var(--success); border-color: var(--success); color: #fff; }
-    .step.done .step-line { background: var(--success); }
-    .step.done .step-label { color: var(--success); font-weight: 600; }
-    .step.current .step-dot { background: var(--warning-bg); border-color: var(--warning); color: var(--warning); }
-    .step.current .step-label { color: var(--warning); font-weight: 700; }
+    .prubeh-step-label { font-size: 0.68rem; color: var(--text-muted); text-align: center; white-space: nowrap; }
+    .prubeh-step-line { position: absolute; top: 10px; left: -50%; width: 100%; height: 2px; background: var(--border); z-index: 0; }
+    .prubeh-step:first-child .prubeh-step-line { display: none; }
+    .prubeh-step.done .prubeh-step-dot { background: var(--success); border-color: var(--success); color: #fff; }
+    .prubeh-step.done .prubeh-step-line { background: var(--success); }
+    .prubeh-step.done .prubeh-step-label { color: var(--success); font-weight: 600; }
+    .prubeh-step.current .prubeh-step-dot { background: var(--warning-bg); border-color: var(--warning); color: var(--warning); }
+    .prubeh-step.current .prubeh-step-label { color: var(--warning); font-weight: 700; }
 
     .prubeh-msg-toggle {
       font-size: 0.78rem; font-weight: 600; color: var(--primary); background: none; border: none;
@@ -222,10 +226,10 @@
     function renderStepper(p, eventInfo) {
       const steps = stepsFor(eventInfo);
       const curIdx = currentStepIndex(p.stage, steps);
-      return `<div class="stepper">${steps.map((label, i) => {
+      return `<div class="prubeh-stepper">${steps.map((label, i) => {
         const cls = i < curIdx || p.stage === 'hotovo' ? 'done' : (i === curIdx ? 'current' : '');
         const dot = (i < curIdx || p.stage === 'hotovo') ? '✓' : (i + 1);
-        return `<div class="step ${cls}"><span class="step-line"></span><span class="step-dot">${dot}</span><span class="step-label">${label}</span></div>`;
+        return `<div class="prubeh-step ${cls}"><span class="prubeh-step-line"></span><span class="prubeh-step-dot">${dot}</span><span class="prubeh-step-label">${label}</span></div>`;
       }).join('')}</div>`;
     }
 
