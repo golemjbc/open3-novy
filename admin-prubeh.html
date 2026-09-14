@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OOO Community - Otevři se. Poznej se. Propoj se.">
+  <meta property="og:title" content="Průběh akce — OOO Community">
+  <meta property="og:description" content="Eventy, Seznamování, Umění, Výzkum, ... Přidej se do komunity!">
+  <meta property="og:image" content="https://open3.cz/assets/images/LogoMETA.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://open3.cz/admin-prubeh.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="OOO Community">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://open3.cz/assets/images/LogoMETA.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="favicon.ico">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <title>Průběh akce — OOO Community</title>
+  <style>
+    .hidden { display: none !important; }
+
+    /* Průběh akce (2026-09-14, na žádost - "chci vidět kdo je v jakém stavu a co mu bylo
+       kdy posláno", "chci to víc graficky ať vidím jak se to posouvá"). Vlastní tokeny pro
+       stavy, co jinde ve style.css nejsou (čekačka = info, zrušeno = danger) - zbytek
+       (success/warning/primary/surface/border/radius) je sdílený se zbytkem administrace. */
+    .prubeh-scope { --info: #0c5f9e; --info-bg: #e5f2fc; --danger: #b3261e; --danger-bg: #fbe9e7; }
+    .prubeh-scope .status-panel.error { background: var(--danger-bg, #fbe9e7); color: var(--danger, #b3261e); }
+
+    .prubeh-summary { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0 22px; }
+    .prubeh-pill {
+      display: inline-flex; align-items: baseline; gap: 7px; padding: 8px 14px; border-radius: 999px;
+      font-size: 0.82rem; font-weight: 700; border: 1.5px solid transparent; cursor: pointer;
+      background: var(--bg-alt); color: var(--text-muted); transition: transform .1s, box-shadow .15s;
+    }
+    .prubeh-pill:hover { transform: translateY(-1px); }
+    .prubeh-pill .n { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+    .prubeh-pill[data-stage="hotovo"] { background: var(--success-bg); color: var(--success); }
+    .prubeh-pill[data-stage="ceka_zalohu"], .prubeh-pill[data-stage="ceka_doplatek"] { background: var(--warning-bg); color: var(--warning); }
+    .prubeh-pill[data-stage="cekacka"] { background: var(--info-bg); color: var(--info); }
+    .prubeh-pill[data-stage="zruseno"] { background: var(--danger-bg); color: var(--danger); }
+    .prubeh-pill.active { border-color: currentColor; box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 18%, transparent); }
+
+    .prubeh-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+    .prubeh-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 16px 18px; display: flex; flex-direction: column; gap: 12px;
+    }
+    .prubeh-card[data-stage="zruseno"] { opacity: 0.7; }
+    .prubeh-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .prubeh-name { font-weight: 700; font-size: 1.02rem; }
+    .prubeh-sub { font-size: 0.76rem; color: var(--text-muted); margin-top: 1px; }
+    .prubeh-ribbon {
+      align-self: flex-start; font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+      text-transform: uppercase; letter-spacing: 0.03em;
+    }
+    .prubeh-ribbon.cekacka { background: var(--info-bg); color: var(--info); }
+    .prubeh-ribbon.zruseno { background: var(--danger-bg); color: var(--danger); }
+
+    /* Stepper - vodorovná řada koleček propojených čárou, jedna vizuální "cesta" osoby
+       akcí (Registrace -> Záloha -> Doplatek -> Hotovo, zkráceno podle typu akce). */
+    .stepper { display: flex; align-items: center; }
+    .step { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; position: relative; }
+    .step-dot {
+      width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; font-weight: 800; background: var(--bg-alt); color: var(--text-muted);
+      border: 2px solid var(--border); z-index: 1; flex-shrink: 0;
+    }
+    .step-label { font-size: 0.68rem; color: var(--text-muted); text-align: center; white-space: nowrap; }
+    .step-line { position: absolute; top: 10px; left: -50%; width: 100%; height: 2px; background: var(--border); z-index: 0; }
+    .step:first-child .step-line { display: none; }
+    .step.done .step-dot { background: var(--success); border-color: var(--success); color: #fff; }
+    .step.done .step-line { background: var(--success); }
+    .step.done .step-label { color: var(--success); font-weight: 600; }
+    .step.current .step-dot { background: var(--warning-bg); border-color: var(--warning); color: var(--warning); }
+    .step.current .step-label { color: var(--warning); font-weight: 700; }
+
+    .prubeh-msg-toggle {
+      font-size: 0.78rem; font-weight: 600; color: var(--primary); background: none; border: none;
+      padding: 0; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 5px;
+    }
+    .prubeh-msg-toggle:hover { text-decoration: underline; }
+    .prubeh-msg-toggle .arrow { transition: transform .15s; display: inline-block; }
+    .prubeh-msg-toggle.open .arrow { transform: rotate(90deg); }
+
+    .prubeh-timeline { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+    .prubeh-timeline li {
+      display: flex; align-items: flex-start; gap: 8px; font-size: 0.78rem; padding: 7px 9px;
+      background: var(--bg-alt); border-radius: var(--radius-sm);
+    }
+    .prubeh-timeline .ch { display: flex; gap: 3px; flex-shrink: 0; margin-top: 1px; }
+    .prubeh-timeline .ch span { font-size: 0.85rem; }
+    .prubeh-timeline .ch span.fail { filter: grayscale(1) opacity(0.5); }
+    .prubeh-timeline .body { flex: 1; min-width: 0; }
+    .prubeh-timeline .type { font-weight: 600; }
+    .prubeh-timeline .ts { color: var(--text-muted); font-size: 0.72rem; }
+    .prubeh-empty-msgs { font-size: 0.76rem; color: var(--text-muted); font-style: italic; }
+
+    .prubeh-hint { font-size: 0.8rem; color: var(--text-muted); margin: -8px 0 18px; }
+  </style>
+</head>
+<body>
+  <script src="assets/js/age-gate.js"></script>
+
+  <header class="site-header">
+    <div class="container">
+      <button class="nav-toggle" id="nav-toggle" aria-label="Menu">☰</button>
+      <a class="brand" href="index.html"><img src="assets/images/OOOlogo.png" alt="OOO logo"> <span>OOO Community</span></a>
+      <nav>
+        <ul class="nav-links" id="nav-links">
+          <li><a href="index.html">Domů</a></li>
+          <li><a href="akce.html">Akce</a></li>
+          <li><a href="galerie.html">Galerie</a></li>
+          <li><a href="pravidla.html">Pravidla</a></li>
+          <li><a href="contact.html">Kontakt</a></li>
+          <li id="nav-admin" class="hidden" data-self-managed="1"><a href="admin-akce.html">Administrace</a></li>
+        </ul>
+      </nav>
+      <div class="header-actions">
+        <div id="user-info"><img id="user-avatar" src="" alt=""><span id="user-name"></span></div>
+        <a id="login-button" href="#" class="btn btn-primary btn-sm">Přihlásit</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="section prubeh-scope">
+    <div class="container">
+      <span class="eyebrow">Pro organizátory</span>
+      <h1>Průběh akce</h1>
+
+      <div id="gate-loading" class="status-panel info">Ověřuji oprávnění…</div>
+
+      <div id="gate-denied" class="access-denied hidden">
+        <h3>Nemáš oprávnění</h3>
+        <p>Tahle stránka je pro radu a organizátory akcí. Přihlas se prosím přes tlačítko v hlavičce účtem, co má roli Rada nebo Spolupracovník / tvůrce.</p>
+      </div>
+
+      <div id="admin-content" class="hidden">
+        <div class="admin-tabs">
+          <a id="tab-akce" href="admin-akce.html">Akce a přihlášky</a>
+          <a id="tab-dotazniky" href="admin-dotazniky.html">Fronta dotazníků</a>
+          <a id="tab-clenove" href="admin-clenove.html">Přehled členů</a>
+          <a id="tab-platby" href="admin-platby.html">Platby</a>
+          <a id="tab-galerie" href="admin-galerie.html">Fotogalerie</a>
+          <a id="tab-prubeh" href="admin-prubeh.html" class="active">Průběh akce</a>
+          <a id="tab-napoveda" href="admin-napoveda.html">Nápověda</a>
+        </div>
+
+        <div class="admin-card">
+          <div class="form-group">
+            <label class="form-label">Akce</label>
+            <select id="event-select" class="form-control"><option value="">— vyber akci —</option></select>
+          </div>
+          <p class="prubeh-hint">Historie zpráv (dole u každé osoby) se zaznamenává od 14. 9. 2026 — u starších zpráv se zpětně nedá zobrazit, uvidíš jen aktuální stav.</p>
+
+          <div id="prubeh-body"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-bottom">© 2026 OOO Community z.s. — Design: Adam</div>
+    </div>
+  </footer>
+
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/profile-modal.js"></script>
+  <script>
+    function identityPayload() { return getIdentityPayload(getLoggedUser()); }
+
+    const gateLoading = document.getElementById('gate-loading');
+    const gateDenied = document.getElementById('gate-denied');
+    const adminContent = document.getElementById('admin-content');
+    const navAdmin = document.getElementById('nav-admin');
+    const eventSelect = document.getElementById('event-select');
+    const prubehBody = document.getElementById('prubeh-body');
+
+    let currentData = null; // { event, participants }
+    let activeStageFilter = null;
+
+    function loadEventsForSelect() {
+      return fetch(API_BASE + '/api/panel-list-events', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...identityPayload(), include_archived: true }),
+      }).then(r => r.json()).then(data => {
+        if (!data.ok) throw new Error(data.error || 'Chyba při načítání akcí.');
+        eventSelect.innerHTML = '<option value="">— vyber akci —</option>' +
+          data.events.map(e => `<option value="${e.event_id}">${e.nazev || e.event_id} (${e.event_id})</option>`).join('');
+      });
+    }
+
+    const STAGE_LABEL = { ceka_zalohu: 'Čeká na zálohu', ceka_doplatek: 'Čeká na doplatek', hotovo: 'Hotovo', cekacka: 'Na čekačce', zruseno: 'Zrušeno' };
+
+    function escapeHtml(str) {
+      const d = document.createElement('div'); d.textContent = str || ''; return d.innerHTML;
+    }
+
+    function formatTs(iso) {
+      try {
+        return new Intl.DateTimeFormat('cs-CZ', { timeZone: 'Europe/Prague', day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
+      } catch (e) { return iso || ''; }
+    }
+
+    // Kroky pipeline podle typu akce - stejné tři možnosti, co umí backend (viz
+    // panel-event-timeline: is_free / has_doplatek), žádný přepočet stavu tady, jen
+    // vykreslení toho, co řekl server.
+    function stepsFor(eventInfo) {
+      if (eventInfo.is_free) return ['Registrace', 'Hotovo'];
+      if (eventInfo.has_doplatek) return ['Registrace', 'Záloha', 'Doplatek'];
+      return ['Registrace', 'Platba'];
+    }
+    function currentStepIndex(stage, steps) {
+      if (stage === 'hotovo') return steps.length - 1;
+      if (stage === 'ceka_doplatek') return 1; // záloha hotová, čeká se na doplatek (poslední krok)
+      return 0; // ceka_zalohu - první krok po registraci ještě neproběhl
+    }
+
+    function renderStepper(p, eventInfo) {
+      const steps = stepsFor(eventInfo);
+      const curIdx = currentStepIndex(p.stage, steps);
+      return `<div class="stepper">${steps.map((label, i) => {
+        const cls = i < curIdx || p.stage === 'hotovo' ? 'done' : (i === curIdx ? 'current' : '');
+        const dot = (i < curIdx || p.stage === 'hotovo') ? '✓' : (i + 1);
+        return `<div class="step ${cls}"><span class="step-line"></span><span class="step-dot">${dot}</span><span class="step-label">${label}</span></div>`;
+      }).join('')}</div>`;
+    }
+
+    function channelIcons(m) {
+      const parts = [];
+      if (m.discord_attempted) parts.push(`<span title="Discord DM ${m.discord_sent ? 'doručeno' : 'selhalo'}" class="${m.discord_sent ? '' : 'fail'}">💬</span>`);
+      if (m.email_attempted) parts.push(`<span title="E-mail ${m.email_sent ? 'doručen' : 'selhal'}" class="${m.email_sent ? '' : 'fail'}">✉️</span>`);
+      return parts.join('');
+    }
+
+    function renderCard(p, eventInfo, idx) {
+      const isSpecial = p.stage === 'cekacka' || p.stage === 'zruseno';
+      const ribbon = p.stage === 'cekacka' ? '<span class="prubeh-ribbon cekacka">Na čekačce</span>'
+        : p.stage === 'zruseno' ? '<span class="prubeh-ribbon zruseno">Zrušeno</span>' : '';
+      const msgs = p.messages || [];
+      const timelineHtml = msgs.length
+        ? `<ul class="prubeh-timeline">${msgs.map(m => `
+            <li>
+              <span class="ch">${channelIcons(m)}</span>
+              <span class="body"><span class="type">${escapeHtml(m.type || 'Zpráva')}</span><br><span class="ts">${formatTs(m.ts)}</span></span>
+            </li>`).join('')}</ul>`
+        : `<p class="prubeh-empty-msgs">Zatím žádné zaznamenané zprávy.</p>`;
+
+      return `
+        <div class="prubeh-card" data-stage="${p.stage}">
+          <div class="prubeh-card-head">
+            <div>
+              <div class="prubeh-name">${escapeHtml(p.jmeno)}</div>
+              <div class="prubeh-sub">${p.username ? '@' + escapeHtml(p.username) + ' · ' : ''}${p.typ_ucasti === 'par' ? 'pár' : 'sólo'}${p.ooo_id ? ' · ' + p.ooo_id : ''}</div>
+            </div>
+            ${ribbon}
+          </div>
+          ${isSpecial ? '' : renderStepper(p, eventInfo)}
+          <div>
+            <button type="button" class="prubeh-msg-toggle" data-idx="${idx}"><span class="arrow">▸</span> Zprávy (${msgs.length})</button>
+            <div class="prubeh-timeline-wrap hidden" id="timeline-${idx}">${timelineHtml}</div>
+          </div>
+        </div>`;
+    }
+
+    function renderAll() {
+      if (!currentData) { prubehBody.innerHTML = ''; return; }
+      const { event, participants } = currentData;
+      const counts = {};
+      participants.forEach(p => { counts[p.stage] = (counts[p.stage] || 0) + 1; });
+
+      const stagesOrder = ['ceka_zalohu', 'ceka_doplatek', 'hotovo', 'cekacka', 'zruseno'];
+      const summaryHtml = `<div class="prubeh-summary">` +
+        stagesOrder.filter(s => counts[s]).map(s => `
+          <button type="button" class="prubeh-pill ${activeStageFilter === s ? 'active' : ''}" data-stage="${s}">
+            <span class="n">${counts[s]}</span> ${STAGE_LABEL[s]}
+          </button>`).join('') +
+        (activeStageFilter ? `<button type="button" class="prubeh-pill" data-stage="">✕ Zrušit filtr</button>` : '') +
+        `</div>`;
+
+      const visible = activeStageFilter ? participants.filter(p => p.stage === activeStageFilter) : participants;
+      const gridHtml = `<div class="prubeh-grid">${visible.map((p, i) => renderCard(p, event, i)).join('')}</div>`;
+
+      prubehBody.innerHTML = summaryHtml + (visible.length ? gridHtml : '<p class="form-hint">Žádná přihláška v tomhle stavu.</p>');
+
+      prubehBody.querySelectorAll('.prubeh-pill').forEach(btn => {
+        btn.addEventListener('click', () => { activeStageFilter = btn.dataset.stage || null; renderAll(); });
+      });
+      prubehBody.querySelectorAll('.prubeh-msg-toggle').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const wrap = document.getElementById('timeline-' + btn.dataset.idx);
+          wrap.classList.toggle('hidden');
+          btn.classList.toggle('open');
+        });
+      });
+    }
+
+    function loadTimeline(eventId) {
+      prubehBody.innerHTML = '<p class="status-panel info">Načítám…</p>';
+      activeStageFilter = null;
+      fetch(API_BASE + '/api/panel-event-timeline', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...identityPayload(), event_id: eventId }),
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (!data.ok) { prubehBody.innerHTML = `<p class="status-panel error">Chyba: ${escapeHtml(data.error || 'neznámá')}</p>`; return; }
+          currentData = data;
+          renderAll();
+        })
+        .catch(err => { prubehBody.innerHTML = `<p class="status-panel error">Chyba: ${escapeHtml(err.message)}</p>`; });
+    }
+
+    eventSelect.addEventListener('change', () => {
+      currentData = null;
+      if (eventSelect.value) loadTimeline(eventSelect.value);
+      else prubehBody.innerHTML = '';
+    });
+
+    // Přístupová brána - stejný vzorec jako admin-akce.html/admin-galerie.html (Rada,
+    // Spolupracovník / tvůrce, nebo organizátor konkrétní akce - ověřeno znovu na
+    // backendu u každého volání, tohle je jen UX).
+    const loggedUser = getLoggedUser();
+    if (!loggedUser || !loggedUser.userId) {
+      gateLoading.classList.add('hidden');
+      gateDenied.classList.remove('hidden');
+    } else {
+      fetch(API_BASE + '/api/my-roles', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(identityPayload()),
+      })
+        .then(r => r.json())
+        .then(data => {
+          gateLoading.classList.add('hidden');
+          if (!data.rada && !data.spolupracovnik && !data.organizator) {
+            gateDenied.classList.remove('hidden');
+          } else {
+            navAdmin.classList.remove('hidden');
+            adminContent.classList.remove('hidden');
+            applyAdminTabsVisibility(data);
+            logActivity('admin_page', 'prubeh');
+            loadEventsForSelect().catch(err => { prubehBody.innerHTML = `<p class="status-panel error">Chyba: ${escapeHtml(err.message)}</p>`; });
+          }
+        })
+        .catch(() => { gateLoading.classList.add('hidden'); gateDenied.classList.remove('hidden'); });
+    }
+  </script>
+</body>
+</html>
