@@ -250,6 +250,46 @@ function applyAdminTabsVisibility(data) {
     const el = document.getElementById(id);
     if (el) el.classList.toggle('hidden', !visible);
   });
+
+  // Skupinové pilulky (2026-09-16, viz initAdminGroupNav) - skrýt skupinu, ve který podle
+  // role nezbyl ani jeden viditelný tab, a pokud to byla zrovna ta aktivní, přepnout na
+  // první skupinu, co něco ukazuje (ať nezůstane vybraná prázdná).
+  const pills = document.querySelectorAll('.admin-group-pill');
+  let activeStillVisible = false;
+  pills.forEach(p => {
+    const visible = (ADMIN_TAB_GROUPS[p.dataset.group] || []).some(id => rules[id]);
+    p.classList.toggle('hidden', !visible);
+    if (visible && p.classList.contains('active')) activeStillVisible = true;
+  });
+  if (!activeStillVisible) {
+    const firstVisible = document.querySelector('.admin-group-pill:not(.hidden)');
+    if (firstVisible) firstVisible.click();
+  }
+}
+
+// Navigace administrace rozdělená do tří skupin (2026-09-16, na žádost - "rozdělit
+// administraci do tří skupin akce/lidé/správa, hezky, ale ať to nezabere víc místa") -
+// nahrazuje dřívější jeden natěsnaný řádek se všemi taby. Každá admin-*.html stránka má v
+// HTML rovnou označenou svou vlastní skupinu jako výchozí aktivní (přes class="active" na
+// příslušné .admin-group-pill a viditelný odpovídající #admin-tabs-<skupina>), klik jen
+// přepíná, který z připravených řádků je vidět - žádné přesměrování.
+const ADMIN_TAB_GROUPS = {
+  akce: ['tab-akce', 'tab-prubeh', 'tab-galerie'],
+  lide: ['tab-clenove', 'tab-dotazniky', 'tab-platby'],
+  sprava: ['tab-statistika', 'tab-napoveda'],
+};
+
+function initAdminGroupNav() {
+  const pills = document.querySelectorAll('.admin-group-pill');
+  if (!pills.length) return;
+  function showGroup(group) {
+    pills.forEach(p => p.classList.toggle('active', p.dataset.group === group));
+    Object.keys(ADMIN_TAB_GROUPS).forEach(g => {
+      const el = document.getElementById(`admin-tabs-${g}`);
+      if (el) el.classList.toggle('hidden', g !== group);
+    });
+  }
+  pills.forEach(p => p.addEventListener('click', () => showGroup(p.dataset.group)));
 }
 
 function initAuthUI() {

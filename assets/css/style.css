@@ -907,6 +907,20 @@ p { margin: 0 0 16px; color: var(--text-muted); }
 .reg-row-cancelled { opacity: 0.55; text-decoration: line-through; }
 .reg-row-cancelled .member-link { pointer-events: none; text-decoration: line-through; }
 
+/* ---------- Admin navigace rozdělená do skupin Akce/Lidé/Správa (2026-09-16, na žádost -
+   "rozdělit administraci do tří skupin, hezky, ale ať to nezabere víc místa" - nahrazuje
+   dřívější jeden natěsnaný řádek se všemi taby a statický "eyebrow" popisek nad nadpisem).
+   Pilulky ve stylu .eyebrow, jen klikací - klik přepne, který .admin-tabs řádek pod nimi
+   je vidět (viz initAdminGroupNav v auth.js). ---------- */
+.admin-group-nav { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.admin-group-pill {
+  display: inline-block; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--primary); background: var(--bg-alt);
+  padding: 6px 14px; border-radius: 999px; border: none; cursor: pointer;
+}
+.admin-group-pill:hover { background: var(--border); }
+.admin-group-pill.active { background: var(--primary); color: #fff; }
+
 /* ---------- Admin tabulky - responzivní na mobilu (2026-08-24, na žádost - vodorovné
    posouvání "není přehledný") ---------- */
 .admin-tabs { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }

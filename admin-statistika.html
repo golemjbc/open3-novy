@@ -88,7 +88,6 @@
 
   <section class="section stat-scope">
     <div class="container">
-      <span class="eyebrow">Pro radu</span>
       <h1>Statistika webu</h1>
 
       <div id="gate-loading" class="status-panel info">Ověřuji oprávnění…</div>
@@ -99,13 +98,22 @@
       </div>
 
       <div id="admin-content" class="hidden">
-        <div class="admin-tabs">
+        <div class="admin-group-nav">
+          <button type="button" class="admin-group-pill" data-group="akce">Akce</button>
+          <button type="button" class="admin-group-pill" data-group="lide">Lidé</button>
+          <button type="button" class="admin-group-pill active" data-group="sprava">Správa</button>
+        </div>
+        <div class="admin-tabs hidden" id="admin-tabs-akce">
           <a id="tab-akce" href="admin-akce.html">Akce a přihlášky</a>
-          <a id="tab-dotazniky" href="admin-dotazniky.html">Fronta dotazníků</a>
-          <a id="tab-clenove" href="admin-clenove.html">Přehled členů</a>
-          <a id="tab-platby" href="admin-platby.html">Platby</a>
-          <a id="tab-galerie" href="admin-galerie.html">Fotogalerie</a>
           <a id="tab-prubeh" href="admin-prubeh.html">Průběh akce</a>
+          <a id="tab-galerie" href="admin-galerie.html">Fotogalerie</a>
+        </div>
+        <div class="admin-tabs hidden" id="admin-tabs-lide">
+          <a id="tab-clenove" href="admin-clenove.html">Přehled členů</a>
+          <a id="tab-dotazniky" href="admin-dotazniky.html">Fronta dotazníků</a>
+          <a id="tab-platby" href="admin-platby.html">Platby</a>
+        </div>
+        <div class="admin-tabs" id="admin-tabs-sprava">
           <a id="tab-statistika" href="admin-statistika.html" class="active">Statistika webu</a>
           <a id="tab-napoveda" href="admin-napoveda.html">Nápověda</a>
         </div>
@@ -296,6 +304,7 @@
             navAdmin.classList.remove('hidden');
             adminContent.classList.remove('hidden');
             applyAdminTabsVisibility(data);
+            initAdminGroupNav();
             logActivity('admin_page', 'statistika');
             loadStats();
           }
