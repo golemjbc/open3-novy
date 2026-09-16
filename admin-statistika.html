@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OOO Community - Otevři se. Poznej se. Propoj se.">
+  <meta property="og:title" content="Statistika webu — OOO Community">
+  <meta property="og:description" content="Eventy, Seznamování, Umění, Výzkum, ... Přidej se do komunity!">
+  <meta property="og:image" content="https://open3.cz/assets/images/LogoMETA.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://open3.cz/admin-statistika.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="OOO Community">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://open3.cz/assets/images/LogoMETA.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="favicon.ico">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+  <title>Statistika webu — OOO Community</title>
+  <style>
+    .hidden { display: none !important; }
+    .stat-scope { --info: #0c5f9e; --info-bg: #e5f2fc; }
+    .stat-scope .status-panel.error { background: #fbe9e7; color: #b3261e; }
+
+    .stat-controls {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 22px;
+      padding: 14px 16px; background: var(--bg-alt); border-radius: var(--radius);
+    }
+    .stat-presets { display: flex; gap: 6px; }
+    .stat-preset-btn {
+      font-size: 0.82rem; font-weight: 600; padding: 6px 12px; border-radius: 999px;
+      border: 1.5px solid var(--border); background: var(--surface); cursor: pointer; color: var(--text-muted);
+    }
+    .stat-preset-btn.active { border-color: var(--primary); color: var(--primary); background: var(--bg-alt); }
+    .stat-range { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; }
+    .stat-range input { padding: 5px 8px; border-radius: 8px; border: 1.5px solid var(--border); font-size: 0.82rem; }
+    .stat-toggle { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; margin-left: auto; cursor: pointer; }
+    .stat-toggle input { width: 17px; height: 17px; cursor: pointer; }
+    .stat-summary-line { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 18px; }
+
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+    .stat-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+    .stat-card-title { font-weight: 700; font-size: 1rem; }
+    .stat-card-badge { font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--info-bg); color: var(--info); text-transform: uppercase; letter-spacing: 0.02em; }
+    .stat-numbers { display: flex; gap: 18px; margin: 8px 0 12px; }
+    .stat-number { font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--primary); }
+    .stat-number-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
+    .stat-chart-wrap { height: 140px; margin-bottom: 10px; }
+
+    .stat-identified { list-style: none; margin: 10px 0 0; padding: 10px 0 0; border-top: 1px dashed var(--border); display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; }
+    .stat-identified li { font-size: 0.78rem; display: flex; justify-content: space-between; gap: 8px; }
+    .stat-identified .name { font-weight: 600; }
+    .stat-identified .ts { color: var(--text-muted); font-size: 0.72rem; flex-shrink: 0; }
+    .stat-anon-note { font-size: 0.74rem; color: var(--text-muted); font-style: italic; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <script src="assets/js/age-gate.js"></script>
+
+  <header class="site-header">
+    <div class="container">
+      <button class="nav-toggle" id="nav-toggle" aria-label="Menu">☰</button>
+      <a class="brand" href="index.html"><img src="assets/images/OOOlogo.png" alt="OOO logo"> <span>OOO Community</span></a>
+      <nav>
+        <ul class="nav-links" id="nav-links">
+          <li><a href="index.html">Domů</a></li>
+          <li><a href="akce.html">Akce</a></li>
+          <li><a href="galerie.html">Galerie</a></li>
+          <li><a href="pravidla.html">Pravidla</a></li>
+          <li><a href="contact.html">Kontakt</a></li>
+          <li id="nav-admin" class="hidden" data-self-managed="1"><a href="admin-akce.html">Administrace</a></li>
+        </ul>
+      </nav>
+      <div class="header-actions">
+        <div id="user-info"><img id="user-avatar" src="" alt=""><span id="user-name"></span></div>
+        <a id="login-button" href="#" class="btn btn-primary btn-sm">Přihlásit</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="section stat-scope">
+    <div class="container">
+      <span class="eyebrow">Pro radu</span>
+      <h1>Statistika webu</h1>
+
+      <div id="gate-loading" class="status-panel info">Ověřuji oprávnění…</div>
+
+      <div id="gate-denied" class="access-denied hidden">
+        <h3>Nemáš oprávnění</h3>
+        <p>Tahle stránka je jen pro radu.</p>
+      </div>
+
+      <div id="admin-content" class="hidden">
+        <div class="admin-tabs">
+          <a id="tab-akce" href="admin-akce.html">Akce a přihlášky</a>
+          <a id="tab-dotazniky" href="admin-dotazniky.html">Fronta dotazníků</a>
+          <a id="tab-clenove" href="admin-clenove.html">Přehled členů</a>
+          <a id="tab-platby" href="admin-platby.html">Platby</a>
+          <a id="tab-galerie" href="admin-galerie.html">Fotogalerie</a>
+          <a id="tab-prubeh" href="admin-prubeh.html">Průběh akce</a>
+          <a id="tab-statistika" href="admin-statistika.html" class="active">Statistika webu</a>
+          <a id="tab-napoveda" href="admin-napoveda.html">Nápověda</a>
+        </div>
+
+        <div class="stat-controls">
+          <div class="stat-presets">
+            <button type="button" class="stat-preset-btn" data-days="7">7 dní</button>
+            <button type="button" class="stat-preset-btn active" data-days="30">30 dní</button>
+            <button type="button" class="stat-preset-btn" data-days="90">90 dní</button>
+          </div>
+          <div class="stat-range">
+            od <input type="date" id="stat-from"> do <input type="date" id="stat-to">
+            <button type="button" class="btn btn-outline btn-sm" id="stat-apply">Použít</button>
+          </div>
+          <label class="stat-toggle">
+            <input type="checkbox" id="stat-reveal-names">
+            🙈 → 😎 Zobrazit jména (vypnout anonymitu)
+          </label>
+        </div>
+
+        <p class="stat-summary-line" id="stat-summary"></p>
+        <div id="stat-body"></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-bottom">© 2026 OOO Community z.s. — Design: Adam</div>
+    </div>
+  </footer>
+
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/profile-modal.js"></script>
+  <script>
+    function identityPayload() { return getIdentityPayload(getLoggedUser()); }
+
+    const gateLoading = document.getElementById('gate-loading');
+    const gateDenied = document.getElementById('gate-denied');
+    const adminContent = document.getElementById('admin-content');
+    const navAdmin = document.getElementById('nav-admin');
+    const statBody = document.getElementById('stat-body');
+    const statSummary = document.getElementById('stat-summary');
+    const fromInput = document.getElementById('stat-from');
+    const toInput = document.getElementById('stat-to');
+    const revealCheckbox = document.getElementById('stat-reveal-names');
+    const charts = {}; // page_key -> Chart instance, ať se při překreslení nekupí přes sebe
+
+    function toDateInputValue(d) { return d.toISOString().slice(0, 10); }
+    function setRangeByDays(days) {
+      const to = new Date();
+      const from = new Date(Date.now() - (days - 1) * 24 * 60 * 60 * 1000);
+      fromInput.value = toDateInputValue(from);
+      toInput.value = toDateInputValue(to);
+    }
+    setRangeByDays(30);
+
+    document.querySelectorAll('.stat-preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.stat-preset-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        setRangeByDays(parseInt(btn.dataset.days, 10));
+        loadStats();
+      });
+    });
+    document.getElementById('stat-apply').addEventListener('click', () => {
+      document.querySelectorAll('.stat-preset-btn').forEach(b => b.classList.remove('active'));
+      loadStats();
+    });
+    revealCheckbox.addEventListener('change', renderAll);
+
+    function escapeHtml(str) {
+      const d = document.createElement('div'); d.textContent = str || ''; return d.innerHTML;
+    }
+    function formatTs(iso) {
+      try {
+        return new Intl.DateTimeFormat('cs-CZ', { timeZone: 'Europe/Prague', day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
+      } catch (e) { return iso || ''; }
+    }
+    function formatChartDate(dateStr) {
+      const [y, m, d] = dateStr.split('-');
+      return `${parseInt(d, 10)}.${parseInt(m, 10)}.`;
+    }
+
+    let currentPages = [];
+
+    function renderCard(p) {
+      const identifiedHtml = revealCheckbox.checked
+        ? `<ul class="stat-identified">${p.identified.map(i => `<li><span class="name">${escapeHtml(i.label)}</span><span class="ts">${formatTs(i.ts)}</span></li>`).join('')}</ul>${p.anonymous_count ? `<p class="stat-anon-note">+ ${p.anonymous_count} anonymních zobrazení (nedá se zpětně zjistit kdo)</p>` : ''}`
+        : '';
+      return `
+        <div class="stat-card">
+          <div class="stat-card-head">
+            <div class="stat-card-title">${escapeHtml(p.label)}</div>
+            ${p.is_event ? '<span class="stat-card-badge">akce</span>' : ''}
+          </div>
+          <div class="stat-numbers">
+            <div><div class="stat-number">${p.total}</div><div class="stat-number-label">zobrazení</div></div>
+            <div><div class="stat-number">${p.unique}</div><div class="stat-number-label">odhad. lidí</div></div>
+            ${revealCheckbox.checked ? `<div><div class="stat-number">${p.identified.length}</div><div class="stat-number-label">identifikováno</div></div>` : ''}
+          </div>
+          <div class="stat-chart-wrap"><canvas id="chart-${cssEscape(p.page_key)}"></canvas></div>
+          ${identifiedHtml}
+        </div>`;
+    }
+
+    // Klíče typu "event:C26-8" obsahují dvojtečku - jako id atributu je to technicky
+    // platné, ale pro čitelnost/bezpečnost v querySelectoru radši nahradit.
+    function cssEscape(key) { return key.replace(/[^A-Za-z0-9_-]/g, '_'); }
+
+    function drawChart(p) {
+      const canvas = document.getElementById(`chart-${cssEscape(p.page_key)}`);
+      if (!canvas) return;
+      if (charts[p.page_key]) { charts[p.page_key].destroy(); }
+      charts[p.page_key] = new Chart(canvas, {
+        type: 'line',
+        data: {
+          labels: p.daily.map(d => formatChartDate(d.date)),
+          datasets: [
+            { label: 'Zobrazení', data: p.daily.map(d => d.total), borderColor: '#af3b6e', backgroundColor: 'rgba(175,59,110,0.12)', fill: true, tension: 0.25, pointRadius: 2 },
+            { label: 'Odhad lidí', data: p.daily.map(d => d.unique), borderColor: '#0c5f9e', backgroundColor: 'rgba(12,95,158,0.08)', fill: true, tension: 0.25, pointRadius: 2 },
+          ],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: { legend: { display: true, labels: { boxWidth: 10, font: { size: 10 } } } },
+          scales: {
+            x: { ticks: { font: { size: 10 } } },
+            y: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } } },
+          },
+        },
+      });
+    }
+
+    function renderAll() {
+      if (!currentPages.length) {
+        statBody.innerHTML = '<p class="form-hint">Za tohle období nemáme žádná zobrazení.</p>';
+        return;
+      }
+      statBody.innerHTML = `<div class="stat-grid">${currentPages.map(renderCard).join('')}</div>`;
+      currentPages.forEach(drawChart);
+    }
+
+    function loadStats() {
+      statBody.innerHTML = '<p class="status-panel info">Načítám…</p>';
+      fetch(API_BASE + '/api/panel-page-stats', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...identityPayload(), from: fromInput.value, to: toInput.value }),
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (!data.ok) { statBody.innerHTML = `<p class="status-panel error">Chyba: ${escapeHtml(data.error || 'neznámá')}</p>`; return; }
+          currentPages = data.pages || [];
+          const totalViews = currentPages.reduce((s, p) => s + p.total, 0);
+          statSummary.textContent = `${data.from} – ${data.to} · ${currentPages.length} sledovaných stránek · ${totalViews} zobrazení celkem`;
+          renderAll();
+        })
+        .catch(err => { statBody.innerHTML = `<p class="status-panel error">Chyba: ${escapeHtml(err.message)}</p>`; });
+    }
+
+    // Přístupová brána - jen Rada (citlivější scope, umí ukázat identifikované návštěvy).
+    const loggedUser = getLoggedUser();
+    if (!loggedUser || !loggedUser.userId) {
+      gateLoading.classList.add('hidden');
+      gateDenied.classList.remove('hidden');
+    } else {
+      fetch(API_BASE + '/api/my-roles', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(identityPayload()),
+      })
+        .then(r => r.json())
+        .then(data => {
+          gateLoading.classList.add('hidden');
+          if (!data.rada) {
+            gateDenied.classList.remove('hidden');
+          } else {
+            navAdmin.classList.remove('hidden');
+            adminContent.classList.remove('hidden');
+            applyAdminTabsVisibility(data);
+            logActivity('admin_page', 'statistika');
+            loadStats();
+          }
+        })
+        .catch(() => { gateLoading.classList.add('hidden'); gateDenied.classList.remove('hidden'); });
+    }
+  </script>
+</body>
+</html>

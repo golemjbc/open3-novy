@@ -160,6 +160,25 @@ function logActivity(type, detail) {
   }).catch(() => {});
 }
 
+// Statistika webu (2026-09-16, na žádost - "statistiky jednotlivých stránek, různá
+// časová období, s grafy, checkbox na vypnutí anonymity"). Volá se na KAŽDÉ veřejné
+// stránce (viz page_key konvence v backend/lib/page-view-log.js), na rozdíl od
+// logActivity() zaznamenává i nepřihlášené - `who`/`jmeno` se přidají jen když je
+// návštěvník právě přihlášený, jinak zůstává čistě anonymní (jen anon_id). V ghost modu
+// se neloguje vůbec - jinak by se admin v náhledu tvářil jako cílový uživatel.
+function logPageView(pageKey) {
+  if (getGhostTarget()) return;
+  const anonId = getAnonId();
+  if (!anonId) return;
+  const user = getRealLoggedUser();
+  const payload = { page_key: pageKey, anon_id: anonId };
+  if (user && user.userId) { payload.who = user.userId; payload.jmeno = user.userName; }
+  fetch(API_BASE + '/api/log-page-view', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).catch(() => {});
+}
+
 // Položka "Administrace" v hlavičce (2026-08-25, oprava - "zobrazuje se se zpožděním").
 // Dřív to KAŽDÁ stránka zjišťovala vlastní kopií stejného kódu přes /api/members, což
 // stahuje do prohlížeče celý seznam všech ~360 členů jen kvůli jedné vlastní řádce -
@@ -224,6 +243,7 @@ function applyAdminTabsVisibility(data) {
     'tab-platby': data.rada,
     'tab-galerie': data.rada || data.spolupracovnik || data.organizator,
     'tab-prubeh': data.rada || data.spolupracovnik || data.organizator,
+    'tab-statistika': data.rada,
     'tab-napoveda': data.rada || data.spolupracovnik || data.patron || data.organizator,
   };
   Object.entries(rules).forEach(([id, visible]) => {
