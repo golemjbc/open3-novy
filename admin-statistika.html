@@ -37,10 +37,14 @@
     .stat-preset-btn.active { border-color: var(--primary); color: var(--primary); background: var(--bg-alt); }
     .stat-range { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; }
     .stat-range input { padding: 5px 8px; border-radius: 8px; border: 1.5px solid var(--border); font-size: 0.82rem; }
-    .stat-toggle { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; margin-left: auto; cursor: pointer; }
-    .stat-toggle input { width: 17px; height: 17px; cursor: pointer; }
+    .stat-toggle { display: inline-flex; align-items: center; margin-left: auto; cursor: pointer; user-select: none; }
+    .stat-toggle input { display: none; }
+    .stat-toggle span { font-size: 1.35rem; line-height: 1; opacity: 0.8; transition: opacity 0.15s, transform 0.15s; }
+    .stat-toggle:hover span { opacity: 1; transform: scale(1.08); }
     .stat-summary-line { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 18px; }
 
+    .stat-section-title { font-size: 1rem; font-weight: 800; margin: 26px 0 12px; }
+    .stat-section-title:first-child { margin-top: 0; }
     .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
     .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
     .stat-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
@@ -116,9 +120,9 @@
             od <input type="date" id="stat-from"> do <input type="date" id="stat-to">
             <button type="button" class="btn btn-outline btn-sm" id="stat-apply">Použít</button>
           </div>
-          <label class="stat-toggle">
+          <label class="stat-toggle" title="Zobrazit jména (výchozí stav je anonymní)">
             <input type="checkbox" id="stat-reveal-names">
-            🙈 → 😎 Zobrazit jména (vypnout anonymitu)
+            <span id="stat-toggle-emoji">🙈</span>
           </label>
         </div>
 
@@ -171,7 +175,10 @@
       document.querySelectorAll('.stat-preset-btn').forEach(b => b.classList.remove('active'));
       loadStats();
     });
-    revealCheckbox.addEventListener('change', renderAll);
+    revealCheckbox.addEventListener('change', () => {
+      document.getElementById('stat-toggle-emoji').textContent = revealCheckbox.checked ? '😎' : '🙈';
+      renderAll();
+    });
 
     function escapeHtml(str) {
       const d = document.createElement('div'); d.textContent = str || ''; return d.innerHTML;
@@ -242,7 +249,15 @@
         statBody.innerHTML = '<p class="form-hint">Za tohle období nemáme žádná zobrazení.</p>';
         return;
       }
-      statBody.innerHTML = `<div class="stat-grid">${currentPages.map(renderCard).join('')}</div>`;
+      // Rozdělené na obecné stránky webu a jednotlivé akce (2026-09-16, na žádost - "chci
+      // vidět jaký je zájem o jakou akci") - v jednom seřazeném seznamu by se akce ztrácely
+      // mezi Domů/Galerií/Pravidly.
+      const sitePages = currentPages.filter(p => !p.is_event);
+      const eventPages = currentPages.filter(p => p.is_event);
+      let html = '';
+      if (sitePages.length) html += `<div class="stat-section-title">Stránky webu</div><div class="stat-grid">${sitePages.map(renderCard).join('')}</div>`;
+      if (eventPages.length) html += `<div class="stat-section-title">Jednotlivé akce</div><div class="stat-grid">${eventPages.map(renderCard).join('')}</div>`;
+      statBody.innerHTML = html;
       currentPages.forEach(drawChart);
     }
 
