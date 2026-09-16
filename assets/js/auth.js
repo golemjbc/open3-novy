@@ -274,8 +274,8 @@ function applyAdminTabsVisibility(data) {
 // příslušné .admin-group-pill a viditelný odpovídající #admin-tabs-<skupina>), klik jen
 // přepíná, který z připravených řádků je vidět - žádné přesměrování.
 const ADMIN_TAB_GROUPS = {
-  akce: ['tab-akce', 'tab-prubeh', 'tab-galerie'],
-  lide: ['tab-clenove', 'tab-dotazniky', 'tab-platby'],
+  akce: ['tab-akce', 'tab-prubeh', 'tab-galerie', 'tab-platby'],
+  lide: ['tab-clenove', 'tab-dotazniky'],
   sprava: ['tab-statistika', 'tab-napoveda'],
 };
 
