@@ -16,6 +16,24 @@ function getRealLoggedUser() {
   try { return JSON.parse(raw); } catch (e) { return null; }
 }
 
+// Anonymní ID pro počítadlo zobrazení veřejných (typ A) akcí (2026-09-16, na žádost -
+// "kolik lidí přijde, zjistí že je obsazeno, zase odejde" - viz backend
+// lib/anon-view-log.js). Náhodné, vzniká jen v tomhle prohlížeči, NENÍ to identita -
+// nikdy se neposílá spolu se jménem/e-mailem/Discord ID, jen samo o sobě k odhadu "kolik
+// RŮZNÝCH lidí", ne "kolik otevření". Smazání dat prohlížeče = nové ID napříště.
+function getAnonId() {
+  try {
+    let id = localStorage.getItem('oooAnonId');
+    if (!id) {
+      id = (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      localStorage.setItem('oooAnonId', id);
+    }
+    return id;
+  } catch (e) {
+    return null; // soukromý režim / zakázané úložiště - prostě se nepočítá, nic se nerozbije
+  }
+}
+
 // "Zobrazit jako" / ghost mode (2026-08-28, na žádost - podpora: "co mi nejde" jde ověřit
 // tak, že admin uvidí web přesně očima toho člověka). Cíleně jen Discord identita - Google
 // cestu backend ověřuje skutečným tokenem (viz Identitní model v BACKEND-AZURE-FUNCTIONS.md),

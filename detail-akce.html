@@ -154,6 +154,20 @@
         }
         logActivity('event_detail', event.event_id + ' - ' + (event.nazev || ''));
 
+        // Anonymní počítadlo zobrazení (2026-09-16, na žádost - "kolik lidí přijde,
+        // zjistí že je obsazeno, zase odejde") - jen typ A (veřejné), jen když NENÍ
+        // přihlášený (přihlášené už pokrývá logActivity výš). Fire-and-forget, nesmí
+        // nijak zpomalit ani ovlivnit zobrazení stránky.
+        if (event.typ_akce === 'A' && !getRealLoggedUser()) {
+          const anonId = getAnonId();
+          if (anonId) {
+            fetch(API_BASE + '/api/log-event-view', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ event_id: event.event_id, anon_id: anonId }),
+            }).catch(() => {});
+          }
+        }
+
         // 🔒 Kontrola oprávnění - stejná logika jako na produkci (přihlášení + discord_role_required)
         const loggedUser = getLoggedUser();
         const isLoggedIn = !!loggedUser && !!loggedUser.userId;
