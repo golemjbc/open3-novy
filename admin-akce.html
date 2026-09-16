@@ -726,7 +726,7 @@
       container.innerHTML = allEvents.map(e => `
         <div class="admin-event-card" style="${e.is_past ? 'opacity:0.6;' : ''}">
           <h3>${e.nazev || e.event_id}${e.is_past ? ' <span class="form-hint" style="font-weight:400;">(proběhlo)</span>' : ''}</h3>
-          <div class="admin-event-meta">${e.event_id} · typ ${e.typ_akce} · ${e.registrations_count} přihlášek / ${e.participants_count} účastníků (záloha OK: ${e.deposit_ok_count}, doplatek OK: ${e.doplatek_ok_count})${e.waitlist_count ? ` · <strong>${e.waitlist_count} na čekačce</strong>` : ''}${e.typ_akce === 'A' ? ` · 👁 ${e.anon_views_total || 0} zobrazení bez přihlášení (${e.anon_views_unique || 0} odhad. lidí)` : ''}</div>
+          <div class="admin-event-meta">${e.event_id} · typ ${e.typ_akce} · ${e.registrations_count} přihlášek / ${e.participants_count} účastníků (záloha OK: ${e.deposit_ok_count}, doplatek OK: ${e.doplatek_ok_count})${e.waitlist_count ? ` · <strong>${e.waitlist_count} na čekačce</strong>` : ''}</div>
           <div class="admin-event-actions">
             <button class="btn btn-outline btn-sm" data-action="edit" data-event="${e.event_id}">Upravit</button>
             <button class="btn btn-outline btn-sm" data-action="registrations" data-event="${e.event_id}">Přihlášky</button>
