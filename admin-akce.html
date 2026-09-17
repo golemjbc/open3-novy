@@ -435,6 +435,7 @@
         .then(list => {
           discordMembersForPartner = (list || []).map(m => ({
             userId: m.user_id,
+            oooId: m.roles.ooo_id || null,
             displayName: m.roles['Zobrazované jméno'] || m.roles['Uživatelské jméno'] || 'Neznámý',
             username: m.roles['Uživatelské jméno'] || 'Neznámý',
           }));
@@ -442,12 +443,17 @@
         .catch(() => { discordMembersForPartner = []; });
     }
 
-    // Modál pro editaci partnera (2026-09-17, verze 2 - na žádost "políčko pokud je
-    // vyplněno bych nenechával k editaci, ale dal tlačítko editovat, čímž se otevře malý
-    // modál"). Jeden sdílený modál pro celou stránku (stejné CSS jako member-modal.js),
-    // vytvořený líně při prvním otevření - kontext (event/ooo/user) se drží v
-    // partnerModalCtx mezi otevřením a potvrzením.
+    // Modál pro editaci partnera (2026-09-17, verze 3 po zpětné vazbě):
+    // - Discord ID se NIKDE nezobrazuje, ani v tomhle okénku - viditelný input ukazuje
+    //   jen jméno, skutečná hodnota k uložení (`partnerModalValue`, může nést ID) se drží
+    //   jen v JS proměnné. Při výběru z nabídky se do inputu vepíše zase jen jméno.
+    // - Sám sebe si nejde vybrat jako partnera (filtr `m.userId !== partnerModalCtx.user`
+    //   přímo v nabídce, ne až tichá ochrana na backendu - "je to blbost", ať to tam
+    //   vůbec nesvítí jako možnost).
+    // Jeden sdílený modál pro celou stránku (stejné CSS jako member-modal.js), vytvořený
+    // líně při prvním otevření.
     let partnerModalCtx = null;
+    let partnerModalValue = '';
     function ensurePartnerModal() {
       if (document.getElementById('partner-modal-overlay')) return;
       const overlay = document.createElement('div');
@@ -458,7 +464,7 @@
           <button type="button" class="member-modal-close" id="partner-modal-close" aria-label="Zavřít">&times;</button>
           <h3 style="margin-top:0;">Partner — <span id="partner-modal-jmeno"></span></h3>
           <div class="autocomplete-wrap">
-            <input type="text" class="form-control" id="partner-modal-input" placeholder="Začni psát Discord jméno…">
+            <input type="text" class="form-control" id="partner-modal-input" placeholder="Začni psát jméno…">
             <div class="autocomplete-dropdown" id="partner-modal-dropdown"></div>
           </div>
           <p class="form-hint">Vyber z nabídky, nebo nech okénko prázdné a potvrď pro smazání partnera.</p>
@@ -477,10 +483,14 @@
       const input = document.getElementById('partner-modal-input');
       const dropdown = document.getElementById('partner-modal-dropdown');
       input.addEventListener('input', function () {
+        // Ruční psaní bez výběru z nabídky = čistě popisné jméno, žádná Discord vazba
+        // (stejná záměrně podporovaná možnost jako na webu - "bez Discordu OK").
+        partnerModalValue = this.value;
         const q = this.value.toLowerCase();
         if (q.length < 2) { dropdown.style.display = 'none'; return; }
         const matches = discordMembersForPartner.filter(m =>
-          (m.userId || '').toLowerCase().includes(q) || m.displayName.toLowerCase().includes(q) || m.username.toLowerCase().includes(q)
+          m.userId !== (partnerModalCtx && partnerModalCtx.user) &&
+          (m.displayName.toLowerCase().includes(q) || m.username.toLowerCase().includes(q))
         ).slice(0, 8);
         dropdown.innerHTML = matches.map(m =>
           `<div class="autocomplete-item" data-user-id="${m.userId}" data-display-name="${m.displayName}" data-username="${m.username}">
@@ -492,7 +502,8 @@
       dropdown.addEventListener('click', function (e) {
         const item = e.target.closest('.autocomplete-item');
         if (!item) return;
-        input.value = `${item.dataset.displayName} | ${item.dataset.username} | ${item.dataset.userId}`;
+        partnerModalValue = `${item.dataset.displayName} | ${item.dataset.username} | ${item.dataset.userId}`;
+        input.value = item.dataset.displayName;
         dropdown.style.display = 'none';
       });
       document.getElementById('partner-modal-confirm').addEventListener('click', () => {
@@ -504,7 +515,7 @@
           body: JSON.stringify({
             ...identityPayload(), event_id: partnerModalCtx.eventId,
             ooo_id: partnerModalCtx.ooo || undefined, user_id: partnerModalCtx.user || undefined,
-            partner_discord: input.value.trim(),
+            partner_discord: partnerModalValue.trim(),
           }),
         })
           .then(r => r.json())
@@ -520,8 +531,9 @@
     function openPartnerModal(eventId, ooo, user, jmeno, currentPartner) {
       ensurePartnerModal();
       partnerModalCtx = { eventId, ooo, user };
+      partnerModalValue = currentPartner || '';
       document.getElementById('partner-modal-jmeno').textContent = jmeno || '';
-      document.getElementById('partner-modal-input').value = currentPartner || '';
+      document.getElementById('partner-modal-input').value = partnerName(currentPartner) || '';
       document.getElementById('partner-modal-dropdown').style.display = 'none';
       document.getElementById('partner-modal-error').classList.add('hidden');
       document.getElementById('partner-modal-overlay').classList.remove('hidden');
@@ -530,6 +542,7 @@
       const overlay = document.getElementById('partner-modal-overlay');
       if (overlay) overlay.classList.add('hidden');
       partnerModalCtx = null;
+      partnerModalValue = '';
     }
 
     function renderOrganizatoriChips() {
@@ -907,17 +920,23 @@
     }
 
     // Rozklad "Jméno | username | discord_id" (2026-09-17) - stejný formát, jaký zapisuje
-    // autocomplete na webu i tenhle v modálu níž. `partnerName` pro čitelné zobrazení,
-    // `partnerId` pro kontrolní součet vedle ooo_id ("dá se poznat, jestli je to správně").
+    // autocomplete na webu i tenhle v modálu níž. `partnerName` pro čitelné zobrazení.
+    // Discord ID se NIKDY nezobrazuje (viz pravidlo "ooo_id je kanonický klíč, Discord ID
+    // jen tam, kde se fakt mluví s Discord API" - admin panel/zobrazení do toho nepatří) -
+    // `partnerOooId` proto místo syrového ID vrací ooo_id z už načteného seznamu členů
+    // (stejná data jako pro autocomplete), jen jako potvrzení "systém tuhle osobu zná".
     function partnerName(partnerDiscord) {
       if (!partnerDiscord) return null;
       const parts = partnerDiscord.split('|');
       return (parts[0] || '').trim() || null;
     }
-    function partnerId(partnerDiscord) {
+    function partnerOooId(partnerDiscord) {
       if (!partnerDiscord) return null;
       const parts = partnerDiscord.split('|');
-      return parts.length >= 3 ? (parts[2] || '').trim() || null : null;
+      const discordId = parts.length >= 3 ? (parts[2] || '').trim() : null;
+      if (!discordId) return null;
+      const member = discordMembersForPartner.find(m => m.userId === discordId);
+      return member ? member.oooId : null;
     }
 
     // Jedna platební buňka (záloha/doplatek) v přehledu přihlášek (2026-08-25, verze 5 -
@@ -996,7 +1015,7 @@
                             <span>${partnerName(r.partner_discord) ? partnerName(r.partner_discord).replace(/</g, '&lt;') : 'Partner nezadán'}</span>
                             <button type="button" class="pay-link" data-edit-partner="1" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}" data-jmeno="${(r.jmeno || '').replace(/"/g, '&quot;')}" data-partner="${(r.partner_discord || '').replace(/"/g, '&quot;')}">${r.partner_discord ? 'Upravit' : 'Doplnit partnera'}</button>
                           </div>` : ''}</td>
-                        <td data-label="ooo_id" style="font-size:0.8rem; color:var(--text-muted); font-variant-numeric:tabular-nums;">${r.ooo_id || (r.user_id ? '—' : '')}${r.typ_ucasti === 'par' ? `<div class="partner-id-hint">partner ID:<br>${partnerId(r.partner_discord) || '—'}</div>` : ''}</td>
+                        <td data-label="ooo_id" style="font-size:0.8rem; color:var(--text-muted); font-variant-numeric:tabular-nums;">${r.ooo_id || (r.user_id ? '—' : '')}${r.typ_ucasti === 'par' ? `<div class="partner-id-hint">partner ooo_id:<br>${partnerOooId(r.partner_discord) || '—'}</div>` : ''}</td>
                         <td data-label="Kontakt">${r.email || ''}${r.telefon ? ' · ' + r.telefon : ''}</td>
                         <td data-label="Typ účasti">${r.typ_ucasti || ''}</td>
                         <td data-label="Záloha">${payCell({
