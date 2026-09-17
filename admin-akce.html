@@ -1035,7 +1035,6 @@
                         <td data-label="ooo_id" style="font-size:0.8rem; color:var(--text-muted); font-variant-numeric:tabular-nums;">${r.ooo_id || (r.user_id ? '—' : '')}${r.typ_ucasti === 'par' ? `
                           <div class="partner-display">
                             <span>${partnerOooIdVal || 'Nezadán'}</span>
-                            ${partnerBtn}
                           </div>` : ''}</td>
                         <td data-label="Kontakt">${r.email || ''}${r.telefon ? ' · ' + r.telefon : ''}</td>
                         <td data-label="Typ účasti">${r.typ_ucasti || ''}</td>
