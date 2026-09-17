@@ -1019,17 +1019,24 @@
             body.innerHTML = `
               <div class="admin-responsive-table-wrap">
                 <table class="admin-responsive-table">
-                  <thead><tr><th>Jméno</th><th>ooo_id</th><th>Partner ooo_id</th><th>Kontakt</th><th>Typ účasti</th><th>Záloha</th><th>Doplatek</th><th>Účast</th></tr></thead>
+                  <thead><tr><th>Jméno</th><th>ooo_id</th><th>Kontakt</th><th>Typ účasti</th><th>Záloha</th><th>Doplatek</th><th>Účast</th></tr></thead>
                   <tbody>
-                    ${sortedRegistrations.map((r, i) => `
+                    ${sortedRegistrations.map((r, i) => {
+                      const partnerBtn = `<button type="button" class="pay-link" data-edit-partner="1" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}" data-jmeno="${(r.jmeno || '').replace(/"/g, '&quot;')}" data-partner="${(isSelfPartner(r.partner_discord, r.user_id) ? '' : (r.partner_discord || '')).replace(/"/g, '&quot;')}">${r.partner_discord && !isSelfPartner(r.partner_discord, r.user_id) ? 'Upravit' : 'Doplnit'}</button>`;
+                      const partnerNameVal = partnerName(r.partner_discord, r.user_id);
+                      const partnerOooIdVal = partnerOooId(r.partner_discord, r.user_id);
+                      return `
                       <tr${r.odhlaseno_datum ? ' class="reg-row-cancelled"' : ''}>
                         <td data-label="Jméno">${(r.ooo_id || r.user_id) ? `<button type="button" class="member-link" data-ooo="${r.ooo_id || ''}" data-discord="${r.user_id || ''}">${r.jmeno || r.email || r.ooo_id || r.user_id}</button>` : (r.jmeno || '—')}${r.nahradnik && !r.odhlaseno_datum ? ' <span class="pay-status pay-status--pending">Na čekačce</span>' : ''}${r.typ_ucasti === 'par' ? `
                           <div class="partner-display">
-                            <span>${partnerName(r.partner_discord, r.user_id) ? partnerName(r.partner_discord, r.user_id).replace(/</g, '&lt;') : 'Partner nezadán'}</span>
-                            <button type="button" class="pay-link" data-edit-partner="1" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}" data-jmeno="${(r.jmeno || '').replace(/"/g, '&quot;')}" data-partner="${(isSelfPartner(r.partner_discord, r.user_id) ? '' : (r.partner_discord || '')).replace(/"/g, '&quot;')}">${r.partner_discord && !isSelfPartner(r.partner_discord, r.user_id) ? 'Upravit' : 'Doplnit partnera'}</button>
+                            <span>${partnerNameVal ? partnerNameVal.replace(/</g, '&lt;') : 'Nezadán'}</span>
+                            ${partnerBtn}
                           </div>` : ''}</td>
-                        <td data-label="ooo_id" style="font-size:0.8rem; color:var(--text-muted); font-variant-numeric:tabular-nums;">${r.ooo_id || (r.user_id ? '—' : '')}</td>
-                        <td data-label="Partner ooo_id" style="font-size:0.8rem; color:var(--text-muted); font-variant-numeric:tabular-nums;">${r.typ_ucasti === 'par' ? (partnerOooId(r.partner_discord, r.user_id) || '—') : ''}</td>
+                        <td data-label="ooo_id" style="font-size:0.8rem; color:var(--text-muted); font-variant-numeric:tabular-nums;">${r.ooo_id || (r.user_id ? '—' : '')}${r.typ_ucasti === 'par' ? `
+                          <div class="partner-display">
+                            <span>${partnerOooIdVal || 'Nezadán'}</span>
+                            ${partnerBtn}
+                          </div>` : ''}</td>
                         <td data-label="Kontakt">${r.email || ''}${r.telefon ? ' · ' + r.telefon : ''}</td>
                         <td data-label="Typ účasti">${r.typ_ucasti || ''}</td>
                         <td data-label="Záloha">${payCell({
@@ -1056,7 +1063,7 @@
                           ` : `<button class="btn btn-outline btn-sm" data-cancel="1" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}" data-jmeno="${(r.jmeno || r.email || r.ooo_id || r.user_id || '').replace(/"/g, '&quot;')}" data-deposit="${(r.deposit_status || '').toUpperCase() === 'OK' ? (r.deposit || 0) : 0}" data-doplatek="${(r.doplatek_status || '').toUpperCase() === 'OK' ? (r.doplatek || 0) : 0}">Zrušit účast</button>`)}
                         </td>
                       </tr>
-                    `).join('')}
+                    `; }).join('')}
                   </tbody>
                 </table>
               </div>
