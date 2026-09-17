@@ -73,6 +73,18 @@
     .prubeh-fl-chip.pending { background: var(--warning-bg); color: var(--warning); }
     .prubeh-fl-empty { font-size: 0.78rem; color: var(--text-muted); font-style: italic; }
 
+    /* Stav Discord rolí (2026-09-17) - dvě malé "čtverečkové" značky Z/Ú hned vedle jména
+       v chipu, ne samostatný sloupec - ať jde vidět bez extra kliku. */
+    .prubeh-role-badges { display: inline-flex; gap: 2px; margin-left: 2px; }
+    .prubeh-role-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 15px; height: 15px; border-radius: 4px; font-size: 0.62rem; font-weight: 800;
+      background: rgba(0,0,0,0.06);
+    }
+    .prubeh-role-badge.ok { background: var(--success); color: #fff; }
+    .prubeh-role-badge.missing { background: rgba(0,0,0,0.08); color: var(--text-muted); }
+    .prubeh-partner-label { font-weight: 600; opacity: 0.85; margin-left: 2px; }
+
     .prubeh-fl-msgs { list-style: none; margin: 6px 0 0; padding: 10px 0 0; border-top: 1px dashed var(--border); display: flex; flex-direction: column; gap: 7px; }
     .prubeh-fl-msg { display: flex; align-items: center; gap: 7px; font-size: 0.78rem; }
     .prubeh-fl-msg .icon { width: 16px; height: 16px; flex-shrink: 0; display: flex; }
@@ -147,6 +159,7 @@
             <select id="event-select" class="form-control"><option value="">— vyber akci —</option></select>
           </div>
           <p class="prubeh-hint">Historie zpráv (dole u každé osoby) se zaznamenává od 14. 9. 2026 — u starších zpráv se zpětně nedá zobrazit, uvidíš jen aktuální stav.</p>
+          <p class="prubeh-hint">Vedle jména: <span class="prubeh-role-badges"><span class="prubeh-role-badge ok">Z</span></span> zájemce, <span class="prubeh-role-badges"><span class="prubeh-role-badge ok">Ú</span></span> účastník na Discordu (zeleně = má, šedě = ještě nemá) — jen čtení aktuálního stavu, role přiděluje bot na RPi.</p>
 
           <div id="prubeh-body"></div>
         </div>
@@ -244,8 +257,26 @@
       return candidates.find(k => stepKeys.includes(k)) || null;
     }
 
+    // Stav Discord rolí (2026-09-17, na žádost - "ať je vidět kdo už dostal jakou roli,
+    // třeba já na tohle už zapomněl") - Z = zájemce, Ú = účastník, zelená = má, šedá =
+    // nemá (nebo se nedá zjistit - `null`, viz panel-event-timeline). Jen ČTE stav z
+    // members, nic nepřiděluje - to dělá výhradně discord-sync.py na RPi.
+    function roleBadges(roles, prefix) {
+      if (!roles) return '';
+      const z = roles.zajemce ? 'ok' : 'missing';
+      const u = roles.ucastnik ? 'ok' : 'missing';
+      return `<span class="prubeh-role-badges" title="${prefix}zájemce: ${roles.zajemce ? 'ano' : 'ne'} · ${prefix}účastník: ${roles.ucastnik ? 'ano' : 'ne'}"><span class="prubeh-role-badge ${z}">Z</span><span class="prubeh-role-badge ${u}">Ú</span></span>`;
+    }
     function personLabel(p) {
-      return escapeHtml(p.jmeno) + (p.typ_ucasti === 'par' ? ' (pár)' : '');
+      let html = escapeHtml(p.jmeno) + (p.typ_ucasti === 'par' ? ' (pár)' : '');
+      html += roleBadges(p.roles, '');
+      if (p.partner) {
+        html += `<span class="prubeh-partner-label"> + ${escapeHtml(p.partner.jmeno)}</span>`;
+        html += p.partner.no_discord
+          ? '<span class="prubeh-role-badges" title="Partner bez Discord vazby - role se nedá zjistit"><span class="prubeh-role-badge missing">?</span></span>'
+          : roleBadges(p.partner.roles, 'partner ');
+      }
+      return html;
     }
 
     function renderMsgList(msgs) {
