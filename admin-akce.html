@@ -71,12 +71,12 @@
     .pay-icon-btn { flex-shrink: 0; width: 30px; height: 30px; border-radius: 8px; border: none; background: var(--primary); color: #fff; cursor: pointer; font-size: 0.85rem; font-weight: 700; line-height: 1; display: flex; align-items: center; justify-content: center; transition: background .15s, transform .1s; }
     .pay-icon-btn:hover { background: var(--primary-dark); }
     .pay-icon-btn:active { transform: scale(0.94); }
-    /* Ruční doplnění partnera u páru (2026-09-17) - malé okénko rovnou pod jménem, ne
-       schované za "upravit" odkazem, ať to jde vždycky rovnou zkontrolovat/opravit. */
-    .partner-edit-wrap { display: flex; gap: 6px; margin-top: 6px; align-items: flex-start; }
-    .partner-edit-wrap .autocomplete-wrap { flex: 1; min-width: 0; }
-    .partner-edit-wrap .form-control { font-size: 0.78rem; padding: 5px 8px; }
-    .partner-edit-wrap .pay-icon-btn { width: 26px; height: 26px; font-size: 0.75rem; }
+    /* Ruční doplnění/oprava partnera u páru (2026-09-17, druhá verze - napoprvé natvrdo
+       vidět okénko na řádku bylo "krajně nepřehledné"). Jen jméno + tlačítko, editace
+       přes modál (stejné CSS jako member-modal, .member-modal* z assets/css/style.css). */
+    .partner-display { margin-top: 4px; font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .partner-display .pay-link { font-size: 0.78rem; }
+    .partner-id-hint { margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--border); font-size: 0.72rem; color: var(--text-muted); }
     /* Sloupce Jméno/Účast v tabulce přihlášek mají tlačítka/odkazy, ne jen text - v
        responzivním (kartovém) módu na mobilu potřebují trochu prostoru navíc pod
        popiskem, ať tlačítko nekoliduje s řádkem nad sebou. */
@@ -426,9 +426,8 @@
 
     // Ruční doplnění/oprava partnera u páru (2026-09-17, na žádost - "pokud to někdo
     // neudělal už při přihlášení... zase stejná funkce jako je na webu") - stejný
-    // autocomplete widget jako na detail-akce.html při registraci, jen s vlastním
-    // dropdown elementem na řádek (v tabulce může být víc párů najednou). Načítá se
-    // nezávisle na organizátorech (ti jen pro Radu), tohle smí i Spolupracovník/organizátor.
+    // autocomplete widget jako na detail-akce.html při registraci. Načítá se nezávisle na
+    // organizátorech (ti jen pro Radu), tohle smí i Spolupracovník/organizátor.
     let discordMembersForPartner = [];
     function loadMembersForPartner() {
       return fetch(API_BASE + '/api/members')
@@ -441,6 +440,96 @@
           }));
         })
         .catch(() => { discordMembersForPartner = []; });
+    }
+
+    // Modál pro editaci partnera (2026-09-17, verze 2 - na žádost "políčko pokud je
+    // vyplněno bych nenechával k editaci, ale dal tlačítko editovat, čímž se otevře malý
+    // modál"). Jeden sdílený modál pro celou stránku (stejné CSS jako member-modal.js),
+    // vytvořený líně při prvním otevření - kontext (event/ooo/user) se drží v
+    // partnerModalCtx mezi otevřením a potvrzením.
+    let partnerModalCtx = null;
+    function ensurePartnerModal() {
+      if (document.getElementById('partner-modal-overlay')) return;
+      const overlay = document.createElement('div');
+      overlay.id = 'partner-modal-overlay';
+      overlay.className = 'member-modal-overlay hidden';
+      overlay.innerHTML = `
+        <div class="member-modal" style="max-width:420px;">
+          <button type="button" class="member-modal-close" id="partner-modal-close" aria-label="Zavřít">&times;</button>
+          <h3 style="margin-top:0;">Partner — <span id="partner-modal-jmeno"></span></h3>
+          <div class="autocomplete-wrap">
+            <input type="text" class="form-control" id="partner-modal-input" placeholder="Začni psát Discord jméno…">
+            <div class="autocomplete-dropdown" id="partner-modal-dropdown"></div>
+          </div>
+          <p class="form-hint">Vyber z nabídky, nebo nech okénko prázdné a potvrď pro smazání partnera.</p>
+          <p class="status-panel error hidden" id="partner-modal-error"></p>
+          <div style="display:flex; gap:8px; margin-top:14px;">
+            <button type="button" class="btn btn-primary" id="partner-modal-confirm">Potvrdit</button>
+            <button type="button" class="btn btn-outline" id="partner-modal-cancel">Zrušit</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      overlay.addEventListener('click', e => { if (e.target === overlay) closePartnerModal(); });
+      document.getElementById('partner-modal-close').addEventListener('click', closePartnerModal);
+      document.getElementById('partner-modal-cancel').addEventListener('click', closePartnerModal);
+      document.addEventListener('keydown', e => { if (e.key === 'Escape' && !overlay.classList.contains('hidden')) closePartnerModal(); });
+
+      const input = document.getElementById('partner-modal-input');
+      const dropdown = document.getElementById('partner-modal-dropdown');
+      input.addEventListener('input', function () {
+        const q = this.value.toLowerCase();
+        if (q.length < 2) { dropdown.style.display = 'none'; return; }
+        const matches = discordMembersForPartner.filter(m =>
+          (m.userId || '').toLowerCase().includes(q) || m.displayName.toLowerCase().includes(q) || m.username.toLowerCase().includes(q)
+        ).slice(0, 8);
+        dropdown.innerHTML = matches.map(m =>
+          `<div class="autocomplete-item" data-user-id="${m.userId}" data-display-name="${m.displayName}" data-username="${m.username}">
+             <strong>${m.displayName}</strong><small>${m.username}</small>
+           </div>`
+        ).join('');
+        dropdown.style.display = matches.length ? 'block' : 'none';
+      });
+      dropdown.addEventListener('click', function (e) {
+        const item = e.target.closest('.autocomplete-item');
+        if (!item) return;
+        input.value = `${item.dataset.displayName} | ${item.dataset.username} | ${item.dataset.userId}`;
+        dropdown.style.display = 'none';
+      });
+      document.getElementById('partner-modal-confirm').addEventListener('click', () => {
+        if (!partnerModalCtx) return;
+        const errorEl = document.getElementById('partner-modal-error');
+        errorEl.classList.add('hidden');
+        fetch(API_BASE + '/api/panel-set-partner-discord', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...identityPayload(), event_id: partnerModalCtx.eventId,
+            ooo_id: partnerModalCtx.ooo || undefined, user_id: partnerModalCtx.user || undefined,
+            partner_discord: input.value.trim(),
+          }),
+        })
+          .then(r => r.json())
+          .then(res => {
+            if (!res.ok) { errorEl.textContent = 'Chyba: ' + (res.error || 'neznámá'); errorEl.classList.remove('hidden'); return; }
+            const eventId = partnerModalCtx.eventId;
+            closePartnerModal();
+            loadRegistrations(eventId);
+          })
+          .catch(err => { errorEl.textContent = 'Chyba: ' + err.message; errorEl.classList.remove('hidden'); });
+      });
+    }
+    function openPartnerModal(eventId, ooo, user, jmeno, currentPartner) {
+      ensurePartnerModal();
+      partnerModalCtx = { eventId, ooo, user };
+      document.getElementById('partner-modal-jmeno').textContent = jmeno || '';
+      document.getElementById('partner-modal-input').value = currentPartner || '';
+      document.getElementById('partner-modal-dropdown').style.display = 'none';
+      document.getElementById('partner-modal-error').classList.add('hidden');
+      document.getElementById('partner-modal-overlay').classList.remove('hidden');
+    }
+    function closePartnerModal() {
+      const overlay = document.getElementById('partner-modal-overlay');
+      if (overlay) overlay.classList.add('hidden');
+      partnerModalCtx = null;
     }
 
     function renderOrganizatoriChips() {
@@ -817,6 +906,20 @@
       return (status || '').toUpperCase() === 'OK' ? '<span class="status-ok">OK</span>' : `<span class="status-pending">${status || '—'}</span>`;
     }
 
+    // Rozklad "Jméno | username | discord_id" (2026-09-17) - stejný formát, jaký zapisuje
+    // autocomplete na webu i tenhle v modálu níž. `partnerName` pro čitelné zobrazení,
+    // `partnerId` pro kontrolní součet vedle ooo_id ("dá se poznat, jestli je to správně").
+    function partnerName(partnerDiscord) {
+      if (!partnerDiscord) return null;
+      const parts = partnerDiscord.split('|');
+      return (parts[0] || '').trim() || null;
+    }
+    function partnerId(partnerDiscord) {
+      if (!partnerDiscord) return null;
+      const parts = partnerDiscord.split('|');
+      return parts.length >= 3 ? (parts[2] || '').trim() || null : null;
+    }
+
     // Jedna platební buňka (záloha/doplatek) v přehledu přihlášek (2026-08-25, verze 5 -
     // skutečný přepínač zaplaceno/nezaplaceno místo textového odkazu "Zrušit", co si
     // šlo splést se "Zrušit účast" ve stejném řádku) - částka nahoře, pod tím přepínač
@@ -889,14 +992,11 @@
                     ${sortedRegistrations.map((r, i) => `
                       <tr${r.odhlaseno_datum ? ' class="reg-row-cancelled"' : ''}>
                         <td data-label="Jméno">${(r.ooo_id || r.user_id) ? `<button type="button" class="member-link" data-ooo="${r.ooo_id || ''}" data-discord="${r.user_id || ''}">${r.jmeno || r.email || r.ooo_id || r.user_id}</button>` : (r.jmeno || '—')}${r.nahradnik && !r.odhlaseno_datum ? ' <span class="pay-status pay-status--pending">Na čekačce</span>' : ''}${r.typ_ucasti === 'par' ? `
-                          <div class="partner-edit-wrap">
-                            <div class="autocomplete-wrap">
-                              <input type="text" class="form-control partner-input" value="${(r.partner_discord || '').replace(/"/g, '&quot;')}" placeholder="Discord jméno partnera…" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}" data-partner-idx="${i}">
-                              <div class="autocomplete-dropdown" id="partner-dropdown-${i}"></div>
-                            </div>
-                            <button type="button" class="pay-icon-btn" data-save-partner="1" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}" data-partner-idx="${i}" title="Uložit partnera">✓</button>
+                          <div class="partner-display">
+                            <span>${partnerName(r.partner_discord) ? partnerName(r.partner_discord).replace(/</g, '&lt;') : 'Partner nezadán'}</span>
+                            <button type="button" class="pay-link" data-edit-partner="1" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}" data-jmeno="${(r.jmeno || '').replace(/"/g, '&quot;')}" data-partner="${(r.partner_discord || '').replace(/"/g, '&quot;')}">${r.partner_discord ? 'Upravit' : 'Doplnit partnera'}</button>
                           </div>` : ''}</td>
-                        <td data-label="ooo_id" style="font-size:0.8rem; color:var(--text-muted); font-variant-numeric:tabular-nums;">${r.ooo_id || (r.user_id ? '—' : '')}</td>
+                        <td data-label="ooo_id" style="font-size:0.8rem; color:var(--text-muted); font-variant-numeric:tabular-nums;">${r.ooo_id || (r.user_id ? '—' : '')}${r.typ_ucasti === 'par' ? `<div class="partner-id-hint">partner ID:<br>${partnerId(r.partner_discord) || '—'}</div>` : ''}</td>
                         <td data-label="Kontakt">${r.email || ''}${r.telefon ? ' · ' + r.telefon : ''}</td>
                         <td data-label="Typ účasti">${r.typ_ucasti || ''}</td>
                         <td data-label="Záloha">${payCell({
@@ -929,48 +1029,11 @@
               </div>
             `;
             body.querySelectorAll('.member-link[data-ooo]').forEach(btn => btn.addEventListener('click', () => openMemberModal(btn.dataset.ooo, btn.dataset.discord)));
-            // Ruční doplnění/oprava partnera u páru (2026-09-17) - stejný autocomplete
-            // widget jako na webu při registraci (detail-akce.html), jen jeden dropdown na
-            // řádek (v tabulce může být víc párů najednou).
-            body.querySelectorAll('.partner-input').forEach(input => {
-              const dropdown = document.getElementById('partner-dropdown-' + input.dataset.partnerIdx);
-              input.addEventListener('input', function () {
-                const q = this.value.toLowerCase();
-                if (q.length < 2) { dropdown.style.display = 'none'; return; }
-                const matches = discordMembersForPartner.filter(m =>
-                  (m.userId || '').toLowerCase().includes(q) || m.displayName.toLowerCase().includes(q) || m.username.toLowerCase().includes(q)
-                ).slice(0, 8);
-                dropdown.innerHTML = matches.map(m =>
-                  `<div class="autocomplete-item" data-user-id="${m.userId}" data-display-name="${m.displayName}" data-username="${m.username}">
-                     <strong>${m.displayName}</strong><small>${m.username}</small>
-                   </div>`
-                ).join('');
-                dropdown.style.display = matches.length ? 'block' : 'none';
-              });
-              dropdown.addEventListener('click', function (e) {
-                const item = e.target.closest('.autocomplete-item');
-                if (!item) return;
-                input.value = `${item.dataset.displayName} | ${item.dataset.username} | ${item.dataset.userId}`;
-                dropdown.style.display = 'none';
-              });
-              input.addEventListener('blur', () => setTimeout(() => { dropdown.style.display = 'none'; }, 150));
-            });
-            body.querySelectorAll('[data-save-partner]').forEach(btn => btn.addEventListener('click', () => {
-              const input = body.querySelector(`.partner-input[data-partner-idx="${btn.dataset.partnerIdx}"]`);
-              fetch(API_BASE + '/api/panel-set-partner-discord', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  ...identityPayload(), event_id: eventId,
-                  ooo_id: btn.dataset.ooo || undefined, user_id: btn.dataset.user || undefined,
-                  partner_discord: input.value.trim(),
-                }),
-              })
-                .then(r => r.json())
-                .then(res => {
-                  if (!res.ok) { alert('Chyba: ' + (res.error || 'neznámá')); return; }
-                  loadRegistrations(eventId);
-                })
-                .catch(err => alert('Chyba: ' + err.message));
+            // Ruční doplnění/oprava partnera u páru (2026-09-17, verze 2 - natvrdo
+            // viditelné okénko na řádku bylo "krajně nepřehledné") - jen jméno + tlačítko,
+            // editace přes sdílený modál (jeden pro celou stránku, viz ensurePartnerModal).
+            body.querySelectorAll('[data-edit-partner]').forEach(btn => btn.addEventListener('click', () => {
+              openPartnerModal(eventId, btn.dataset.ooo, btn.dataset.user, btn.dataset.jmeno, btn.dataset.partner);
             }));
             // Povýšit z čekačky (2026-09-13, na žádost) - kapacita se tu záměrně
             // nekontroluje, admin může povýšit i nad kapacitu, pokud chce.
