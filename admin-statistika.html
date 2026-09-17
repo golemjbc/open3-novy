@@ -46,20 +46,46 @@
     .stat-section-title { font-size: 1rem; font-weight: 800; margin: 26px 0 12px; }
     .stat-section-title:first-child { margin-top: 0; }
     .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
-    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 16px 18px; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; text-align: left;
+      width: 100%; font: inherit; color: inherit;
+    }
+    .stat-card:hover { border-color: var(--primary); box-shadow: 0 2px 10px rgba(10,16,69,0.08); }
     .stat-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
     .stat-card-title { font-weight: 700; font-size: 1rem; }
     .stat-card-badge { font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--info-bg); color: var(--info); text-transform: uppercase; letter-spacing: 0.02em; }
     .stat-numbers { display: flex; gap: 18px; margin: 8px 0 12px; }
     .stat-number { font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--primary); }
     .stat-number-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
-    .stat-chart-wrap { height: 140px; margin-bottom: 10px; }
+    .stat-chart-wrap { height: 140px; margin-bottom: 4px; pointer-events: none; }
+    .stat-card-hint { font-size: 0.72rem; color: var(--text-muted); text-align: right; }
 
-    .stat-identified { list-style: none; margin: 10px 0 0; padding: 10px 0 0; border-top: 1px dashed var(--border); display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; }
-    .stat-identified li { font-size: 0.78rem; display: flex; justify-content: space-between; gap: 8px; }
-    .stat-identified .name { font-weight: 600; }
-    .stat-identified .ts { color: var(--text-muted); font-size: 0.72rem; flex-shrink: 0; }
-    .stat-anon-note { font-size: 0.74rem; color: var(--text-muted); font-style: italic; margin-top: 6px; }
+    /* Detailní modál na kliknutí na kartu (2026-09-17, na žádost - "dokonalá statistika
+       webu"). Tabulka lidí místo dřívějšího plochého seznamu na kartě - seskupeno podle
+       osoby (počet návštěv, ne řádků), plus příznak registrace u akcí. */
+    .stat-modal-overlay {
+      position: fixed; inset: 0; background: rgba(10,16,69,0.55); z-index: 1000;
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .stat-modal {
+      background: var(--surface); border-radius: var(--radius); max-width: 640px; width: 100%;
+      max-height: 88vh; overflow-y: auto; padding: 26px 28px; position: relative;
+    }
+    .stat-modal-close {
+      position: absolute; top: 12px; right: 14px; background: none; border: none; font-size: 1.7rem;
+      line-height: 1; cursor: pointer; color: var(--text-muted); padding: 4px;
+    }
+    .stat-modal-close:hover { color: var(--text); }
+    .stat-modal-chart-wrap { height: 220px; margin: 18px 0 6px; }
+    .stat-modal-table-wrap { max-height: 320px; overflow-y: auto; margin-top: 14px; }
+    .stat-modal-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .stat-modal-table th, .stat-modal-table td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--border); }
+    .stat-modal-table th { font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); }
+    .stat-badge-registered { font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--success-bg); color: var(--success); white-space: nowrap; }
+    .stat-badge-unregistered { font-size: 0.72rem; color: var(--text-muted); }
+    .stat-modal-anon-note { font-size: 0.8rem; color: var(--text-muted); font-style: italic; margin-top: 14px; }
+    .stat-modal-hint { font-size: 0.85rem; color: var(--text-muted); font-style: italic; margin-top: 14px; }
   </style>
 </head>
 <body>
@@ -140,6 +166,13 @@
     </div>
   </section>
 
+  <div id="stat-modal-overlay" class="stat-modal-overlay hidden">
+    <div class="stat-modal">
+      <button type="button" class="stat-modal-close" id="stat-modal-close" aria-label="Zavřít">&times;</button>
+      <div id="stat-modal-body"></div>
+    </div>
+  </div>
+
   <footer class="site-footer">
     <div class="container">
       <div class="footer-bottom">© 2026 OOO Community z.s. — Design: Adam</div>
@@ -186,6 +219,7 @@
     revealCheckbox.addEventListener('change', () => {
       document.getElementById('stat-toggle-emoji').textContent = revealCheckbox.checked ? '😎' : '🙈';
       renderAll();
+      if (!modalOverlay.classList.contains('hidden') && currentModalPageKey) openStatModal(currentModalPageKey);
     });
 
     function escapeHtml(str) {
@@ -204,11 +238,8 @@
     let currentPages = [];
 
     function renderCard(p) {
-      const identifiedHtml = revealCheckbox.checked
-        ? `<ul class="stat-identified">${p.identified.map(i => `<li><span class="name">${escapeHtml(i.label)}</span><span class="ts">${formatTs(i.ts)}</span></li>`).join('')}</ul>${p.anonymous_count ? `<p class="stat-anon-note">+ ${p.anonymous_count} anonymních zobrazení (nedá se zpětně zjistit kdo)</p>` : ''}`
-        : '';
       return `
-        <div class="stat-card">
+        <button type="button" class="stat-card" data-page-key="${escapeHtml(p.page_key)}">
           <div class="stat-card-head">
             <div class="stat-card-title">${escapeHtml(p.label)}</div>
             ${p.is_event ? '<span class="stat-card-badge">akce</span>' : ''}
@@ -216,22 +247,19 @@
           <div class="stat-numbers">
             <div><div class="stat-number">${p.total}</div><div class="stat-number-label">zobrazení</div></div>
             <div><div class="stat-number">${p.unique}</div><div class="stat-number-label">odhad. lidí</div></div>
-            ${revealCheckbox.checked ? `<div><div class="stat-number">${p.identified.length}</div><div class="stat-number-label">identifikováno</div></div>` : ''}
+            ${revealCheckbox.checked ? `<div><div class="stat-number">${p.identified_unique_count}</div><div class="stat-number-label">identifikováno</div></div>` : ''}
           </div>
           <div class="stat-chart-wrap"><canvas id="chart-${cssEscape(p.page_key)}"></canvas></div>
-          ${identifiedHtml}
-        </div>`;
+          <div class="stat-card-hint">Klikni pro detail →</div>
+        </button>`;
     }
 
     // Klíče typu "event:C26-8" obsahují dvojtečku - jako id atributu je to technicky
     // platné, ale pro čitelnost/bezpečnost v querySelectoru radši nahradit.
     function cssEscape(key) { return key.replace(/[^A-Za-z0-9_-]/g, '_'); }
 
-    function drawChart(p) {
-      const canvas = document.getElementById(`chart-${cssEscape(p.page_key)}`);
-      if (!canvas) return;
-      if (charts[p.page_key]) { charts[p.page_key].destroy(); }
-      charts[p.page_key] = new Chart(canvas, {
+    function chartConfig(p) {
+      return {
         type: 'line',
         data: {
           labels: p.daily.map(d => formatChartDate(d.date)),
@@ -249,7 +277,14 @@
             y: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } } },
           },
         },
-      });
+      };
+    }
+
+    function drawChart(p) {
+      const canvas = document.getElementById(`chart-${cssEscape(p.page_key)}`);
+      if (!canvas) return;
+      if (charts[p.page_key]) { charts[p.page_key].destroy(); }
+      charts[p.page_key] = new Chart(canvas, chartConfig(p));
     }
 
     function renderAll() {
@@ -267,6 +302,80 @@
       if (eventPages.length) html += `<div class="stat-section-title">Jednotlivé akce</div><div class="stat-grid">${eventPages.map(renderCard).join('')}</div>`;
       statBody.innerHTML = html;
       currentPages.forEach(drawChart);
+      statBody.querySelectorAll('.stat-card').forEach(card => {
+        card.addEventListener('click', () => openStatModal(card.dataset.pageKey));
+      });
+    }
+
+    // Detailní modál na kliknutí na kartu (2026-09-17, na žádost - "dokonalá statistika
+    // webu... posčítat souhrny lidí kdo tam kolikrát byl a dát příznak lidem co se
+    // přihlásili"). `identified_people` už je seskupené podle osoby (ne podle návštěvy) -
+    // viz panel-page-stats. Tabulka se zobrazí, jen když je zapnuté "zobrazit jména" -
+    // jinak jen souhrnná čísla + graf, stejná anonymita jako na kartě.
+    const modalOverlay = document.getElementById('stat-modal-overlay');
+    const modalBody = document.getElementById('stat-modal-body');
+    let modalChart = null;
+    let currentModalPageKey = null;
+
+    function closeStatModal() {
+      modalOverlay.classList.add('hidden');
+      currentModalPageKey = null;
+      if (modalChart) { modalChart.destroy(); modalChart = null; }
+    }
+    document.getElementById('stat-modal-close').addEventListener('click', closeStatModal);
+    modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closeStatModal(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !modalOverlay.classList.contains('hidden')) closeStatModal(); });
+
+    function personRow(person, isEvent) {
+      let badge = '';
+      if (isEvent) {
+        badge = person.registered === true ? '<span class="stat-badge-registered">✅ přihlášen/a</span>'
+          : person.registered === false ? '<span class="stat-badge-unregistered">nepřihlášen/a</span>'
+          : '<span class="stat-badge-unregistered">?</span>';
+      }
+      return `<tr>
+        <td>${escapeHtml(person.label)}</td>
+        <td>${person.visits}×</td>
+        <td>${formatTs(person.last_ts)}</td>
+        ${isEvent ? `<td>${badge}</td>` : ''}
+      </tr>`;
+    }
+
+    function openStatModal(pageKey) {
+      const p = currentPages.find(x => x.page_key === pageKey);
+      if (!p) return;
+      currentModalPageKey = pageKey;
+
+      const peopleHtml = revealCheckbox.checked
+        ? (p.identified_people.length
+          ? `<div class="stat-modal-table-wrap"><table class="stat-modal-table">
+              <thead><tr><th>Jméno</th><th>Návštěv</th><th>Poslední</th>${p.is_event ? '<th>Přihláška</th>' : ''}</tr></thead>
+              <tbody>${p.identified_people.map(person => personRow(person, p.is_event)).join('')}</tbody>
+            </table></div>`
+          : '<p class="stat-modal-hint">Žádná identifikovaná návštěva za tohle období.</p>')
+        : '<p class="stat-modal-hint">🙈 Zapni "zobrazit jména" nahoře pro seznam identifikovaných lidí.</p>';
+
+      const anonNote = p.anonymous_count
+        ? `<p class="stat-modal-anon-note">+ ${p.anonymous_count} anonymních zobrazení, odhadem ${p.anonymous_unique} lidí (nedá se zpětně zjistit kdo).</p>`
+        : '';
+
+      modalBody.innerHTML = `
+        <div class="stat-card-head" style="margin-bottom:6px;">
+          <div class="stat-card-title" style="font-size:1.2rem;">${escapeHtml(p.label)}</div>
+          ${p.is_event ? '<span class="stat-card-badge">akce</span>' : ''}
+        </div>
+        <div class="stat-numbers">
+          <div><div class="stat-number">${p.total}</div><div class="stat-number-label">zobrazení</div></div>
+          <div><div class="stat-number">${p.unique}</div><div class="stat-number-label">odhad. lidí</div></div>
+          <div><div class="stat-number">${p.identified_unique_count}</div><div class="stat-number-label">identifikováno</div></div>
+        </div>
+        <div class="stat-modal-chart-wrap"><canvas id="stat-modal-chart"></canvas></div>
+        ${peopleHtml}
+        ${anonNote}
+      `;
+      modalOverlay.classList.remove('hidden');
+      if (modalChart) modalChart.destroy();
+      modalChart = new Chart(document.getElementById('stat-modal-chart'), chartConfig(p));
     }
 
     function loadStats() {
