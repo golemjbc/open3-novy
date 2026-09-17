@@ -35,12 +35,8 @@
       border: 1.5px solid var(--border); background: var(--surface); cursor: pointer; color: var(--text-muted);
     }
     .stat-preset-btn.active { border-color: var(--primary); color: var(--primary); background: var(--bg-alt); }
-    .stat-range { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; }
+    .stat-range { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; margin-left: auto; }
     .stat-range input { padding: 5px 8px; border-radius: 8px; border: 1.5px solid var(--border); font-size: 0.82rem; }
-    .stat-toggle { display: inline-flex; align-items: center; margin-left: auto; cursor: pointer; user-select: none; }
-    .stat-toggle input { display: none; }
-    .stat-toggle span { font-size: 1.35rem; line-height: 1; opacity: 0.8; transition: opacity 0.15s, transform 0.15s; }
-    .stat-toggle:hover span { opacity: 1; transform: scale(1.08); }
     .stat-summary-line { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 18px; }
 
     .stat-section-title { font-size: 1rem; font-weight: 800; margin: 26px 0 12px; }
@@ -78,7 +74,18 @@
     }
     .stat-modal-close:hover { color: var(--text); }
     .stat-modal-chart-wrap { height: 220px; margin: 18px 0 6px; }
-    .stat-modal-table-wrap { max-height: 320px; overflow-y: auto; margin-top: 14px; }
+
+    /* Přepínač pohledu na lidi (2026-09-17, na žádost - slučování podle osoby a řazení
+       podle času jsou dvě různé věci, ne jedna tabulka se sloupcem navíc: "podle návštěv"
+       je součet za osobu (bez data - u součtu nedává datum smysl), "podle času" je syrový
+       chronologický log (bez počtu - u jedné návštěvy nedává počet smysl). */
+    .stat-view-toggle { display: flex; gap: 6px; margin-top: 18px; }
+    .stat-view-btn {
+      font-size: 0.8rem; font-weight: 600; padding: 6px 12px; border-radius: 999px;
+      border: 1.5px solid var(--border); background: var(--surface); cursor: pointer; color: var(--text-muted);
+    }
+    .stat-view-btn.active { border-color: var(--primary); color: var(--primary); background: var(--bg-alt); }
+    .stat-modal-table-wrap { max-height: 320px; overflow-y: auto; margin-top: 10px; }
     .stat-modal-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
     .stat-modal-table th, .stat-modal-table td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--border); }
     .stat-modal-table th { font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); }
@@ -156,10 +163,6 @@
             od <input type="date" id="stat-from"> do <input type="date" id="stat-to">
             <button type="button" class="btn btn-outline btn-sm" id="stat-apply">Použít</button>
           </div>
-          <label class="stat-toggle" title="Zobrazit jména (výchozí stav je anonymní)">
-            <input type="checkbox" id="stat-reveal-names">
-            <span id="stat-toggle-emoji">🙈</span>
-          </label>
         </div>
 
         <p class="stat-summary-line" id="stat-summary"></p>
@@ -194,7 +197,6 @@
     const statSummary = document.getElementById('stat-summary');
     const fromInput = document.getElementById('stat-from');
     const toInput = document.getElementById('stat-to');
-    const revealCheckbox = document.getElementById('stat-reveal-names');
     const charts = {}; // page_key -> Chart instance, ať se při překreslení nekupí přes sebe
 
     function toDateInputValue(d) { return d.toISOString().slice(0, 10); }
@@ -217,11 +219,6 @@
     document.getElementById('stat-apply').addEventListener('click', () => {
       document.querySelectorAll('.stat-preset-btn').forEach(b => b.classList.remove('active'));
       loadStats();
-    });
-    revealCheckbox.addEventListener('change', () => {
-      document.getElementById('stat-toggle-emoji').textContent = revealCheckbox.checked ? '😎' : '🙈';
-      renderAll();
-      if (!modalOverlay.classList.contains('hidden') && currentModalPageKey) openStatModal(currentModalPageKey);
     });
 
     function escapeHtml(str) {
@@ -247,9 +244,8 @@
             ${p.is_event ? '<span class="stat-card-badge">akce</span>' : ''}
           </div>
           <div class="stat-numbers">
-            <div><div class="stat-number">${p.total}</div><div class="stat-number-label">zobrazení</div></div>
-            <div><div class="stat-number">${p.unique}</div><div class="stat-number-label">odhad. lidí</div></div>
-            ${revealCheckbox.checked ? `<div><div class="stat-number">${p.identified_unique_count}</div><div class="stat-number-label">identifikováno</div></div>` : ''}
+            <div><div class="stat-number">${p.unique}</div><div class="stat-number-label">unikátní lidé</div></div>
+            ${p.is_event ? `<div><div class="stat-number">${p.registered_count}</div><div class="stat-number-label">přihlášeno</div></div>` : ''}
           </div>
           <div class="stat-chart-wrap"><canvas id="chart-${cssEscape(p.page_key)}"></canvas></div>
           <div class="stat-card-hint">Klikni pro detail →</div>
@@ -260,24 +256,27 @@
     // platné, ale pro čitelnost/bezpečnost v querySelectoru radši nahradit.
     function cssEscape(key) { return key.replace(/[^A-Za-z0-9_-]/g, '_'); }
 
+    // Graf (2026-09-17, na žádost - "přidej počet přihlášených lidí ať je vidět jak to na
+    // sobě závisí"): druhá osa Y pro kumulativní přihlášky na akci - jiný řád velikosti a
+    // jiná povaha (roste jen nahoru, celoživotní součet za akci) než denní počet
+    // unikátních návštěv, proto zvlášť napravo, ne stejná škála.
     function chartConfig(p) {
+      const datasets = [
+        { label: 'Unikátní lidé / den', data: p.daily.map(d => d.unique), borderColor: '#0c5f9e', backgroundColor: 'rgba(12,95,158,0.12)', fill: true, tension: 0.25, pointRadius: 2, yAxisID: 'y' },
+      ];
+      if (p.is_event) {
+        datasets.push({ label: 'Přihlášeno celkem (kumulativně)', data: p.daily.map(d => d.registered_cumulative), borderColor: '#af3b6e', backgroundColor: 'transparent', borderDash: [5, 3], tension: 0.15, pointRadius: 2, yAxisID: 'y1' });
+      }
+      const scales = { x: { ticks: { font: { size: 10 } } }, y: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } } } };
+      if (p.is_event) scales.y1 = { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { precision: 0, font: { size: 10 } } };
       return {
         type: 'line',
-        data: {
-          labels: p.daily.map(d => formatChartDate(d.date)),
-          datasets: [
-            { label: 'Zobrazení', data: p.daily.map(d => d.total), borderColor: '#af3b6e', backgroundColor: 'rgba(175,59,110,0.12)', fill: true, tension: 0.25, pointRadius: 2 },
-            { label: 'Odhad lidí', data: p.daily.map(d => d.unique), borderColor: '#0c5f9e', backgroundColor: 'rgba(12,95,158,0.08)', fill: true, tension: 0.25, pointRadius: 2 },
-          ],
-        },
+        data: { labels: p.daily.map(d => formatChartDate(d.date)), datasets },
         options: {
           responsive: true, maintainAspectRatio: false,
           interaction: { mode: 'index', intersect: false },
           plugins: { legend: { display: true, labels: { boxWidth: 10, font: { size: 10 } } } },
-          scales: {
-            x: { ticks: { font: { size: 10 } } },
-            y: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } } },
-          },
+          scales,
         },
       };
     }
@@ -309,21 +308,21 @@
       });
     }
 
-    // Detailní modál na kliknutí na kartu (2026-09-17, na žádost - "dokonalá statistika
-    // webu... posčítat souhrny lidí kdo tam kolikrát byl a dát příznak lidem co se
-    // přihlásili"). `identified_people` už je seskupené podle osoby (ne podle návštěvy) -
-    // viz panel-page-stats. Tabulka se zobrazí, jen když je zapnuté "zobrazit jména" -
-    // jinak jen souhrnná čísla + graf, stejná anonymita jako na kartě.
+    // Detailní modál na kliknutí na kartu. Dva NEZÁVISLÉ pohledy na lidi, ne jedna
+    // tabulka se vším namíchaným (2026-09-17, oprava po zpětné vazbě "řazení a slučování
+    // je blbost jak to má udělaný"):
+    // - "Podle návštěv" - `identified_people` (seskupené podle osoby), sloupce Jméno/
+    //   Návštěv/Přihláška, výchozí řazení podle počtu návštěv. ŽÁDNÉ datum - u součtu za
+    //   víc návštěv jedno konkrétní datum nedává smysl.
+    // - "Podle času" - `identified_visits` (syrový log, jeden řádek = jedna návštěva),
+    //   sloupce Jméno/Kdy/Přihláška, VŽDYCKY od nejnovější, bez volby směru - u
+    //   chronologického logu nedává smysl počet ani obrácené řazení.
     const modalOverlay = document.getElementById('stat-modal-overlay');
     const modalBody = document.getElementById('stat-modal-body');
     let modalChart = null;
     let currentModalPageKey = null;
-
-    // Řazení tabulky lidí (2026-09-17, na žádost - "chci možnost seřadit podle datumu i
-    // podle počtu návštěv") - klik na hlavičku sloupce přepíná směr, přetrvává mezi
-    // otevřeními modálu (ne mezi načteními stránky). Registered se řadí jako
-    // ne-zjištěno/nepřihlášen/přihlášen (0/1/2), ať dává smysl i tenhle sloupec.
-    let modalSort = { key: 'last_ts', dir: 'desc' };
+    let modalViewMode = 'people'; // 'people' | 'log'
+    let modalSort = { key: 'visits', dir: 'desc' }; // jen pro 'people' režim
 
     function sortValue(person, key) {
       if (key === 'label') return (person.label || '').toLowerCase();
@@ -348,6 +347,10 @@
       else { modalSort.key = key; modalSort.dir = key === 'label' ? 'asc' : 'desc'; }
       if (currentModalPageKey) openStatModal(currentModalPageKey);
     }
+    function setModalViewMode(mode) {
+      modalViewMode = mode;
+      if (currentModalPageKey) openStatModal(currentModalPageKey);
+    }
 
     function closeStatModal() {
       modalOverlay.classList.add('hidden');
@@ -358,19 +361,40 @@
     modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closeStatModal(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && !modalOverlay.classList.contains('hidden')) closeStatModal(); });
 
-    function personRow(person, isEvent) {
-      let badge = '';
-      if (isEvent) {
-        badge = person.registered === true ? '<span class="stat-badge-registered">✅ přihlášen/a</span>'
-          : person.registered === false ? '<span class="stat-badge-unregistered">nepřihlášen/a</span>'
-          : '<span class="stat-badge-unregistered">?</span>';
-      }
-      return `<tr>
+    function registeredBadge(registered) {
+      return registered === true ? '<span class="stat-badge-registered">✅ přihlášen/a</span>'
+        : registered === false ? '<span class="stat-badge-unregistered">nepřihlášen/a</span>'
+        : '<span class="stat-badge-unregistered">?</span>';
+    }
+
+    function peopleTableHtml(p) {
+      if (!p.identified_people.length) return '<p class="stat-modal-hint">Žádná identifikovaná návštěva za tohle období.</p>';
+      const rows = sortPeople(p.identified_people).map(person => `<tr>
         <td>${escapeHtml(person.label)}</td>
         <td>${person.visits}×</td>
-        <td>${formatTs(person.last_ts)}</td>
-        ${isEvent ? `<td>${badge}</td>` : ''}
-      </tr>`;
+        ${p.is_event ? `<td>${registeredBadge(person.registered)}</td>` : ''}
+      </tr>`).join('');
+      return `<div class="stat-modal-table-wrap"><table class="stat-modal-table">
+        <thead><tr>
+          <th class="stat-sortable" data-sort="label">Jméno${sortArrow('label')}</th>
+          <th class="stat-sortable" data-sort="visits">Návštěv${sortArrow('visits')}</th>
+          ${p.is_event ? `<th class="stat-sortable" data-sort="registered">Přihláška${sortArrow('registered')}</th>` : ''}
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>`;
+    }
+
+    function logTableHtml(p) {
+      if (!p.identified_visits.length) return '<p class="stat-modal-hint">Žádná identifikovaná návštěva za tohle období.</p>';
+      const rows = p.identified_visits.map(v => `<tr>
+        <td>${escapeHtml(v.label)}</td>
+        <td>${formatTs(v.ts)}</td>
+        ${p.is_event ? `<td>${registeredBadge(v.registered)}</td>` : ''}
+      </tr>`).join('');
+      return `<div class="stat-modal-table-wrap"><table class="stat-modal-table">
+        <thead><tr><th>Jméno</th><th>Kdy</th>${p.is_event ? '<th>Přihláška</th>' : ''}</tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>`;
     }
 
     function openStatModal(pageKey) {
@@ -378,22 +402,14 @@
       if (!p) return;
       currentModalPageKey = pageKey;
 
-      const peopleHtml = revealCheckbox.checked
-        ? (p.identified_people.length
-          ? `<div class="stat-modal-table-wrap"><table class="stat-modal-table">
-              <thead><tr>
-                <th class="stat-sortable" data-sort="label">Jméno${sortArrow('label')}</th>
-                <th class="stat-sortable" data-sort="visits">Návštěv${sortArrow('visits')}</th>
-                <th class="stat-sortable" data-sort="last_ts">Poslední${sortArrow('last_ts')}</th>
-                ${p.is_event ? `<th class="stat-sortable" data-sort="registered">Přihláška${sortArrow('registered')}</th>` : ''}
-              </tr></thead>
-              <tbody>${sortPeople(p.identified_people).map(person => personRow(person, p.is_event)).join('')}</tbody>
-            </table></div>`
-          : '<p class="stat-modal-hint">Žádná identifikovaná návštěva za tohle období.</p>')
-        : '<p class="stat-modal-hint">🙈 Zapni "zobrazit jména" nahoře pro seznam identifikovaných lidí.</p>';
+      const viewToggleHtml = `<div class="stat-view-toggle">
+        <button type="button" class="stat-view-btn${modalViewMode === 'people' ? ' active' : ''}" data-view="people">Podle návštěv</button>
+        <button type="button" class="stat-view-btn${modalViewMode === 'log' ? ' active' : ''}" data-view="log">Podle času</button>
+      </div>`;
+      const peopleHtml = modalViewMode === 'people' ? peopleTableHtml(p) : logTableHtml(p);
 
       const anonNote = p.anonymous_count
-        ? `<p class="stat-modal-anon-note">+ ${p.anonymous_count} anonymních zobrazení, odhadem ${p.anonymous_unique} lidí (nedá se zpětně zjistit kdo).</p>`
+        ? `<p class="stat-modal-anon-note">+ ${p.anonymous_count} zobrazení od lidí, co se nikdy nepřihlásili (odhadem ${p.anonymous_unique} lidí) - u nich se identita zjistit nedá.</p>`
         : '';
 
       modalBody.innerHTML = `
@@ -402,11 +418,11 @@
           ${p.is_event ? '<span class="stat-card-badge">akce</span>' : ''}
         </div>
         <div class="stat-numbers">
-          <div><div class="stat-number">${p.total}</div><div class="stat-number-label">zobrazení</div></div>
-          <div><div class="stat-number">${p.unique}</div><div class="stat-number-label">odhad. lidí</div></div>
-          <div><div class="stat-number">${p.identified_unique_count}</div><div class="stat-number-label">identifikováno</div></div>
+          <div><div class="stat-number">${p.unique}</div><div class="stat-number-label">unikátní lidé</div></div>
+          ${p.is_event ? `<div><div class="stat-number">${p.registered_count}</div><div class="stat-number-label">přihlášeno</div></div>` : ''}
         </div>
         <div class="stat-modal-chart-wrap"><canvas id="stat-modal-chart"></canvas></div>
+        ${viewToggleHtml}
         ${peopleHtml}
         ${anonNote}
       `;
@@ -415,6 +431,9 @@
       modalChart = new Chart(document.getElementById('stat-modal-chart'), chartConfig(p));
       modalBody.querySelectorAll('.stat-sortable').forEach(th => {
         th.addEventListener('click', () => setModalSort(th.dataset.sort));
+      });
+      modalBody.querySelectorAll('.stat-view-btn').forEach(btn => {
+        btn.addEventListener('click', () => setModalViewMode(btn.dataset.view));
       });
     }
 
@@ -428,8 +447,8 @@
         .then(data => {
           if (!data.ok) { statBody.innerHTML = `<p class="status-panel error">Chyba: ${escapeHtml(data.error || 'neznámá')}</p>`; return; }
           currentPages = data.pages || [];
-          const totalViews = currentPages.reduce((s, p) => s + p.total, 0);
-          statSummary.textContent = `${data.from} – ${data.to} · ${currentPages.length} sledovaných stránek · ${totalViews} zobrazení celkem`;
+          const totalUnique = currentPages.reduce((s, p) => s + p.unique, 0);
+          statSummary.textContent = `${data.from} – ${data.to} · ${currentPages.length} sledovaných stránek · ${totalUnique} unikátních lidí celkem`;
           renderAll();
         })
         .catch(err => { statBody.innerHTML = `<p class="status-panel error">Chyba: ${escapeHtml(err.message)}</p>`; });
