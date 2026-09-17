@@ -76,7 +76,6 @@
        přes modál (stejné CSS jako member-modal, .member-modal* z assets/css/style.css). */
     .partner-display { margin-top: 4px; font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .partner-display .pay-link { font-size: 0.78rem; }
-    .partner-id-hint { margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--border); font-size: 0.72rem; color: var(--text-muted); }
     /* Sloupce Jméno/Účast v tabulce přihlášek mají tlačítka/odkazy, ne jen text - v
        responzivním (kartovém) módu na mobilu potřebují trochu prostoru navíc pod
        popiskem, ať tlačítko nekoliduje s řádkem nad sebou. */
@@ -925,15 +924,29 @@
     // jen tam, kde se fakt mluví s Discord API" - admin panel/zobrazení do toho nepatří) -
     // `partnerOooId` proto místo syrového ID vrací ooo_id z už načteného seznamu členů
     // (stejná data jako pro autocomplete), jen jako potvrzení "systém tuhle osobu zná".
-    function partnerName(partnerDiscord) {
+    //
+    // Starší data (2026-09-17, na žádost "pořád tam mám i ty co vybrali sami sebe jako
+    // partnera") - backend (parsePartnerDiscordId) sám sebe jako partnera vždycky
+    // ignoroval při posílání notifikací, ale zobrazení tady ne - takže se to i přes
+    // funkční ochranu vizuálně tvářilo jako platný partner. `isSelfPartner` to řeší stejně
+    // v zobrazení: bere se to, jako by partner vůbec nebyl zadaný (ne jako zvláštní stav).
+    function partnerDiscordId(partnerDiscord) {
       if (!partnerDiscord) return null;
+      const parts = partnerDiscord.split('|');
+      return parts.length >= 3 ? (parts[2] || '').trim() || null : null;
+    }
+    function isSelfPartner(partnerDiscord, ownUserId) {
+      const id = partnerDiscordId(partnerDiscord);
+      return !!(id && ownUserId && id === ownUserId);
+    }
+    function partnerName(partnerDiscord, ownUserId) {
+      if (!partnerDiscord || isSelfPartner(partnerDiscord, ownUserId)) return null;
       const parts = partnerDiscord.split('|');
       return (parts[0] || '').trim() || null;
     }
-    function partnerOooId(partnerDiscord) {
-      if (!partnerDiscord) return null;
-      const parts = partnerDiscord.split('|');
-      const discordId = parts.length >= 3 ? (parts[2] || '').trim() : null;
+    function partnerOooId(partnerDiscord, ownUserId) {
+      if (isSelfPartner(partnerDiscord, ownUserId)) return null;
+      const discordId = partnerDiscordId(partnerDiscord);
       if (!discordId) return null;
       const member = discordMembersForPartner.find(m => m.userId === discordId);
       return member ? member.oooId : null;
@@ -1006,16 +1019,17 @@
             body.innerHTML = `
               <div class="admin-responsive-table-wrap">
                 <table class="admin-responsive-table">
-                  <thead><tr><th>Jméno</th><th>ooo_id</th><th>Kontakt</th><th>Typ účasti</th><th>Záloha</th><th>Doplatek</th><th>Účast</th></tr></thead>
+                  <thead><tr><th>Jméno</th><th>ooo_id</th><th>Partner ooo_id</th><th>Kontakt</th><th>Typ účasti</th><th>Záloha</th><th>Doplatek</th><th>Účast</th></tr></thead>
                   <tbody>
                     ${sortedRegistrations.map((r, i) => `
                       <tr${r.odhlaseno_datum ? ' class="reg-row-cancelled"' : ''}>
                         <td data-label="Jméno">${(r.ooo_id || r.user_id) ? `<button type="button" class="member-link" data-ooo="${r.ooo_id || ''}" data-discord="${r.user_id || ''}">${r.jmeno || r.email || r.ooo_id || r.user_id}</button>` : (r.jmeno || '—')}${r.nahradnik && !r.odhlaseno_datum ? ' <span class="pay-status pay-status--pending">Na čekačce</span>' : ''}${r.typ_ucasti === 'par' ? `
                           <div class="partner-display">
-                            <span>${partnerName(r.partner_discord) ? partnerName(r.partner_discord).replace(/</g, '&lt;') : 'Partner nezadán'}</span>
-                            <button type="button" class="pay-link" data-edit-partner="1" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}" data-jmeno="${(r.jmeno || '').replace(/"/g, '&quot;')}" data-partner="${(r.partner_discord || '').replace(/"/g, '&quot;')}">${r.partner_discord ? 'Upravit' : 'Doplnit partnera'}</button>
+                            <span>${partnerName(r.partner_discord, r.user_id) ? partnerName(r.partner_discord, r.user_id).replace(/</g, '&lt;') : 'Partner nezadán'}</span>
+                            <button type="button" class="pay-link" data-edit-partner="1" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}" data-jmeno="${(r.jmeno || '').replace(/"/g, '&quot;')}" data-partner="${(isSelfPartner(r.partner_discord, r.user_id) ? '' : (r.partner_discord || '')).replace(/"/g, '&quot;')}">${r.partner_discord && !isSelfPartner(r.partner_discord, r.user_id) ? 'Upravit' : 'Doplnit partnera'}</button>
                           </div>` : ''}</td>
-                        <td data-label="ooo_id" style="font-size:0.8rem; color:var(--text-muted); font-variant-numeric:tabular-nums;">${r.ooo_id || (r.user_id ? '—' : '')}${r.typ_ucasti === 'par' ? `<div class="partner-id-hint">partner ooo_id:<br>${partnerOooId(r.partner_discord) || '—'}</div>` : ''}</td>
+                        <td data-label="ooo_id" style="font-size:0.8rem; color:var(--text-muted); font-variant-numeric:tabular-nums;">${r.ooo_id || (r.user_id ? '—' : '')}</td>
+                        <td data-label="Partner ooo_id" style="font-size:0.8rem; color:var(--text-muted); font-variant-numeric:tabular-nums;">${r.typ_ucasti === 'par' ? (partnerOooId(r.partner_discord, r.user_id) || '—') : ''}</td>
                         <td data-label="Kontakt">${r.email || ''}${r.telefon ? ' · ' + r.telefon : ''}</td>
                         <td data-label="Typ účasti">${r.typ_ucasti || ''}</td>
                         <td data-label="Záloha">${payCell({
