@@ -91,6 +91,8 @@
     .stat-modal-table th { font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); }
     .stat-sortable { cursor: pointer; user-select: none; white-space: nowrap; }
     .stat-sortable:hover { color: var(--text); }
+    .stat-name-link { background: none; border: none; padding: 0; font: inherit; color: var(--primary); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+    .stat-name-link:hover { color: var(--primary-dark, var(--primary)); }
     .stat-badge-registered { font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--success-bg); color: var(--success); white-space: nowrap; }
     .stat-badge-unregistered { font-size: 0.72rem; color: var(--text-muted); }
     .stat-modal-anon-note { font-size: 0.8rem; color: var(--text-muted); font-style: italic; margin-top: 14px; }
@@ -186,6 +188,7 @@
 
   <script src="assets/js/auth.js"></script>
   <script src="assets/js/profile-modal.js"></script>
+  <script src="assets/js/member-modal.js"></script>
   <script>
     function identityPayload() { return getIdentityPayload(getLoggedUser()); }
 
@@ -244,8 +247,8 @@
             ${p.is_event ? '<span class="stat-card-badge">akce</span>' : ''}
           </div>
           <div class="stat-numbers">
-            <div><div class="stat-number">${p.unique}</div><div class="stat-number-label">unikátní lidé</div></div>
-            ${p.is_event ? `<div><div class="stat-number">${p.registered_count}</div><div class="stat-number-label">přihlášeno</div></div>` : ''}
+            <div><div class="stat-number">${p.unique}</div><div class="stat-number-label">návštěvy</div></div>
+            ${p.is_event ? `<div><div class="stat-number">${p.registered_count}</div><div class="stat-number-label">účastníci</div></div>` : ''}
           </div>
           <div class="stat-chart-wrap"><canvas id="chart-${cssEscape(p.page_key)}"></canvas></div>
           <div class="stat-card-hint">Klikni pro detail →</div>
@@ -262,10 +265,10 @@
     // unikátních návštěv, proto zvlášť napravo, ne stejná škála.
     function chartConfig(p) {
       const datasets = [
-        { label: 'Unikátní lidé / den', data: p.daily.map(d => d.unique), borderColor: '#0c5f9e', backgroundColor: 'rgba(12,95,158,0.12)', fill: true, tension: 0.25, pointRadius: 2, yAxisID: 'y' },
+        { label: 'Návštěvy / den', data: p.daily.map(d => d.unique), borderColor: '#0c5f9e', backgroundColor: 'rgba(12,95,158,0.12)', fill: true, tension: 0.25, pointRadius: 2, yAxisID: 'y' },
       ];
       if (p.is_event) {
-        datasets.push({ label: 'Přihlášeno celkem (kumulativně)', data: p.daily.map(d => d.registered_cumulative), borderColor: '#af3b6e', backgroundColor: 'transparent', borderDash: [5, 3], tension: 0.15, pointRadius: 2, yAxisID: 'y1' });
+        datasets.push({ label: 'Účastníci celkem (kumulativně)', data: p.daily.map(d => d.registered_cumulative), borderColor: '#af3b6e', backgroundColor: 'transparent', borderDash: [5, 3], tension: 0.15, pointRadius: 2, yAxisID: 'y1' });
       }
       const scales = { x: { ticks: { font: { size: 10 } } }, y: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } } } };
       if (p.is_event) scales.y1 = { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { precision: 0, font: { size: 10 } } };
@@ -322,7 +325,16 @@
     let modalChart = null;
     let currentModalPageKey = null;
     let modalViewMode = 'people'; // 'people' | 'log'
-    let modalSort = { key: 'visits', dir: 'desc' }; // jen pro 'people' režim
+    let modalSort = { key: 'visits', dir: 'desc' }; // jen pro 'people' rezim
+
+    // Klik na jméno v tabulce otevře stejné okno s detailem člena jako zbytek
+    // administrace (member-modal.js, sdílené přes celý web) - delegovaně na modalBody,
+    // ať funguje po každém překreslení (řazení, přepnutí pohledu) bez nutnosti znovu
+    // přidávat listener na každý řádek zvlášť.
+    modalBody.addEventListener('click', e => {
+      const btn = e.target.closest('.stat-name-link');
+      if (btn) openMemberModal('', btn.dataset.discord);
+    });
 
     function sortValue(person, key) {
       if (key === 'label') return (person.label || '').toLowerCase();
@@ -367,10 +379,20 @@
         : '<span class="stat-badge-unregistered">?</span>';
     }
 
+    // Klik na jméno otevře stejné okno s detailem člena jako zbytek administrace
+    // (2026-09-17, na žádost - "je to pořád stejná funkce") - jen když máme skutečné
+    // Discord ID (`who`), ne u ručně doplněných historických řádků bez identity, tam
+    // není co dohledat.
+    function nameCell(label, who) {
+      return who
+        ? `<button type="button" class="stat-name-link" data-discord="${escapeHtml(who)}">${escapeHtml(label)}</button>`
+        : escapeHtml(label);
+    }
+
     function peopleTableHtml(p) {
       if (!p.identified_people.length) return '<p class="stat-modal-hint">Žádná identifikovaná návštěva za tohle období.</p>';
       const rows = sortPeople(p.identified_people).map(person => `<tr>
-        <td>${escapeHtml(person.label)}</td>
+        <td>${nameCell(person.label, person.who)}</td>
         <td>${person.visits}×</td>
         ${p.is_event ? `<td>${registeredBadge(person.registered)}</td>` : ''}
       </tr>`).join('');
@@ -387,7 +409,7 @@
     function logTableHtml(p) {
       if (!p.identified_visits.length) return '<p class="stat-modal-hint">Žádná identifikovaná návštěva za tohle období.</p>';
       const rows = p.identified_visits.map(v => `<tr>
-        <td>${escapeHtml(v.label)}</td>
+        <td>${nameCell(v.label, v.who)}</td>
         <td>${formatTs(v.ts)}</td>
         ${p.is_event ? `<td>${registeredBadge(v.registered)}</td>` : ''}
       </tr>`).join('');
@@ -418,8 +440,8 @@
           ${p.is_event ? '<span class="stat-card-badge">akce</span>' : ''}
         </div>
         <div class="stat-numbers">
-          <div><div class="stat-number">${p.unique}</div><div class="stat-number-label">unikátní lidé</div></div>
-          ${p.is_event ? `<div><div class="stat-number">${p.registered_count}</div><div class="stat-number-label">přihlášeno</div></div>` : ''}
+          <div><div class="stat-number">${p.unique}</div><div class="stat-number-label">návštěvy</div></div>
+          ${p.is_event ? `<div><div class="stat-number">${p.registered_count}</div><div class="stat-number-label">účastníci</div></div>` : ''}
         </div>
         <div class="stat-modal-chart-wrap"><canvas id="stat-modal-chart"></canvas></div>
         ${viewToggleHtml}
