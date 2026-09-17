@@ -82,6 +82,8 @@
     .stat-modal-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
     .stat-modal-table th, .stat-modal-table td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--border); }
     .stat-modal-table th { font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); }
+    .stat-sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+    .stat-sortable:hover { color: var(--text); }
     .stat-badge-registered { font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--success-bg); color: var(--success); white-space: nowrap; }
     .stat-badge-unregistered { font-size: 0.72rem; color: var(--text-muted); }
     .stat-modal-anon-note { font-size: 0.8rem; color: var(--text-muted); font-style: italic; margin-top: 14px; }
@@ -317,6 +319,36 @@
     let modalChart = null;
     let currentModalPageKey = null;
 
+    // Řazení tabulky lidí (2026-09-17, na žádost - "chci možnost seřadit podle datumu i
+    // podle počtu návštěv") - klik na hlavičku sloupce přepíná směr, přetrvává mezi
+    // otevřeními modálu (ne mezi načteními stránky). Registered se řadí jako
+    // ne-zjištěno/nepřihlášen/přihlášen (0/1/2), ať dává smysl i tenhle sloupec.
+    let modalSort = { key: 'last_ts', dir: 'desc' };
+
+    function sortValue(person, key) {
+      if (key === 'label') return (person.label || '').toLowerCase();
+      if (key === 'registered') return person.registered === true ? 2 : person.registered === false ? 1 : 0;
+      return person[key];
+    }
+    function sortPeople(people) {
+      const { key, dir } = modalSort;
+      const factor = dir === 'asc' ? 1 : -1;
+      return [...people].sort((a, b) => {
+        const av = sortValue(a, key), bv = sortValue(b, key);
+        if (av < bv) return -1 * factor;
+        if (av > bv) return 1 * factor;
+        return 0;
+      });
+    }
+    function sortArrow(key) {
+      return modalSort.key === key ? (modalSort.dir === 'asc' ? ' ▲' : ' ▼') : '';
+    }
+    function setModalSort(key) {
+      if (modalSort.key === key) modalSort.dir = modalSort.dir === 'asc' ? 'desc' : 'asc';
+      else { modalSort.key = key; modalSort.dir = key === 'label' ? 'asc' : 'desc'; }
+      if (currentModalPageKey) openStatModal(currentModalPageKey);
+    }
+
     function closeStatModal() {
       modalOverlay.classList.add('hidden');
       currentModalPageKey = null;
@@ -349,8 +381,13 @@
       const peopleHtml = revealCheckbox.checked
         ? (p.identified_people.length
           ? `<div class="stat-modal-table-wrap"><table class="stat-modal-table">
-              <thead><tr><th>Jméno</th><th>Návštěv</th><th>Poslední</th>${p.is_event ? '<th>Přihláška</th>' : ''}</tr></thead>
-              <tbody>${p.identified_people.map(person => personRow(person, p.is_event)).join('')}</tbody>
+              <thead><tr>
+                <th class="stat-sortable" data-sort="label">Jméno${sortArrow('label')}</th>
+                <th class="stat-sortable" data-sort="visits">Návštěv${sortArrow('visits')}</th>
+                <th class="stat-sortable" data-sort="last_ts">Poslední${sortArrow('last_ts')}</th>
+                ${p.is_event ? `<th class="stat-sortable" data-sort="registered">Přihláška${sortArrow('registered')}</th>` : ''}
+              </tr></thead>
+              <tbody>${sortPeople(p.identified_people).map(person => personRow(person, p.is_event)).join('')}</tbody>
             </table></div>`
           : '<p class="stat-modal-hint">Žádná identifikovaná návštěva za tohle období.</p>')
         : '<p class="stat-modal-hint">🙈 Zapni "zobrazit jména" nahoře pro seznam identifikovaných lidí.</p>';
@@ -376,6 +413,9 @@
       modalOverlay.classList.remove('hidden');
       if (modalChart) modalChart.destroy();
       modalChart = new Chart(document.getElementById('stat-modal-chart'), chartConfig(p));
+      modalBody.querySelectorAll('.stat-sortable').forEach(th => {
+        th.addEventListener('click', () => setModalSort(th.dataset.sort));
+      });
     }
 
     function loadStats() {
