@@ -248,7 +248,7 @@
           </div>
           <div class="stat-numbers">
             <div><div class="stat-number">${p.unique}</div><div class="stat-number-label">návštěvy</div></div>
-            ${p.is_event ? `<div><div class="stat-number">${p.registered_count}</div><div class="stat-number-label">účastníci</div></div>` : ''}
+            ${p.is_event ? `<div><div class="stat-number">${p.registered_count}</div><div class="stat-number-label">známí</div></div>` : ''}
           </div>
           <div class="stat-chart-wrap"><canvas id="chart-${cssEscape(p.page_key)}"></canvas></div>
           <div class="stat-card-hint">Klikni pro detail →</div>
@@ -268,7 +268,7 @@
         { label: 'Návštěvy / den', data: p.daily.map(d => d.unique), borderColor: '#0c5f9e', backgroundColor: 'rgba(12,95,158,0.12)', fill: true, tension: 0.25, pointRadius: 2, yAxisID: 'y' },
       ];
       if (p.is_event) {
-        datasets.push({ label: 'Účastníci celkem (kumulativně)', data: p.daily.map(d => d.registered_cumulative), borderColor: '#af3b6e', backgroundColor: 'transparent', borderDash: [5, 3], tension: 0.15, pointRadius: 2, yAxisID: 'y1' });
+        datasets.push({ label: 'Známí celkem (kumulativně)', data: p.daily.map(d => d.registered_cumulative), borderColor: '#af3b6e', backgroundColor: 'transparent', borderDash: [5, 3], tension: 0.15, pointRadius: 2, yAxisID: 'y1' });
       }
       const scales = { x: { ticks: { font: { size: 10 } } }, y: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } } } };
       if (p.is_event) scales.y1 = { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { precision: 0, font: { size: 10 } } };
@@ -441,7 +441,7 @@
         </div>
         <div class="stat-numbers">
           <div><div class="stat-number">${p.unique}</div><div class="stat-number-label">návštěvy</div></div>
-          ${p.is_event ? `<div><div class="stat-number">${p.registered_count}</div><div class="stat-number-label">účastníci</div></div>` : ''}
+          ${p.is_event ? `<div><div class="stat-number">${p.registered_count}</div><div class="stat-number-label">známí</div></div>` : ''}
         </div>
         <div class="stat-modal-chart-wrap"><canvas id="stat-modal-chart"></canvas></div>
         ${viewToggleHtml}
