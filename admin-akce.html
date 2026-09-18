@@ -1041,7 +1041,7 @@
           // admin Přihláškách") - jen když má akce vůbec nějakou preferenci definovanou,
           // kapacita se ukazuje jen tam, kde je nastavená (jinak jen holý počet).
           const prefSummaryText = (data.preference_summary || [])
-            .map(p => `${p.label}: ${p.count}${p.kapacita ? '/' + p.kapacita : ''}`)
+            .map(p => `${p.short}: ${p.count}${p.kapacita ? '/' + p.kapacita : ''}`)
             .join(' · ');
           document.getElementById('registrations-meta').textContent =
             `${active.length} přihlášek / ${participantCount} účastníků` + (prefSummaryText ? ' · ' + prefSummaryText : '');
@@ -1091,7 +1091,7 @@
                           </div>` : ''}</td>
                         <td data-label="Kontakt">${r.email || ''}${r.telefon ? ' · ' + r.telefon : ''}</td>
                         <td data-label="Typ účasti">${r.typ_ucasti || ''}</td>
-                        <td data-label="Preference">${r.preference ? r.preference.split(';').map(p => p.trim()).filter(Boolean).join(', ') : '—'}</td>
+                        <td data-label="Preference">${r.preference_short || '—'}</td>
                         <td data-label="Záloha">${payCell({
                           amount: r.deposit || 0,
                           isOk: (r.deposit_status || '').toUpperCase() === 'OK',
