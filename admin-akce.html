@@ -84,6 +84,23 @@
     }
     .admin-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
     .admin-form-grid .form-group { margin-bottom: 0; }
+    /* Preference (2026-09-18, na žádost - "vypadá to chaoticky, uděláme to jako tabulku,
+       ať to nezabírá tolik místa") - tři ano/ne otázky jako kompaktní zaškrtávátka vedle
+       sebe (dřív tři celé <select> políčka v gridu, zbytečně široké) + tabulka
+       možnost/kapacita místo 10 samostatných polí. Řádky B-E se zobrazují postupně, jak
+       se předchozí vyplní (poslední viditelný řádek je vždycky prázdný "další na řadě",
+       stejný princip jako přidávání položek v Google Forms) - u většiny akcí se stejně
+       použije jen A/B, ať se hned nezobrazuje 5 prázdných řádků najednou.
+       Sloupce s inputy uvnitř .pref-table nemají svůj <label> (hlavička tabulky ho
+       nahrazuje) - jen vizuálně skrytý label pro čtečky obrazovky. */
+    .pref-toggles { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 18px; }
+    .pref-toggle { display: flex; align-items: center; gap: 7px; font-size: 0.9rem; cursor: pointer; user-select: none; }
+    .pref-toggle input { width: 16px; height: 16px; cursor: pointer; }
+    .pref-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+    .pref-table th { text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); font-weight: 600; padding: 0 8px 6px; }
+    .pref-table th:last-child { width: 140px; }
+    .pref-table td { padding: 4px 8px 4px 0; }
+    .pref-table td:last-child { padding-right: 0; }
     /* Organizátoři (2026-08-28) - zpátky vedle "Vyžadovaná Discord role" (na žádost),
        teď zmenšené - hint je od poslední úpravy jen ikonka, ne odstavec, takže pole je
        výrazně nižší a vedle kratšího souseda už tolik nevadí. */
@@ -291,32 +308,21 @@
           </div>
 
           <div class="form-section-label">Preference <span class="hint-icon" title="Volitelné možnosti k výběru u přihlášky (např. jídlo/bez jídla, nebo u speed dating &quot;hledám ženu&quot;/&quot;hledám muže&quot;). Kapacita u možnosti je nezávislá na kapacitě celé akce - když se možnost naplní, další přihláška s ní jde na čekačku, i kdyby akce jako celek ještě měla místo.">?</span></div>
-          <div class="admin-form-grid">
-            <div class="form-group">
-              <label class="form-label">Povinná?</label>
-              <select id="f-pref_required" class="form-control"><option value="ne">Ne</option><option value="ano">Ano</option></select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Jen jedna možnost?</label>
-              <select id="f-pref_exclusive" class="form-control"><option value="ne">Ne (víc najednou)</option><option value="ano">Ano (kolečka)</option></select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Povolit registraci jako pár?</label>
-              <select id="f-par_povolen" class="form-control"><option value="ano">Ano</option><option value="ne">Ne (jen single)</option></select>
-            </div>
+          <div class="pref-toggles">
+            <label class="pref-toggle"><input type="checkbox" id="f-pref_required"> Povinná</label>
+            <label class="pref-toggle"><input type="checkbox" id="f-pref_exclusive"> Jen jedna možnost</label>
+            <label class="pref-toggle"><input type="checkbox" id="f-par_povolen" checked> Povolit registraci jako pár</label>
           </div>
-          <div class="admin-form-grid">
-            <div class="form-group"><label class="form-label">Možnost A</label><input id="f-pref_A" class="form-control" placeholder="např. Jsem muž a chci se seznámit se ženou"></div>
-            <div class="form-group"><label class="form-label">Kapacita A (nepovinné)</label><input id="f-pref_A_kapacita" class="form-control" inputmode="numeric"></div>
-            <div class="form-group"><label class="form-label">Možnost B</label><input id="f-pref_B" class="form-control" placeholder="např. Jsem žena a chci se seznámit s mužem"></div>
-            <div class="form-group"><label class="form-label">Kapacita B (nepovinné)</label><input id="f-pref_B_kapacita" class="form-control" inputmode="numeric"></div>
-            <div class="form-group"><label class="form-label">Možnost C</label><input id="f-pref_C" class="form-control"></div>
-            <div class="form-group"><label class="form-label">Kapacita C (nepovinné)</label><input id="f-pref_C_kapacita" class="form-control" inputmode="numeric"></div>
-            <div class="form-group"><label class="form-label">Možnost D</label><input id="f-pref_D" class="form-control"></div>
-            <div class="form-group"><label class="form-label">Kapacita D (nepovinné)</label><input id="f-pref_D_kapacita" class="form-control" inputmode="numeric"></div>
-            <div class="form-group"><label class="form-label">Možnost E</label><input id="f-pref_E" class="form-control"></div>
-            <div class="form-group"><label class="form-label">Kapacita E (nepovinné)</label><input id="f-pref_E_kapacita" class="form-control" inputmode="numeric"></div>
-          </div>
+          <table class="pref-table">
+            <thead><tr><th>Možnost</th><th>Kapacita</th></tr></thead>
+            <tbody id="pref-table-body">
+              <tr data-pref-row="A"><td><input id="f-pref_A" class="form-control" placeholder="např. Jsem muž a chci se seznámit se ženou" aria-label="Možnost A"></td><td><input id="f-pref_A_kapacita" class="form-control" inputmode="numeric" placeholder="bez omezení" aria-label="Kapacita A"></td></tr>
+              <tr data-pref-row="B" class="hidden"><td><input id="f-pref_B" class="form-control" placeholder="např. Jsem žena a chci se seznámit s mužem" aria-label="Možnost B"></td><td><input id="f-pref_B_kapacita" class="form-control" inputmode="numeric" placeholder="bez omezení" aria-label="Kapacita B"></td></tr>
+              <tr data-pref-row="C" class="hidden"><td><input id="f-pref_C" class="form-control" placeholder="další možnost…" aria-label="Možnost C"></td><td><input id="f-pref_C_kapacita" class="form-control" inputmode="numeric" placeholder="bez omezení" aria-label="Kapacita C"></td></tr>
+              <tr data-pref-row="D" class="hidden"><td><input id="f-pref_D" class="form-control" placeholder="další možnost…" aria-label="Možnost D"></td><td><input id="f-pref_D_kapacita" class="form-control" inputmode="numeric" placeholder="bez omezení" aria-label="Kapacita D"></td></tr>
+              <tr data-pref-row="E" class="hidden"><td><input id="f-pref_E" class="form-control" placeholder="další možnost…" aria-label="Možnost E"></td><td><input id="f-pref_E_kapacita" class="form-control" inputmode="numeric" placeholder="bez omezení" aria-label="Kapacita E"></td></tr>
+            </tbody>
+          </table>
 
           <div class="form-section-label">Popis</div>
           <div class="form-group">
@@ -407,7 +413,14 @@
       'cena', 'jednorazova', 'zaloha', 'doplatek', 'ucet', 'IBAN', 'discord_role_required', 'kapacita',
       'pref_A', 'pref_A_kapacita', 'pref_B', 'pref_B_kapacita', 'pref_C', 'pref_C_kapacita',
       'pref_D', 'pref_D_kapacita', 'pref_E', 'pref_E_kapacita',
-      'pref_required', 'pref_exclusive', 'par_povolen',
+    ];
+    // Ano/ne přepínače jako zaškrtávátka, ne <select> (2026-09-18, na žádost - "vypadá to
+    // chaoticky") - jiná logika čtení/zápisu (.checked místo .value), proto mimo
+    // EDITABLE_FIELD_IDS. `checkedValue` je uložená hodnota, když je zaškrtnuté.
+    const CHECKBOX_FIELD_IDS = [
+      { name: 'pref_required', checkedValue: 'ano', uncheckedValue: 'ne' },
+      { name: 'pref_exclusive', checkedValue: 'ano', uncheckedValue: 'ne' },
+      { name: 'par_povolen', checkedValue: 'ano', uncheckedValue: 'ne' },
     ];
 
     // Datum/čas (2026-08-24, na žádost - "chytřejší pole než jen obyčejný textový") -
@@ -617,15 +630,37 @@
       document.addEventListener('click', (e) => { if (!e.target.closest('#organizator-search')) organizatorDropdown.style.display = 'none'; });
     }
 
-    // Výchozí hodnoty pro selecty, co mají smysluplné "prázdné" chování (2026-09-18,
-    // preference) - par_povolen prázdné = dřívější chování zachováno (pár šel vždycky),
-    // pref_required/pref_exclusive prázdné = dřívější chování (nepovinné, víc najednou).
-    const FIELD_DEFAULTS = { jednorazova: 'ne', par_povolen: 'ano', pref_required: 'ne', pref_exclusive: 'ne' };
+    // Výchozí hodnota pro "prázdné" jednorazova (2026-08-25) - zbytek přepínačů (viz
+    // CHECKBOX_FIELD_IDS výš) má svůj default přímo v `checked` atributu v HTML.
+    const FIELD_DEFAULTS = { jednorazova: 'ne' };
+
+    // Preference se odkrývají postupně (2026-09-18, na žádost - "at to nezabírá tolik
+    // místa... pokud vyplním jeden řádek tak přibude další") - vždycky je vidět jeden
+    // prázdný řádek navíc za posledním vyplněným (jako přidávání položek v Google Forms),
+    // ať je jasné, že jde přidat další, bez zvláštního tlačítka.
+    const PREF_LETTERS = ['A', 'B', 'C', 'D', 'E'];
+    function updatePrefRowsVisibility() {
+      let lastFilled = -1;
+      PREF_LETTERS.forEach((letter, i) => {
+        if (document.getElementById('f-pref_' + letter).value.trim()) lastFilled = i;
+      });
+      const visibleCount = Math.min(lastFilled + 2, PREF_LETTERS.length);
+      PREF_LETTERS.forEach((letter, i) => {
+        document.querySelector('[data-pref-row="' + letter + '"]').classList.toggle('hidden', i >= visibleCount);
+      });
+    }
+    PREF_LETTERS.forEach(letter => {
+      document.getElementById('f-pref_' + letter).addEventListener('input', updatePrefRowsVisibility);
+    });
 
     function fillForm(event) {
       EDITABLE_FIELD_IDS.forEach(name => {
         const el = document.getElementById('f-' + name);
         if (el) el.value = (event && event[name]) || FIELD_DEFAULTS[name] || '';
+      });
+      CHECKBOX_FIELD_IDS.forEach(({ name, checkedValue }) => {
+        const el = document.getElementById('f-' + name);
+        if (el) el.checked = (event && event[name]) ? event[name] === checkedValue : el.defaultChecked;
       });
       DATE_TIME_FIELDS.forEach(name => {
         const { date, time } = czechDateTimeToInputs(event && event[name]);
@@ -635,6 +670,7 @@
       selectedOrganizatoriIds = ((event && event.organizatori) || '').split(',').map(s => s.trim()).filter(Boolean);
       renderOrganizatoriChips();
       setPopisEditableFromStored(event && event.popis);
+      updatePrefRowsVisibility();
     }
 
     function readForm() {
@@ -642,6 +678,10 @@
       EDITABLE_FIELD_IDS.forEach(name => {
         const el = document.getElementById('f-' + name);
         if (el) out[name] = el.value;
+      });
+      CHECKBOX_FIELD_IDS.forEach(({ name, checkedValue, uncheckedValue }) => {
+        const el = document.getElementById('f-' + name);
+        if (el) out[name] = el.checked ? checkedValue : uncheckedValue;
       });
       DATE_TIME_FIELDS.forEach(name => {
         const dateVal = document.getElementById('f-' + name + '-date').value;
