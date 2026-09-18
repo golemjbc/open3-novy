@@ -43,7 +43,16 @@ function memberAvatarImg(discordId, size) {
   return `<img class="member-avatar-icon" data-discord-avatar="${discordId}" width="${px}" height="${px}" style="border-radius:50%;vertical-align:middle;margin-right:4px;display:none;object-fit:cover;" alt="">`;
 }
 
-async function loadMemberAvatars(root) {
+// Automatické dotažení zbytku (2026-09-18, na žádost - "klidně tu funkci volat nějak
+// opakovaně, ať se to postupně za chvíli všechno načte") - u velkých seznamů
+// (admin-clenove.html, stovky lidí) se první dávka kvůli Discord rate limitu nestihne
+// celá (viz AVATAR_BATCH_DEADLINE_MS v lib/discord.js). Místo čekání na ruční obnovení
+// stránky se `loadMemberAvatars` samo zavolá znovu za pár vteřin, dokud buď nedojdou
+// všechny, nebo se to nepokusí příliš mnohokrát (ochrana proti nekonečné smyčce, kdyby
+// byl Discord dlouhodobě nedostupný).
+const MEMBER_AVATARS_MAX_RETRIES = 6;
+
+async function loadMemberAvatars(root, attempt) {
   const scope = root || document;
   const imgs = Array.from(scope.querySelectorAll('img[data-discord-avatar]'));
   if (!imgs.length) return;
@@ -78,6 +87,11 @@ async function loadMemberAvatars(root) {
     const url = memberAvatarCache.get(img.dataset.discordAvatar);
     if (url) { img.src = url; img.style.display = 'inline-block'; }
   });
+
+  const stillMissing = ids.some(id => !memberAvatarCache.has(id));
+  if (stillMissing && (attempt || 0) < MEMBER_AVATARS_MAX_RETRIES) {
+    setTimeout(() => loadMemberAvatars(root, (attempt || 0) + 1), 4000);
+  }
 }
 
 function memberModalEnsureDom() {
