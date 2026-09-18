@@ -28,6 +28,52 @@ function memberModalStatusIcon(status) {
   return '✗';
 }
 
+// Malý Discord avatar vedle jména (2026-09-18, na žádost - "vedle jména bych chtěl
+// malého Discord avatara, ať poznám kdo to je"). `memberAvatarImg` jen vyrenderuje
+// skrytý <img> placeholder u vykreslení tabulky/seznamu, `loadMemberAvatars(root)` se
+// zavolá AŽ PO vložení HTML do stránky - posbírá všechna data-discord-avatar v `root`,
+// dávkově je pošle na panel-discord-avatars (jeden request místo jednoho na osobu) a
+// doplní src. Cache je sdílená pro celou stránku (jedna osoba se často opakuje jako
+// partner u víc řádků), takže druhé volání stejné ID už síť nezatíží.
+const memberAvatarCache = new Map(); // discord_id -> url|null
+
+function memberAvatarImg(discordId, size) {
+  if (!discordId) return '';
+  const px = size || 20;
+  return `<img class="member-avatar-icon" data-discord-avatar="${discordId}" width="${px}" height="${px}" style="border-radius:50%;vertical-align:middle;margin-right:4px;display:none;object-fit:cover;" alt="">`;
+}
+
+async function loadMemberAvatars(root) {
+  const scope = root || document;
+  const imgs = Array.from(scope.querySelectorAll('img[data-discord-avatar]'));
+  if (!imgs.length) return;
+  const ids = [...new Set(imgs.map(img => img.dataset.discordAvatar).filter(Boolean))];
+  const unknown = ids.filter(id => !memberAvatarCache.has(id));
+  if (unknown.length) {
+    const identity = memberModalIdentityPayload();
+    if (identity) {
+      try {
+        const res = await fetch(API_BASE + '/api/panel-discord-avatars', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...identity, ids: unknown }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          unknown.forEach(id => memberAvatarCache.set(id, (data.avatars && data.avatars[id]) || null));
+        }
+      } catch (e) {
+        // Nekritické - avatary jsou jen dekorace, chyba se nikam nehlásí.
+      }
+    }
+    unknown.forEach(id => { if (!memberAvatarCache.has(id)) memberAvatarCache.set(id, null); });
+  }
+  imgs.forEach(img => {
+    const url = memberAvatarCache.get(img.dataset.discordAvatar);
+    if (url) { img.src = url; img.style.display = 'inline-block'; }
+  });
+}
+
 function memberModalEnsureDom() {
   if (document.getElementById('member-modal-overlay')) return;
   const overlay = document.createElement('div');
