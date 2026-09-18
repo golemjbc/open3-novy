@@ -60,13 +60,19 @@ async function loadMemberAvatars(root) {
         });
         if (res.ok) {
           const data = await res.json();
-          unknown.forEach(id => memberAvatarCache.set(id, (data.avatars && data.avatars[id]) || null));
+          // Jen ID, na které server SKUTEČNĚ stihl odpovědět (viz AVATAR_BATCH_DEADLINE_MS
+          // v lib/discord.js - velké dávky, typicky admin-clenove.html, se kvůli Discord
+          // rate limitu nemusí stihnout celé najednou). Co chybí, se NEcachuje jako "bez
+          // avataru" - příští volání (další záložka, ruční obnovení) to zkusí znovu.
+          const avatars = data.avatars || {};
+          unknown.forEach(id => {
+            if (Object.prototype.hasOwnProperty.call(avatars, id)) memberAvatarCache.set(id, avatars[id] || null);
+          });
         }
       } catch (e) {
-        // Nekritické - avatary jsou jen dekorace, chyba se nikam nehlásí.
+        // Nekritické - avatary jsou jen dekorace, chyba se nikam nehlásí, zkusí se příště.
       }
     }
-    unknown.forEach(id => { if (!memberAvatarCache.has(id)) memberAvatarCache.set(id, null); });
   }
   imgs.forEach(img => {
     const url = memberAvatarCache.get(img.dataset.discordAvatar);
