@@ -204,6 +204,12 @@
       const isFreeEvent = !event.cena || event.cena.trim() === '' || parseFloat(event.cena) === 0;
       const images = parseImageUrls(event.obrazky || event.obrazek || '').map(getSmartImageUrl);
       const prefs = [event.pref_A, event.pref_B, event.pref_C, event.pref_D, event.pref_E].filter(Boolean);
+      // Preference "jen jedna možnost" / "povinné" (2026-09-18, na žádost - speed dating,
+      // "hlídáme poměr mužů a žen") - kolečka místo zaškrtávátek, `required` na první
+      // (u radio skupiny stačí jedno, prohlížeč to sám hlídá jako jeden celek podle name).
+      const prefExclusive = event.pref_exclusive === 'ano';
+      const prefRequired = event.pref_required === 'ano';
+      const parPovolen = event.par_povolen !== 'ne';
 
       let discordLinkHtml = '';
       if (event.discord_info) {
@@ -242,8 +248,10 @@
            <button type="button" class="gallery-arrow gallery-arrow-next" id="gallery-next" aria-label="Další obrázek">›</button>`
         : '';
 
+      const prefInputType = prefExclusive ? 'radio' : 'checkbox';
+      const prefRequiredAttr = (prefRequired && prefExclusive) ? ' required' : ''; // viz komentář u požadavků na "required" u checkboxů níž
       const prefsHtml = prefs.length
-        ? prefs.map((p, i) => `<label><input type="checkbox" name="pref" value="${p.replace(/"/g, '&quot;')}"> ${p}</label>`).join('')
+        ? prefs.map((p) => `<label><input type="${prefInputType}" name="pref" value="${p.replace(/"/g, '&quot;')}"${prefRequiredAttr}> ${p}</label>`).join('')
         : '<p class="form-hint">Pro tuto akci nejsou definované žádné preference.</p>';
 
       pageBody.innerHTML = `
@@ -332,7 +340,7 @@
                     <div id="registration-block">
                       <h3>Přihláška na akci</h3>
                       <form id="registration-form-google">
-                        <div class="form-group">
+                        <div class="form-group${parPovolen ? '' : ' hidden'}">
                           <label class="form-label">Typ účasti</label>
                           <div class="pill-choice">
                             <input type="radio" name="typUcastiG" id="typSingleG" value="single" checked>
@@ -374,7 +382,7 @@
               <div id="registration-block">
                 <h3>Přihláška na akci</h3>
                 <form id="registration-form">
-                  <div class="form-group">
+                  <div class="form-group${parPovolen ? '' : ' hidden'}">
                     <label class="form-label">Typ účasti</label>
                     <div class="pill-choice">
                       <input type="radio" name="typUcasti" id="typSingle" value="single" checked>
@@ -790,11 +798,20 @@
         const discordUserIdForForm = (loggedUserForForm && !isGoogleUserForForm) ? loggedUserForForm.discordSession : null;
         const hasIdentityForForm = !!(storedCredential || discordUserIdForForm);
 
+        // Preference povinná (2026-09-18, speed dating) - u exkluzivních (kolečka) to
+        // hlídá i prohlížeč sám přes "required" na radio skupině, tohle je navíc pro
+        // neexkluzivní (zaškrtávátka) případ, kde "required" na jednotlivém checkboxu
+        // nedává smysl (vynucoval by VŠECHNY, ne "aspoň jeden").
+        const prefRequiredForForm = event.pref_required === 'ano';
+        function hasSelectedPref() {
+          return !prefRequiredForForm || googleForm.querySelectorAll('input[name="pref"]:checked').length > 0;
+        }
         function updateGoogleSubmitState() {
-          submitBtn.disabled = !(confirm18.checked && confirmRules.checked);
+          submitBtn.disabled = !(confirm18.checked && confirmRules.checked && hasSelectedPref());
         }
         confirm18.addEventListener('change', updateGoogleSubmitState);
         confirmRules.addEventListener('change', updateGoogleSubmitState);
+        googleForm.querySelectorAll('input[name="pref"]').forEach(el => el.addEventListener('change', updateGoogleSubmitState));
         updateGoogleSubmitState();
 
         // Telefon: předvyplněná +420 předvolba, číslice se za psaní samy seskupují po
@@ -930,6 +947,12 @@
         const typUcasti = document.querySelector('input[name="typUcasti"]:checked').value;
         const partner = partnerInput.value.trim();
         const selectedPrefs = Array.from(document.querySelectorAll('input[name="pref"]:checked')).map(cb => cb.value);
+        // Preference povinná, neexkluzivní případ (2026-09-18) - viz stejný komentář u
+        // Google formuláře výš, "required" na checkboxu samotném by nedával smysl.
+        if (event.pref_required === 'ano' && !selectedPrefs.length) {
+          alert('U téhle akce je potřeba vybrat preferenci.');
+          return;
+        }
         const user = getLoggedUser();
 
         let depositAmount = event.zaloha || '0';

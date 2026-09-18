@@ -289,6 +289,35 @@
             <div class="form-group"><label class="form-label">Účet</label><input id="f-ucet" class="form-control"></div>
             <div class="form-group"><label class="form-label">IBAN</label><input id="f-IBAN" class="form-control"></div>
           </div>
+
+          <div class="form-section-label">Preference <span class="hint-icon" title="Volitelné možnosti k výběru u přihlášky (např. jídlo/bez jídla, nebo u speed dating &quot;hledám ženu&quot;/&quot;hledám muže&quot;). Kapacita u možnosti je nezávislá na kapacitě celé akce - když se možnost naplní, další přihláška s ní jde na čekačku, i kdyby akce jako celek ještě měla místo.">?</span></div>
+          <div class="admin-form-grid">
+            <div class="form-group">
+              <label class="form-label">Povinná?</label>
+              <select id="f-pref_required" class="form-control"><option value="ne">Ne</option><option value="ano">Ano</option></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Jen jedna možnost?</label>
+              <select id="f-pref_exclusive" class="form-control"><option value="ne">Ne (víc najednou)</option><option value="ano">Ano (kolečka)</option></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Povolit registraci jako pár?</label>
+              <select id="f-par_povolen" class="form-control"><option value="ano">Ano</option><option value="ne">Ne (jen single)</option></select>
+            </div>
+          </div>
+          <div class="admin-form-grid">
+            <div class="form-group"><label class="form-label">Možnost A</label><input id="f-pref_A" class="form-control" placeholder="např. Jsem muž a chci se seznámit se ženou"></div>
+            <div class="form-group"><label class="form-label">Kapacita A (nepovinné)</label><input id="f-pref_A_kapacita" class="form-control" inputmode="numeric"></div>
+            <div class="form-group"><label class="form-label">Možnost B</label><input id="f-pref_B" class="form-control" placeholder="např. Jsem žena a chci se seznámit s mužem"></div>
+            <div class="form-group"><label class="form-label">Kapacita B (nepovinné)</label><input id="f-pref_B_kapacita" class="form-control" inputmode="numeric"></div>
+            <div class="form-group"><label class="form-label">Možnost C</label><input id="f-pref_C" class="form-control"></div>
+            <div class="form-group"><label class="form-label">Kapacita C (nepovinné)</label><input id="f-pref_C_kapacita" class="form-control" inputmode="numeric"></div>
+            <div class="form-group"><label class="form-label">Možnost D</label><input id="f-pref_D" class="form-control"></div>
+            <div class="form-group"><label class="form-label">Kapacita D (nepovinné)</label><input id="f-pref_D_kapacita" class="form-control" inputmode="numeric"></div>
+            <div class="form-group"><label class="form-label">Možnost E</label><input id="f-pref_E" class="form-control"></div>
+            <div class="form-group"><label class="form-label">Kapacita E (nepovinné)</label><input id="f-pref_E_kapacita" class="form-control" inputmode="numeric"></div>
+          </div>
+
           <div class="form-section-label">Popis</div>
           <div class="form-group">
             <label class="form-label">Popis (nové řádky se uloží jako zalomení) <span class="hint-icon" title="Konec náhledu určuje, kolik textu se ukáže na kartě akce/nahoře na stránce s tlačítkem &quot;Číst dál&quot; - zbytek se ukáže až po rozkliknutí.">?</span></label>
@@ -376,6 +405,9 @@
     const EDITABLE_FIELD_IDS = [
       'nazev', 'místo', 'lokalita_presna',
       'cena', 'jednorazova', 'zaloha', 'doplatek', 'ucet', 'IBAN', 'discord_role_required', 'kapacita',
+      'pref_A', 'pref_A_kapacita', 'pref_B', 'pref_B_kapacita', 'pref_C', 'pref_C_kapacita',
+      'pref_D', 'pref_D_kapacita', 'pref_E', 'pref_E_kapacita',
+      'pref_required', 'pref_exclusive', 'par_povolen',
     ];
 
     // Datum/čas (2026-08-24, na žádost - "chytřejší pole než jen obyčejný textový") -
@@ -585,10 +617,15 @@
       document.addEventListener('click', (e) => { if (!e.target.closest('#organizator-search')) organizatorDropdown.style.display = 'none'; });
     }
 
+    // Výchozí hodnoty pro selecty, co mají smysluplné "prázdné" chování (2026-09-18,
+    // preference) - par_povolen prázdné = dřívější chování zachováno (pár šel vždycky),
+    // pref_required/pref_exclusive prázdné = dřívější chování (nepovinné, víc najednou).
+    const FIELD_DEFAULTS = { jednorazova: 'ne', par_povolen: 'ano', pref_required: 'ne', pref_exclusive: 'ne' };
+
     function fillForm(event) {
       EDITABLE_FIELD_IDS.forEach(name => {
         const el = document.getElementById('f-' + name);
-        if (el) el.value = (event && event[name]) || (name === 'jednorazova' ? 'ne' : '');
+        if (el) el.value = (event && event[name]) || FIELD_DEFAULTS[name] || '';
       });
       DATE_TIME_FIELDS.forEach(name => {
         const { date, time } = czechDateTimeToInputs(event && event[name]);
@@ -1000,8 +1037,14 @@
           // styl (.admin-event-meta) jako u seznamu akcí výš, ne narvané do nadpisu.
           const active = data.registrations.filter(r => !r.odhlaseno_datum);
           const participantCount = active.reduce((sum, r) => sum + (r.typ_ucasti === 'par' ? 2 : 1), 0);
+          // Souhrn obsazeno/kapacita za preference (2026-09-18, speed dating - "jen v
+          // admin Přihláškách") - jen když má akce vůbec nějakou preferenci definovanou,
+          // kapacita se ukazuje jen tam, kde je nastavená (jinak jen holý počet).
+          const prefSummaryText = (data.preference_summary || [])
+            .map(p => `${p.label}: ${p.count}${p.kapacita ? '/' + p.kapacita : ''}`)
+            .join(' · ');
           document.getElementById('registrations-meta').textContent =
-            `${active.length} přihlášek / ${participantCount} účastníků`;
+            `${active.length} přihlášek / ${participantCount} účastníků` + (prefSummaryText ? ' · ' + prefSummaryText : '');
           const body = document.getElementById('registrations-body');
           if (!data.registrations.length) {
             body.innerHTML = '<p class="form-hint">Zatím nikdo přihlášený.</p>';
@@ -1019,7 +1062,7 @@
             body.innerHTML = `
               <div class="admin-responsive-table-wrap">
                 <table class="admin-responsive-table">
-                  <thead><tr><th>Jméno</th><th>ooo_id</th><th>Kontakt</th><th>Typ účasti</th><th>Záloha</th><th>Doplatek</th><th>Účast</th></tr></thead>
+                  <thead><tr><th>Jméno</th><th>ooo_id</th><th>Kontakt</th><th>Typ účasti</th><th>Preference</th><th>Záloha</th><th>Doplatek</th><th>Účast</th></tr></thead>
                   <tbody>
                     ${sortedRegistrations.map((r, i) => {
                       const partnerBtn = `<button type="button" class="pay-link" data-edit-partner="1" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}" data-jmeno="${(r.jmeno || '').replace(/"/g, '&quot;')}" data-partner="${(isSelfPartner(r.partner_discord, r.user_id) ? '' : (r.partner_discord || '')).replace(/"/g, '&quot;')}">${r.partner_discord && !isSelfPartner(r.partner_discord, r.user_id) ? 'Upravit' : 'Doplnit'}</button>`;
@@ -1048,6 +1091,7 @@
                           </div>` : ''}</td>
                         <td data-label="Kontakt">${r.email || ''}${r.telefon ? ' · ' + r.telefon : ''}</td>
                         <td data-label="Typ účasti">${r.typ_ucasti || ''}</td>
+                        <td data-label="Preference">${r.preference ? r.preference.split(';').map(p => p.trim()).filter(Boolean).join(', ') : '—'}</td>
                         <td data-label="Záloha">${payCell({
                           amount: r.deposit || 0,
                           isOk: (r.deposit_status || '').toUpperCase() === 'OK',
