@@ -1025,11 +1025,21 @@
                       const partnerBtn = `<button type="button" class="pay-link" data-edit-partner="1" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}" data-jmeno="${(r.jmeno || '').replace(/"/g, '&quot;')}" data-partner="${(isSelfPartner(r.partner_discord, r.user_id) ? '' : (r.partner_discord || '')).replace(/"/g, '&quot;')}">${r.partner_discord && !isSelfPartner(r.partner_discord, r.user_id) ? 'Upravit' : 'Doplnit'}</button>`;
                       const partnerNameVal = partnerName(r.partner_discord, r.user_id);
                       const partnerOooIdVal = partnerOooId(r.partner_discord, r.user_id);
+                      // Rozklikávací partner (2026-09-18, na žádost - "pokud jsou partneři
+                      // s oooid, tak by se měli zobrazovat taky jako s možností rozkliknout") -
+                      // jen když ho systém zná (má ooo_id, tj. je to skutečný člen), stejný
+                      // .member-link/openMemberModal jako u hlavní osoby.
+                      const partnerDiscordIdVal = partnerOooIdVal ? partnerDiscordId(r.partner_discord) : null;
+                      const partnerNameHtml = partnerNameVal
+                        ? (partnerOooIdVal
+                          ? `<button type="button" class="member-link" data-ooo="${partnerOooIdVal}" data-discord="${partnerDiscordIdVal || ''}">${partnerNameVal.replace(/</g, '&lt;')}</button>`
+                          : partnerNameVal.replace(/</g, '&lt;'))
+                        : 'Nezadán';
                       return `
                       <tr${r.odhlaseno_datum ? ' class="reg-row-cancelled"' : ''}>
                         <td data-label="Jméno">${(r.ooo_id || r.user_id) ? `<button type="button" class="member-link" data-ooo="${r.ooo_id || ''}" data-discord="${r.user_id || ''}">${r.jmeno || r.email || r.ooo_id || r.user_id}</button>` : (r.jmeno || '—')}${r.nahradnik && !r.odhlaseno_datum ? ' <span class="pay-status pay-status--pending">Na čekačce</span>' : ''}${r.typ_ucasti === 'par' ? `
                           <div class="partner-display">
-                            <span>${partnerNameVal ? partnerNameVal.replace(/</g, '&lt;') : 'Nezadán'}</span>
+                            <span>${partnerNameHtml}</span>
                             ${partnerBtn}
                           </div>` : ''}</td>
                         <td data-label="ooo_id" style="font-size:0.8rem; color:var(--text-muted); font-variant-numeric:tabular-nums;">${r.ooo_id || (r.user_id ? '—' : '')}${r.typ_ucasti === 'par' ? `
