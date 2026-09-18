@@ -85,6 +85,13 @@
     .prubeh-role-badge.missing { background: rgba(0,0,0,0.08); color: var(--text-muted); }
     .prubeh-partner-label { font-weight: 600; opacity: 0.85; margin-left: 2px; }
 
+    /* Rozkliknutí jména (2026-09-18, na žádost - "partneři s ooo_id by se měli
+       zobrazovat s možností rozkliknout, ať víme kdo to je") - stejná vizuální
+       konvence jako .stat-name-link v admin-statistika.html, otevírá stejný
+       sdílený modal (member-modal.js). */
+    .prubeh-name-link { background: none; border: none; padding: 0; font: inherit; font-weight: inherit; color: var(--primary); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+    .prubeh-name-link:hover { color: var(--primary-dark, var(--primary)); }
+
     .prubeh-fl-msgs { list-style: none; margin: 6px 0 0; padding: 10px 0 0; border-top: 1px dashed var(--border); display: flex; flex-direction: column; gap: 7px; }
     .prubeh-fl-msg { display: flex; align-items: center; gap: 7px; font-size: 0.78rem; }
     .prubeh-fl-msg .icon { width: 16px; height: 16px; flex-shrink: 0; display: flex; }
@@ -175,6 +182,7 @@
 
   <script src="assets/js/auth.js"></script>
   <script src="assets/js/profile-modal.js"></script>
+  <script src="assets/js/member-modal.js"></script>
   <script>
     function identityPayload() { return getIdentityPayload(getLoggedUser()); }
 
@@ -184,6 +192,13 @@
     const navAdmin = document.getElementById('nav-admin');
     const eventSelect = document.getElementById('event-select');
     const prubehBody = document.getElementById('prubeh-body');
+
+    // Rozkliknutí jména -> sdílený member-modal.js (2026-09-18), delegovaně na
+    // celý prubehBody, protože se obsah re-renderuje při každém výběru akce.
+    prubehBody.addEventListener('click', e => {
+      const btn = e.target.closest('.prubeh-name-link');
+      if (btn) openMemberModal(btn.dataset.ooo || '', btn.dataset.discord || '');
+    });
 
     let currentData = null; // { event, participants }
 
@@ -267,11 +282,18 @@
       const u = roles.ucastnik ? 'ok' : 'missing';
       return `<span class="prubeh-role-badges" title="${prefix}zájemce: ${roles.zajemce ? 'ano' : 'ne'} · ${prefix}účastník: ${roles.ucastnik ? 'ano' : 'ne'}"><span class="prubeh-role-badge ${z}">Z</span><span class="prubeh-role-badge ${u}">Ú</span></span>`;
     }
+    // Rozkliknutí jména (2026-09-18) - jen když máme ooo_id/user_id, na koho otevřít
+    // stejný sdílený modal (member-modal.js) jako jinde v administraci; jinak prosté jméno.
+    function nameLink(jmeno, oooId, userId) {
+      const label = escapeHtml(jmeno);
+      if (!oooId && !userId) return label;
+      return `<button type="button" class="prubeh-name-link" data-ooo="${escapeHtml(oooId || '')}" data-discord="${escapeHtml(userId || '')}">${label}</button>`;
+    }
     function personLabel(p) {
-      let html = escapeHtml(p.jmeno) + (p.typ_ucasti === 'par' ? ' (pár)' : '');
+      let html = nameLink(p.jmeno, p.ooo_id, p.user_id) + (p.typ_ucasti === 'par' ? ' (pár)' : '');
       html += roleBadges(p.roles, '');
       if (p.partner) {
-        html += `<span class="prubeh-partner-label"> + ${escapeHtml(p.partner.jmeno)}</span>`;
+        html += `<span class="prubeh-partner-label"> + ${nameLink(p.partner.jmeno, p.partner.ooo_id, p.partner.user_id)}</span>`;
         html += p.partner.no_discord
           ? '<span class="prubeh-role-badges" title="Partner bez Discord vazby - role se nedá zjistit"><span class="prubeh-role-badge missing">?</span></span>'
           : roleBadges(p.partner.roles, 'partner ');
