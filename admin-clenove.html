@@ -135,7 +135,7 @@
             <tbody>
               ${list.map(m => `
                 <tr>
-                  <td data-label="Jméno"><button type="button" class="member-link" data-ooo="${m.ooo_id || ''}" data-discord="${m.discord_id || ''}">${m.jmeno || m.discord_username || m.email || m.ooo_id || m.discord_id}</button></td>
+                  <td data-label="Jméno">${memberAvatarImg(m.discord_id)}<button type="button" class="member-link" data-ooo="${m.ooo_id || ''}" data-discord="${m.discord_id || ''}">${m.jmeno || m.discord_username || m.email || m.ooo_id || m.discord_id}</button></td>
                   <td data-label="Discord">${m.discord_username ? '@' + m.discord_username : ''}</td>
                   <td data-label="Kontakt">${m.email || ''}${m.telefon ? ' · ' + m.telefon : ''}</td>
                   <td data-label="Role" class="member-roles-cell">${Object.keys(m.roles || {}).join(', ')}</td>
@@ -149,6 +149,7 @@
         </div>
       `;
       body.querySelectorAll('[data-ooo]').forEach(btn => btn.addEventListener('click', () => openMemberModal(btn.dataset.ooo, btn.dataset.discord)));
+      loadMemberAvatars(body);
       // Ghost mode (2026-08-28) - "zobrazit jako" jen na Discord účty (Google se ověřuje
       // tokenem, nedá se napodobit), viz auth.js getGhostTarget/window.fetch guard.
       body.querySelectorAll('[data-ghost-discord]').forEach(btn => btn.addEventListener('click', () => {

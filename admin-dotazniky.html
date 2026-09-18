@@ -161,7 +161,7 @@
               ${list.map(q => `
                 <tr>
                   <td data-label="Jméno">
-                    <button type="button" class="member-link" data-ooo="${q.ooo_id || ''}" data-row-index="${q.row_index}">${q.jmeno_prezdivka || q.discord_jmeno_historicke || '(bez jména)'}</button>
+                    ${memberAvatarImg(q.discord_id)}<button type="button" class="member-link" data-ooo="${q.ooo_id || ''}" data-row-index="${q.row_index}">${q.jmeno_prezdivka || q.discord_jmeno_historicke || '(bez jména)'}</button>
                     ${!q.ooo_id ? ' <span class="member-roles-cell" title="Starý import bez napojení na profil">(starý dotazník)</span>' : ''}
                     ${(q.discord_jmeno || q.discord_username) ? `<div class="form-hint" style="margin-top:2px;">${[q.discord_jmeno, q.discord_username ? '@' + q.discord_username : ''].filter(Boolean).join(' / ')}</div>` : ''}
                   </td>
@@ -180,6 +180,7 @@
       // muselo na tlačítko na konci") - sjednoceno se stejným vzorem jako admin-clenove.html
       // a tabulka přihlášek v admin-akce.html.
       body.querySelectorAll('[data-row-index]').forEach(btn => btn.addEventListener('click', () => openMemberModal(btn.dataset.ooo, '', btn.dataset.ooo ? '' : btn.dataset.rowIndex)));
+      loadMemberAvatars(body);
     }
 
     // Filtry (2026-08-24, na žádost - "patron neschválen, bez kontaktu a tak vše, co tě

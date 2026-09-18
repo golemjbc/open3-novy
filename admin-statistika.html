@@ -385,7 +385,7 @@
     // není co dohledat.
     function nameCell(label, who) {
       return who
-        ? `<button type="button" class="stat-name-link" data-discord="${escapeHtml(who)}">${escapeHtml(label)}</button>`
+        ? `${memberAvatarImg(who)}<button type="button" class="stat-name-link" data-discord="${escapeHtml(who)}">${escapeHtml(label)}</button>`
         : escapeHtml(label);
     }
 
@@ -457,6 +457,7 @@
       modalBody.querySelectorAll('.stat-view-btn').forEach(btn => {
         btn.addEventListener('click', () => setModalViewMode(btn.dataset.view));
       });
+      loadMemberAvatars(modalBody);
     }
 
     function loadStats() {

@@ -287,7 +287,7 @@
     function nameLink(jmeno, oooId, userId) {
       const label = escapeHtml(jmeno);
       if (!oooId && !userId) return label;
-      return `<button type="button" class="prubeh-name-link" data-ooo="${escapeHtml(oooId || '')}" data-discord="${escapeHtml(userId || '')}">${label}</button>`;
+      return `${memberAvatarImg(userId)}<button type="button" class="prubeh-name-link" data-ooo="${escapeHtml(oooId || '')}" data-discord="${escapeHtml(userId || '')}">${label}</button>`;
     }
     function personLabel(p) {
       let html = nameLink(p.jmeno, p.ooo_id, p.user_id) + (p.typ_ucasti === 'par' ? ' (pár)' : '');
@@ -380,6 +380,7 @@
         </div>` : '';
 
       prubehBody.innerHTML = `<div class="prubeh-flow">${stepsHtml}</div>${sideHtml}`;
+      loadMemberAvatars(prubehBody);
     }
 
     function loadTimeline(eventId) {
