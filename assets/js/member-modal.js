@@ -190,21 +190,17 @@ function escapeHtml(str) {
 }
 
 // Sdílený "přívěsek" za jméno v seznamech (2026-09-24, na žádost - "zmatek ve jménech...
-// pokud mám jméno z dotazníku nebo Googlu nebo tak něco jiného než Discord, dej to do
-// závorky") - "jmeno" v seznamech (přihlášky, členové) může být cokoliv jiného než
-// Discord handle (Zobrazované jméno z members, párové "Vítek&Renata", Google jméno...) -
-// když se liší od skutečného Discord jména, dopíše se vedle v závorce, ať je jasné, o
-// koho na Discordu jde. Poznámka (poznamka_admin) se dopisuje stejně, malým písmem.
+// zrušil bych tu závorku a nechal jen poznámku, do který se může automaticky načíst
+// jméno z dotazníku nebo ručně napsat"). Poznámka (poznamka_admin) - buď ručně napsaná
+// adminem, nebo (když admin nic nenapsal) server sám doplní přezdívku z dotazníku jako
+// návrh (viz panel-list-registrations/panel-list-members/panel-member-detail - pole
+// `poznamka_admin` už z backendu chodí jako TENHLE efektivní text, ne surová hodnota).
 // Vrací JEN přívěsek (ne celé jméno) - stránka si primární jméno dá do klikacího tlačítka
 // sama, tenhle text patří AŽ ZA něj, mimo klikací plochu. Obyčejný <script> include na
 // všech admin stránkách (admin-akce.html, admin-clenove.html), žádné importy - proto
 // globální funkce, ne modul.
-function memberNameSuffixHtml(jmeno, discordUsername, poznamka) {
-  const altSuffix = (discordUsername && jmeno && jmeno.trim().toLowerCase() !== discordUsername.trim().toLowerCase())
-    ? ` <span class="member-name-alt">(@${escapeHtml(discordUsername)})</span>`
-    : '';
-  const noteSuffix = poznamka ? ` <span class="member-name-note">– ${escapeHtml(poznamka)}</span>` : '';
-  return `${altSuffix}${noteSuffix}`;
+function memberNameSuffixHtml(poznamka) {
+  return poznamka ? ` <span class="member-name-note">– ${escapeHtml(poznamka)}</span>` : '';
 }
 
 // oooId a discordId - ne každý člen má ooo_id (přiřazuje se až první interakcí s webem,

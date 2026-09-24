@@ -868,9 +868,8 @@ p { margin: 0 0 16px; color: var(--text-muted); }
 .member-note-edit { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 2px 0 8px; }
 .member-note-edit input { font-size: 0.82rem; padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); flex: 1; min-width: 160px; }
 .member-note-edit .member-modal-msg { font-size: 0.78rem; color: var(--text-muted); }
-/* Jméno v seznamech (2026-09-24) - Discord handle v závorce a poznámka jsou doplňkový
-   kontext, ne hlavní informace, proto menší a tlumenější než klikací jméno vedle nich. */
-.member-name-alt { font-size: 0.82em; color: var(--text-muted); font-weight: 400; }
+/* Jméno v seznamech (2026-09-24) - poznámka je doplňkový kontext, ne hlavní informace,
+   proto menší a tlumenější než klikací jméno vedle ní. */
 .member-name-note { font-size: 0.82em; color: var(--text-muted); font-style: italic; }
 .member-modal h4 { margin: 20px 0 8px; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); }
 .member-access-list { display: flex; flex-direction: column; gap: 6px; }
