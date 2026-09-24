@@ -1133,7 +1133,7 @@
             body.innerHTML = `
               <div class="admin-responsive-table-wrap">
                 <table class="admin-responsive-table">
-                  <thead><tr><th>Jméno</th><th>ooo_id</th><th>Kontakt</th><th>Typ účasti</th><th>Preference</th><th>Záloha</th><th>Doplatek</th><th>Účast</th></tr></thead>
+                  <thead><tr><th>Jméno</th><th>ooo_id</th><th>Kontakt</th><th>Typ účasti</th><th>Preference</th><th>Záloha</th><th>Doplatek</th><th>Bez omluvy</th><th>Účast</th></tr></thead>
                   <tbody>
                     ${sortedRegistrations.map((r, i) => {
                       const partnerBtn = `<button type="button" class="pay-link" data-edit-partner="1" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}" data-jmeno="${(r.jmeno || '').replace(/"/g, '&quot;')}" data-partner="${(isSelfPartner(r.partner_discord, r.user_id) ? '' : (r.partner_discord || '')).replace(/"/g, '&quot;')}">${r.partner_discord && !isSelfPartner(r.partner_discord, r.user_id) ? 'Upravit' : 'Doplnit'}</button>`;
@@ -1177,6 +1177,12 @@
                           setAmount: { ooo: r.ooo_id, user: r.user_id },
                           editId: 'doplatek-edit-' + i,
                         })}</td>
+                        <td data-label="Bez omluvy">${r.odhlaseno_datum ? '—' : `
+                          <label class="pay-switch" title="${r.bez_omluvy ? 'Zrušit označení' : 'Označit jako nedorazil/a bez omluvy'}">
+                            <input type="checkbox" ${r.bez_omluvy ? 'checked' : ''} data-mark="bez_omluvy" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}">
+                            <span class="pay-switch-track"><span class="pay-switch-thumb"></span></span>
+                            <span class="pay-switch-label">${r.bez_omluvy ? '⚫ Bez omluvy' : 'V pořádku'}</span>
+                          </label>`}</td>
                         <td data-label="Účast">${r.odhlaseno_datum
                           ? `Zrušeno ${r.odhlaseno_datum}${r.vraceno_castka ? ' (vráceno ' + r.vraceno_castka + ' Kč)' : ''}`
                           : (r.nahradnik ? `
@@ -1222,7 +1228,12 @@
             // zpátky, ať přepínač nelže o stavu, co se ve skutečnosti nezapsal.
             body.querySelectorAll('[data-mark]').forEach(input => input.addEventListener('change', () => {
               const field = input.dataset.mark;
-              const value = input.checked ? 'OK' : 'nova_prihlaska';
+              // "bez_omluvy" má jiné dvojice hodnot (ano/prázdné) než záloha/doplatek
+              // (OK/nova_prihlaska) - stejný obecný přepínač, jen jiný slovník hodnot
+              // podle pole (2026-09-24).
+              const value = field === 'bez_omluvy'
+                ? (input.checked ? 'ano' : '')
+                : (input.checked ? 'OK' : 'nova_prihlaska');
               fetch(API_BASE + '/api/panel-update-registration', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

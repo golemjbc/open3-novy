@@ -864,6 +864,7 @@ p { margin: 0 0 16px; color: var(--text-muted); }
 }
 .member-modal-photo-empty { border: 1px dashed var(--border); }
 .member-modal-contact { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+.member-modal-dochazka { display: flex; gap: 12px; font-size: 0.85rem; font-weight: 600; margin: 2px 0 6px; }
 .member-modal h4 { margin: 20px 0 8px; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); }
 .member-access-list { display: flex; flex-direction: column; gap: 6px; }
 .member-access-row { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: var(--radius-sm); font-size: 0.88rem; }

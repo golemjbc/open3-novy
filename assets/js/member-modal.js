@@ -276,8 +276,17 @@ function renderMemberModal(body, data) {
   }).join('') : '';
 
   const historyRows = data.eventHistory.length
-    ? data.eventHistory.map(h => `<li>${escapeHtml(h.nazev)} <span class="member-history-status">(záloha: ${escapeHtml(h.deposit_status || '—')}${h.doplatek_status ? ', doplatek: ' + escapeHtml(h.doplatek_status) : ''})</span></li>`).join('')
+    ? data.eventHistory.map(h => `<li>${h.bez_omluvy ? '⚫ ' : ''}${escapeHtml(h.nazev)} <span class="member-history-status">(záloha: ${escapeHtml(h.deposit_status || '—')}${h.doplatek_status ? ', doplatek: ' + escapeHtml(h.doplatek_status) : ''})${h.bez_omluvy ? ' <strong>bez omluvy</strong>' : ''}</span></li>`).join('')
     : '<li class="member-modal-empty">Zatím bez historie akcí.</li>';
+
+  // Docházka (2026-09-24, na žádost - "zelené kolik akcí byl, černé kolik bylo bez
+  // omluvy") - malé puntíky nahoře u jména, počítané serverem (panel-member-detail) jen
+  // z proběhlých, nezrušených akcí, kde byl skutečně účastníkem.
+  const dochazkaHtml = data.dochazka ? `
+    <p class="member-modal-dochazka" title="Zelené: kolik proběhlých akcí byl účastníkem. Černé: kolik z toho bez omluvy nedorazil.">
+      <span class="member-dot member-dot--green">🟢 ${data.dochazka.zelene}</span>
+      <span class="member-dot member-dot--black">⚫ ${data.dochazka.cerne}</span>
+    </p>` : '';
 
   let questionnaireHtml = '<p class="member-modal-empty">Dotazník zatím nevyplnil/a.</p>';
   if (data.questionnaire.exists) {
@@ -373,6 +382,7 @@ function renderMemberModal(body, data) {
       </div>
       <div>
         <h3>${escapeHtml(data.jmeno || data.email || data.ooo_id)}</h3>
+        ${dochazkaHtml}
         <p class="member-modal-contact">
           ${data.discord_username ? '@' + escapeHtml(data.discord_username) + ' · ' : ''}
           ${escapeHtml(data.email || '')}${data.telefon ? ' · ' + escapeHtml(data.telefon) : ''}${data.instagram ? ' · ' + escapeHtml(data.instagram) : ''}
