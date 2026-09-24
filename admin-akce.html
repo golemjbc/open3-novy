@@ -62,6 +62,11 @@
     .pay-switch input:focus-visible ~ .pay-switch-track { outline: 2px solid var(--primary); outline-offset: 2px; }
     .pay-switch-label { font-size: 0.76rem; font-weight: 600; color: var(--text-muted); }
     .pay-switch input:checked ~ .pay-switch-label { color: var(--success); }
+    /* "Bez omluvy" (2026-09-24) - zapnutý stav NENÍ dobrá zpráva jako u "Zaplaceno", takže
+       nesmí zezelenat (to vypadá jako "v pořádku") - vlastní varianta, tmavá/černá barva
+       ať to opticky odpovídá "černému puntíku". */
+    .pay-switch--warn input:checked ~ .pay-switch-track { background: var(--text); }
+    .pay-switch--warn input:checked ~ .pay-switch-label { color: var(--text); }
     .pay-edit { display: flex; gap: 6px; margin-top: 8px; }
     .pay-edit.hidden { display: none; }
     .pay-edit input[type=number] { width: 84px; padding: 6px 8px; border-radius: 8px; border: 1.5px solid var(--border); font-size: 0.85rem; background: var(--surface); font-variant-numeric: tabular-nums; -moz-appearance: textfield; appearance: textfield; }
@@ -1178,7 +1183,7 @@
                           editId: 'doplatek-edit-' + i,
                         })}</td>
                         <td data-label="Bez omluvy">${r.odhlaseno_datum ? '—' : `
-                          <label class="pay-switch" title="${r.bez_omluvy ? 'Zrušit označení' : 'Označit jako nedorazil/a bez omluvy'}">
+                          <label class="pay-switch pay-switch--warn" title="${r.bez_omluvy ? 'Zrušit označení' : 'Označit jako nedorazil/a bez omluvy'}">
                             <input type="checkbox" ${r.bez_omluvy ? 'checked' : ''} data-mark="bez_omluvy" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}">
                             <span class="pay-switch-track"><span class="pay-switch-thumb"></span></span>
                             <span class="pay-switch-label">${r.bez_omluvy ? '⚫ Bez omluvy' : 'V pořádku'}</span>
