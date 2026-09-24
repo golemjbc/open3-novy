@@ -1156,7 +1156,7 @@
                         : 'Nezadán';
                       return `
                       <tr${r.odhlaseno_datum ? ' class="reg-row-cancelled"' : ''}>
-                        <td data-label="Jméno">${(r.ooo_id || r.user_id) ? `${memberAvatarImg(r.user_id)}<button type="button" class="member-link" data-ooo="${r.ooo_id || ''}" data-discord="${r.user_id || ''}">${r.jmeno || r.email || r.ooo_id || r.user_id}</button>` : (r.jmeno || '—')}${r.nahradnik && !r.odhlaseno_datum ? ' <span class="pay-status pay-status--pending">Na čekačce</span>' : ''}${r.typ_ucasti === 'par' ? `
+                        <td data-label="Jméno">${(r.ooo_id || r.user_id) ? `${memberAvatarImg(r.user_id)}<button type="button" class="member-link" data-ooo="${r.ooo_id || ''}" data-discord="${r.user_id || ''}">${r.jmeno || r.email || r.ooo_id || r.user_id}</button>${memberNameSuffixHtml(r.jmeno, r.discord_username, r.poznamka_admin)}` : (r.jmeno || '—')}${r.nahradnik && !r.odhlaseno_datum ? ' <span class="pay-status pay-status--pending">Na čekačce</span>' : ''}${r.typ_ucasti === 'par' ? `
                           <div class="partner-display">
                             <span>${partnerNameHtml}</span>
                             ${partnerBtn}

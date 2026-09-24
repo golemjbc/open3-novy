@@ -189,6 +189,24 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
+// Sdílený "přívěsek" za jméno v seznamech (2026-09-24, na žádost - "zmatek ve jménech...
+// pokud mám jméno z dotazníku nebo Googlu nebo tak něco jiného než Discord, dej to do
+// závorky") - "jmeno" v seznamech (přihlášky, členové) může být cokoliv jiného než
+// Discord handle (Zobrazované jméno z members, párové "Vítek&Renata", Google jméno...) -
+// když se liší od skutečného Discord jména, dopíše se vedle v závorce, ať je jasné, o
+// koho na Discordu jde. Poznámka (poznamka_admin) se dopisuje stejně, malým písmem.
+// Vrací JEN přívěsek (ne celé jméno) - stránka si primární jméno dá do klikacího tlačítka
+// sama, tenhle text patří AŽ ZA něj, mimo klikací plochu. Obyčejný <script> include na
+// všech admin stránkách (admin-akce.html, admin-clenove.html), žádné importy - proto
+// globální funkce, ne modul.
+function memberNameSuffixHtml(jmeno, discordUsername, poznamka) {
+  const altSuffix = (discordUsername && jmeno && jmeno.trim().toLowerCase() !== discordUsername.trim().toLowerCase())
+    ? ` <span class="member-name-alt">(@${escapeHtml(discordUsername)})</span>`
+    : '';
+  const noteSuffix = poznamka ? ` <span class="member-name-note">– ${escapeHtml(poznamka)}</span>` : '';
+  return `${altSuffix}${noteSuffix}`;
+}
+
 // oooId a discordId - ne každý člen má ooo_id (přiřazuje se až první interakcí s webem,
 // kdo přišel jen přes Discord bota, ho ještě mít nemusí) - proto Discord ID jako záložní
 // klíč, ať jde otevřít okno úplně každého, ne jen těch, co už ooo_id mají (2026-08-24,
@@ -288,6 +306,18 @@ function renderMemberModal(body, data) {
       <span class="member-dot member-dot--black">⚫ ${data.dochazka.cerne}</span>
     </p>` : '';
 
+  // Obecná admin poznámka (2026-09-24, na žádost) - u KAŽDÉHO člena (na rozdíl od
+  // poznamka/poznamka2 níž, co existuje jen u lidí s vyplněným dotazníkem a slouží jen
+  // patronům). Zobrazuje se pak malým písmem za jménem všude, kde memberNameCellHtml
+  // vykresluje jméno (přihlášky, seznam členů) - proto uložení hned reflektuje jinde.
+  const memberNoteHtml = data.access ? `
+    <div class="member-note-edit">
+      <label class="member-notes-label" for="member-admin-note">Poznámka (vidět všude u jména)</label>
+      <input type="text" id="member-admin-note" maxlength="500" value="${escapeHtml(data.poznamka_admin || '')}" placeholder="Např. dvakrát nedorazil bez omluvy">
+      <button type="button" class="btn btn-outline btn-sm" id="member-save-note-btn">Uložit</button>
+      <span class="member-modal-msg" id="member-note-msg"></span>
+    </div>` : '';
+
   let questionnaireHtml = '<p class="member-modal-empty">Dotazník zatím nevyplnil/a.</p>';
   if (data.questionnaire.exists) {
     const q = data.questionnaire;
@@ -383,6 +413,7 @@ function renderMemberModal(body, data) {
       <div>
         <h3>${escapeHtml(data.jmeno || data.email || data.ooo_id)}</h3>
         ${dochazkaHtml}
+        ${memberNoteHtml}
         <p class="member-modal-contact">
           ${data.discord_username ? '@' + escapeHtml(data.discord_username) + ' · ' : ''}
           ${escapeHtml(data.email || '')}${data.telefon ? ' · ' + escapeHtml(data.telefon) : ''}${data.instagram ? ' · ' + escapeHtml(data.instagram) : ''}
@@ -531,6 +562,33 @@ function renderMemberModal(body, data) {
         if (!res.ok || !resData.ok) { notesMsgEl.textContent = resData.error || 'Nepodařilo se uložit.'; return; }
         notesMsgEl.textContent = 'Uloženo.';
       } catch (err) { notesMsgEl.textContent = 'Chyba: ' + err.message; }
+    });
+  }
+
+  // Obecná poznámka k členovi (2026-09-24) - samostatný endpoint (members sheet, ne
+  // dotazník), proto vlastní handler mimo panel-review-questionnaire výš. Cíl podle ooo_id,
+  // nebo Discord ID jako záloha (stejný důvod jako u openMemberModal - ne každý má ooo_id).
+  const saveNoteBtn = document.getElementById('member-save-note-btn');
+  if (saveNoteBtn) {
+    saveNoteBtn.addEventListener('click', async () => {
+      const noteMsgEl = document.getElementById('member-note-msg');
+      noteMsgEl.textContent = 'Ukládám…';
+      const identity = memberModalIdentityPayload();
+      try {
+        const res = await fetch(API_BASE + '/api/panel-set-member-note', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...identity,
+            ooo_id: data.ooo_id || undefined,
+            target_discord_id: data.ooo_id ? undefined : data.discord_id,
+            poznamka: document.getElementById('member-admin-note').value,
+          }),
+        });
+        const resData = await res.json();
+        if (!res.ok || !resData.ok) { noteMsgEl.textContent = resData.error || 'Nepodařilo se uložit.'; return; }
+        noteMsgEl.textContent = 'Uloženo.';
+      } catch (err) { noteMsgEl.textContent = 'Chyba: ' + err.message; }
     });
   }
 }
