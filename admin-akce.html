@@ -1138,7 +1138,7 @@
             body.innerHTML = `
               <div class="admin-responsive-table-wrap">
                 <table class="admin-responsive-table">
-                  <thead><tr><th>Jméno</th><th>ooo_id</th><th>Kontakt</th><th>Typ účasti</th><th>Preference</th><th>Záloha</th><th>Doplatek</th><th>Bez omluvy</th><th>Účast</th></tr></thead>
+                  <thead><tr><th>Jméno</th><th>ooo_id</th><th>Kontakt</th><th>Typ účasti</th><th>Preference</th><th>Záloha</th><th>Doplatek</th><th>Docházka</th><th>Účast</th></tr></thead>
                   <tbody>
                     ${sortedRegistrations.map((r, i) => {
                       const partnerBtn = `<button type="button" class="pay-link" data-edit-partner="1" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}" data-jmeno="${(r.jmeno || '').replace(/"/g, '&quot;')}" data-partner="${(isSelfPartner(r.partner_discord, r.user_id) ? '' : (r.partner_discord || '')).replace(/"/g, '&quot;')}">${r.partner_discord && !isSelfPartner(r.partner_discord, r.user_id) ? 'Upravit' : 'Doplnit'}</button>`;
@@ -1182,11 +1182,11 @@
                           setAmount: { ooo: r.ooo_id, user: r.user_id },
                           editId: 'doplatek-edit-' + i,
                         })}</td>
-                        <td data-label="Bez omluvy">${r.odhlaseno_datum ? '—' : `
-                          <label class="pay-switch pay-switch--warn" title="${r.bez_omluvy ? 'Zrušit označení' : 'Označit jako nedorazil/a bez omluvy'}">
+                        <td data-label="Docházka">${r.odhlaseno_datum ? '—' : `
+                          <label class="pay-switch pay-switch--warn" title="${r.bez_omluvy ? 'Klikni zpět, pokud přece dorazil/a' : 'Klikni, pokud NEdorazil/a a nemá omluvu'}">
                             <input type="checkbox" ${r.bez_omluvy ? 'checked' : ''} data-mark="bez_omluvy" data-ooo="${r.ooo_id || ''}" data-user="${r.user_id || ''}">
                             <span class="pay-switch-track"><span class="pay-switch-thumb"></span></span>
-                            <span class="pay-switch-label">${r.bez_omluvy ? '⚫ Bez omluvy' : 'V pořádku'}</span>
+                            <span class="pay-switch-label">${r.bez_omluvy ? '⚫ Nedorazil/a (bez omluvy)' : 'Dorazil/a'}</span>
                           </label>`}</td>
                         <td data-label="Účast">${r.odhlaseno_datum
                           ? `Zrušeno ${r.odhlaseno_datum}${r.vraceno_castka ? ' (vráceno ' + r.vraceno_castka + ' Kč)' : ''}`
