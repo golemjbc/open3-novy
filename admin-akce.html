@@ -328,9 +328,9 @@
 
           <div class="form-section-label">Preference <span class="hint-icon" data-tip="Volitelné možnosti k výběru u přihlášky (např. jídlo/bez jídla, nebo u speed dating &quot;hledám ženu&quot;/&quot;hledám muže&quot;). Kapacita u možnosti je nezávislá na kapacitě celé akce - když se možnost naplní, další přihláška s ní jde na čekačku, i kdyby akce jako celek ještě měla místo.">?</span></div>
           <div class="pref-toggles">
-            <label class="pref-toggle"><input type="checkbox" id="f-pref_required"> Povinná</label>
-            <label class="pref-toggle"><input type="checkbox" id="f-pref_exclusive"> Jen jedna možnost</label>
-            <label class="pref-toggle"><input type="checkbox" id="f-par_povolen" checked> Povolit registraci jako pár</label>
+            <label class="pref-toggle"><input type="checkbox" id="f-pref_required"> Povinná <span class="hint-icon" data-tip="Zapnuto: člověk si u přihlášky musí vybrat aspoň jednu možnost, jinak se nemůže přihlásit. Vypnuto: výběr je dobrovolný, dá se přihlásit i bez něj.">?</span></label>
+            <label class="pref-toggle"><input type="checkbox" id="f-pref_exclusive"> Jen jedna možnost <span class="hint-icon" data-tip="Zapnuto: na webu se možnosti zobrazí jako přepínače (jde vybrat jen JEDNA), např. 'hledám ženu' NEBO 'hledám muže'. Vypnuto: zaškrtávátka, jde vybrat víc možností najednou, např. u jídla 'bez lepku' i 'vegetariánské'.">?</span></label>
+            <label class="pref-toggle"><input type="checkbox" id="f-par_povolen" checked> Povolit registraci jako pár <span class="hint-icon" data-tip="Vypnuto: na tuhle akci se dá přihlásit jen sólo, možnost 'jako pár' se na webu vůbec nenabídne.">?</span></label>
           </div>
           <table class="pref-table">
             <thead><tr><th>Možnost</th><th>Kapacita</th></tr></thead>
@@ -678,6 +678,11 @@
     // stejnou ikonku nebo klik mimo bublinu ji zavře - nikdy jich není otevřených víc.
     document.addEventListener('click', (e) => {
       const icon = e.target.closest('.hint-icon');
+      // Ikonky u přepínačů preferencí (2026-09-26) jsou uvnitř <label>, co obaluje
+      // checkbox - klik na "?" by bez tohohle taky přepnul checkbox (nativní chování
+      // labelu), ne jen otevřel bublinu. preventDefault zastaví tohle "přesměrování"
+      // kliku na checkbox, samotné otevření bubliny níž tím není dotčené.
+      if (icon) e.preventDefault();
       const openBubble = document.querySelector('.hint-icon-bubble');
       const wasOpenOnThisIcon = !!(openBubble && icon && openBubble.parentElement === icon);
       if (openBubble) openBubble.remove();
