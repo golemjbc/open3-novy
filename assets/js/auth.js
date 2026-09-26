@@ -228,6 +228,34 @@ function initAdminNavLink(user) {
     .catch(() => {});
 }
 
+// Položka "Speed dating" v hlavičce (2026-09-26, na žádost - "záložka vedle
+// administrace... přístupná jen pro účastníky daného speedatingu podle toho kdo se
+// zúčastnil"). Stejný vzor jako initAdminNavLink výš (cache v localStorage pro okamžité
+// vykreslení, lehký dotaz na pozadí), jen bez konceptu "self-managed" - účast na speed
+// dating nesouvisí s žádnou admin rolí, takže se řeší úplně stejně na všech stránkách
+// včetně admin-*.html. Google přihlášení se nepočítá (speed dating páruje účastníky podle
+// Discord ID, ne e-mailu) - položka pro Google uživatele zůstává schovaná.
+function initSpeedDatingNavLink(user) {
+  const nav = document.getElementById('nav-speed-dating');
+  if (!nav) return;
+  const setVisible = (visible) => nav.classList.toggle('hidden', !visible);
+  if (!user || !user.userId || isGoogleUser(user)) { setVisible(false); return; }
+  const cacheKey = 'oooIsSpeedDatingParticipant_' + user.userId;
+  if (localStorage.getItem(cacheKey) === '1') setVisible(true);
+  const payload = getIdentityPayload(user);
+  if (!payload || !payload.discord_user_id) { setVisible(false); return; }
+  fetch(API_BASE + '/api/speed-dating-my-schedule', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+  })
+    .then(r => r.json())
+    .then(data => {
+      const isParticipant = !!(data.ok && data.is_participant);
+      setVisible(isParticipant);
+      localStorage.setItem(cacheKey, isParticipant ? '1' : '0');
+    })
+    .catch(() => {});
+}
+
 // Skrytí tabů v ".admin-tabs" (Akce a přihlášky / Fronta dotazníků / Přehled členů /
 // Platby / Fotogalerie), na které volající přes my-roles beztak nemá právo - dřív byly
 // tyhle odkazy natvrdo v HTML na všech pěti admin-*.html a klikem na nedostupný tab
@@ -374,6 +402,7 @@ function initAuthUI() {
     localStorage.removeItem('oooUser');
     clearGhostTarget();
     initAdminNavLink(null);
+    initSpeedDatingNavLink(null);
   }
 
   const stored = getLoggedUser();
@@ -385,6 +414,7 @@ function initAuthUI() {
   // .finally() na všech třech místech v týhle funkci to řeší u zdroje (frontend), zámek
   // v findOrCreateMemberRow to řeší i u zdroje (backend) - obojí pro jistotu.
   Promise.resolve(initAdminNavLink(stored)).finally(() => refreshDisplayName(stored));
+  initSpeedDatingNavLink(stored);
 
   window.addEventListener('message', function (event) {
     const data = event.data;
@@ -392,6 +422,7 @@ function initAuthUI() {
     localStorage.setItem('oooUser', JSON.stringify(data.user));
     setLoggedIn(data.user);
     Promise.resolve(initAdminNavLink(data.user)).finally(() => refreshDisplayName(data.user));
+    initSpeedDatingNavLink(data.user);
     logActivity('login', 'discord');
     if (typeof window.onOooLogin === 'function') window.onOooLogin(data.user);
   });
@@ -458,6 +489,7 @@ function initAuthUI() {
             overlay.remove();
             setLoggedIn(user);
             Promise.resolve(initAdminNavLink(user)).finally(() => refreshDisplayName(user));
+            initSpeedDatingNavLink(user);
             logActivity('login', 'google');
             if (typeof window.onOooLogin === 'function') window.onOooLogin(user);
           } catch (err) {

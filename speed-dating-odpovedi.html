@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta name="referrer" content="no-referrer">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OOO Community - Otevři se. Poznej se. Propoj se.">
+  <meta property="og:title" content="Moje karta — OOOnline Speed Dating">
+  <meta property="og:description" content="Zapiš si dojmy ze svých setkání.">
+  <meta property="og:image" content="https://open3.cz/assets/images/LogoMETA.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://open3.cz/speed-dating-odpovedi.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="OOO Community">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://open3.cz/assets/images/LogoMETA.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="favicon.ico">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <title>Moje karta — OOOnline Speed Dating</title>
+  <style>
+    .hidden { display: none !important; }
+
+    /* Karty jednotlivých kol (2026-09-26) - stejný vizuální jazyk jako .admin-card, jen
+       vlastní vnitřní rozvržení (avatar + jméno partnera + tři odpovědní tlačítka). */
+    .sd-round-card { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 14px 18px; }
+    .sd-round-card + .sd-round-card { margin-top: 10px; }
+    .sd-round-no { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: var(--primary); min-width: 64px; }
+    .sd-round-partner { display: flex; align-items: center; gap: 10px; flex: 1 1 200px; min-width: 180px; }
+    .sd-round-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: var(--border); }
+    .sd-round-name { font-weight: 600; }
+    .sd-round-phase { font-size: 0.76rem; color: var(--text-muted); display: block; }
+    .sd-round-card--pending { opacity: 0.6; }
+    .sd-answer-buttons { display: flex; gap: 8px; }
+    .sd-answer-btn {
+      padding: 8px 16px; border-radius: 999px; border: 1.5px solid var(--border);
+      background: #fff; color: var(--text); font-weight: 600; font-size: 0.86rem; cursor: pointer;
+    }
+    .sd-answer-btn.active[data-value="ano"] { background: var(--success); border-color: var(--success); color: #fff; }
+    .sd-answer-btn.active[data-value="mozna"] { background: var(--warning); border-color: var(--warning); color: #fff; }
+    .sd-answer-btn.active[data-value="ne"] { background: var(--text-muted); border-color: var(--text-muted); color: #fff; }
+    .sd-save-note { font-size: 0.76rem; color: var(--text-muted); width: 100%; min-height: 1.2em; }
+    .sd-submit-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 20px; }
+    .sd-submit-status { font-size: 0.9rem; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <script src="assets/js/age-gate.js"></script>
+
+  <header class="site-header">
+    <div class="container">
+      <button class="nav-toggle" id="nav-toggle" aria-label="Menu">☰</button>
+      <a class="brand" href="index.html"><img src="assets/images/OOOlogo.png" alt="OOO logo"> <span>OOO Community</span></a>
+      <nav>
+        <ul class="nav-links" id="nav-links">
+          <li><a href="index.html">Domů</a></li>
+          <li><a href="akce.html">Akce</a></li>
+          <li><a href="galerie.html">Galerie</a></li>
+          <li><a href="pravidla.html">Pravidla</a></li>
+          <li><a href="contact.html">Kontakt</a></li>
+          <li id="nav-speed-dating" class="hidden"><a href="speed-dating-odpovedi.html" class="active">Speed dating</a></li>
+          <li id="nav-admin" style="display:none;"><a href="admin-akce.html">Administrace</a></li>
+        </ul>
+      </nav>
+      <div class="header-actions">
+        <div id="user-info"><img id="user-avatar" src="" alt=""><span id="user-name"></span></div>
+        <a id="login-button" href="#" class="btn btn-primary btn-sm">Přihlásit</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="section">
+    <div class="container">
+      <h1 id="page-title">Moje karta</h1>
+      <p class="form-hint" id="page-subtitle"></p>
+
+      <div id="gate-message" class="status-panel info">Ověřuji přihlášení…</div>
+
+      <div id="sd-content" class="hidden">
+        <div id="sd-rounds"></div>
+        <div class="sd-submit-bar">
+          <button type="button" class="btn btn-primary" id="sd-submit-btn">Odeslat</button>
+          <span class="sd-submit-status" id="sd-submit-status"></span>
+        </div>
+        <p class="form-hint" style="margin-top:10px;">
+          Odpovědi se ukládají průběžně, jak klikáš - "Odeslat" je jen potvrzení, že máš hotovo. Klidně to potvrď klidně
+          znovu, kdyby ses spletl/a - nic se tím nerozbije.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-bottom">© 2026 OOO Community z.s. — Design: Adam</div>
+    </div>
+  </footer>
+
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/profile-modal.js"></script>
+  <script>
+    logPageView('speed-dating-odpovedi');
+
+    const gateMessage = document.getElementById('gate-message');
+    const sdContent = document.getElementById('sd-content');
+    const roundsEl = document.getElementById('sd-rounds');
+    const subtitleEl = document.getElementById('page-subtitle');
+    const submitBtn = document.getElementById('sd-submit-btn');
+    const submitStatus = document.getElementById('sd-submit-status');
+
+    function showGate(html) {
+      gateMessage.innerHTML = html;
+      gateMessage.classList.remove('hidden');
+      sdContent.classList.add('hidden');
+    }
+
+    const PHASE_LABELS = {
+      nezahajeno: 'ještě se nepotkali',
+      aktivni: 'právě probíhá',
+      upozorneni_1min: 'právě probíhá',
+      upozorneni_30s: 'právě probíhá',
+      rozhodovani: 'právě probíhá',
+      hotovo: '',
+    };
+
+    const ANSWER_LABELS = { ano: 'Ano', mozna: 'Možná', ne: 'Ne' };
+
+    function formatTimestamp(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return iso;
+      return d.toLocaleString('cs-CZ', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function renderRounds(meetings, identityPayload) {
+      roundsEl.innerHTML = meetings.map(m => {
+        const isDone = m.phase === 'hotovo';
+        const avatarHtml = m.partner_avatars && m.partner_avatars.length
+          ? m.partner_avatars.map(url => `<img class="sd-round-avatar" src="${url}" alt="">`).join('')
+          : '<span class="sd-round-avatar"></span>';
+        const phaseLabel = isDone ? '' : (PHASE_LABELS[m.phase] || 'ještě se nepotkali');
+        const buttons = ['ano', 'mozna', 'ne'].map(v => `
+          <button type="button" class="sd-answer-btn${m.value === v ? ' active' : ''}" data-value="${v}"
+            data-round="${m.round_no}" data-partner="${m.partner_participant_id}">${ANSWER_LABELS[v]}</button>
+        `).join('');
+        return `
+          <div class="admin-card sd-round-card${isDone ? '' : ' sd-round-card--pending'}" data-round-card="${m.round_no}">
+            <div class="sd-round-no">Kolo ${m.round_no}</div>
+            <div class="sd-round-partner">
+              ${avatarHtml}
+              <span>
+                <span class="sd-round-name">${escapeHtml(m.partner_display_name || '(neznámý účastník)')}</span>
+                ${phaseLabel ? `<span class="sd-round-phase">${phaseLabel}</span>` : ''}
+              </span>
+            </div>
+            <div class="sd-answer-buttons">${buttons}</div>
+            <div class="sd-save-note" id="sd-save-note-${m.round_no}-${m.partner_participant_id}"></div>
+          </div>
+        `;
+      }).join('') || '<p class="form-hint">Zatím pro tebe není vygenerovaný žádný rozpis kol.</p>';
+
+      roundsEl.querySelectorAll('.sd-answer-btn').forEach(btn => btn.addEventListener('click', () => {
+        const roundNo = btn.dataset.round;
+        const partnerId = btn.dataset.partner;
+        const value = btn.dataset.value;
+        const noteEl = document.getElementById(`sd-save-note-${roundNo}-${partnerId}`);
+        const card = btn.closest('.sd-round-card');
+        card.querySelectorAll('.sd-answer-btn').forEach(b => b.classList.toggle('active', b === btn));
+        noteEl.textContent = 'Ukládám…';
+        fetch(API_BASE + '/api/speed-dating-save-answer', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...identityPayload, round_no: Number(roundNo), partner_participant_id: partnerId, value }),
+        })
+          .then(r => r.json())
+          .then(res => {
+            if (!res.ok) { noteEl.textContent = 'Chyba: ' + (res.error || 'nepodařilo se uložit'); return; }
+            noteEl.textContent = 'Uloženo ✓';
+            setTimeout(() => { if (noteEl.textContent === 'Uloženo ✓') noteEl.textContent = ''; }, 2500);
+          })
+          .catch(err => { noteEl.textContent = 'Chyba: ' + err.message; });
+      }));
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str || '';
+      return div.innerHTML;
+    }
+
+    function loadSchedule() {
+      const user = getLoggedUser();
+      if (!user || !user.userId) {
+        showGate('<h4 style="margin-top:0;">Musíš se nejdřív přihlásit</h4><p style="margin-bottom:0;">Přihlas se prosím přes Discord tlačítkem v hlavičce a vrať se zpátky na tuhle stránku.</p>');
+        return;
+      }
+      if (isGoogleUser(user)) {
+        showGate('<h4 style="margin-top:0;">Přihlas se přes Discord</h4><p style="margin-bottom:0;">Speed dating páruje účastníky podle Discord účtu - přihlas se prosím přes Discord, ne přes Google.</p>');
+        return;
+      }
+      const identityPayload = getIdentityPayload(user);
+      fetch(API_BASE + '/api/speed-dating-my-schedule', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(identityPayload),
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (!data.ok) { showGate('<p style="margin-bottom:0;">Chyba: ' + escapeHtml(data.error || 'nepodařilo se načíst.') + '</p>'); return; }
+          if (!data.is_participant) {
+            showGate('<h4 style="margin-top:0;">Nejsi vedený/á jako účastník</h4><p style="margin-bottom:0;">Podle našich záznamů nejsi (dnes) veden/a jako dorazivší účastník aktuální akce OOOnline Speed Dating.</p>');
+            return;
+          }
+          gateMessage.classList.add('hidden');
+          sdContent.classList.remove('hidden');
+          subtitleEl.textContent = data.event_name ? `${data.event_name} — ${data.jmeno || ''}` : (data.jmeno || '');
+          renderRounds(data.meetings || [], identityPayload);
+          updateSubmitStatus(data.submitted_at);
+
+          submitBtn.onclick = () => {
+            submitStatus.textContent = 'Odesílám…';
+            fetch(API_BASE + '/api/speed-dating-submit', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(identityPayload),
+            })
+              .then(r => r.json())
+              .then(res => {
+                if (!res.ok) { submitStatus.textContent = 'Chyba: ' + (res.error || 'nepodařilo se odeslat'); return; }
+                updateSubmitStatus(res.submitted_at);
+              })
+              .catch(err => { submitStatus.textContent = 'Chyba: ' + err.message; });
+          };
+        })
+        .catch(err => showGate('<p style="margin-bottom:0;">Chyba: ' + escapeHtml(err.message) + '</p>'));
+    }
+
+    function updateSubmitStatus(submittedAt) {
+      submitStatus.textContent = submittedAt ? `Odesláno ✅ (naposledy ${formatTimestamp(submittedAt)})` : 'Zatím neodesláno.';
+    }
+
+    loadSchedule();
+  </script>
+</body>
+</html>
