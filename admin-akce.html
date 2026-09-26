@@ -126,13 +126,19 @@
     }
     .hint-icon-bubble {
       position: absolute; z-index: 20; top: calc(100% + 6px); left: 0;
-      width: max-content; max-width: 260px;
+      width: max-content; max-width: 320px;
       background: var(--text, #222); color: #fff;
-      font-size: 0.78rem; font-weight: 400; line-height: 1.4;
-      padding: 8px 10px; border-radius: 8px;
+      font-size: 0.78rem; font-weight: 400; line-height: 1.5;
+      padding: 10px 12px; border-radius: 8px;
       box-shadow: 0 4px 14px rgba(0,0,0,0.18);
       cursor: default; white-space: normal;
     }
+    /* Delší nápovědy (2026-09-26, na žádost - "je to fakt mizerná a blbě formátovaná,
+       těžko čitelná, jak je všechno velkým v jednom bloku textu") - dvě různé myšlenky v
+       jednom data-tip se oddělí "||" (viz JS níž) a vykreslí jako samostatné odstavce s
+       mezerou mezi nimi, místo jedné nepřerušené zdi textu. */
+    .hint-icon-bubble p { margin: 0 0 8px; }
+    .hint-icon-bubble p:last-child { margin-bottom: 0; }
     /* Popis akce (2026-08-28, na žádost - "formátuju rovnou v tom okně kde píšu", ne
        textarea+náhled vedle sebe) - skutečné WYSIWYG contenteditable pole. Tučně/kurzíva
        přes document.execCommand, Enter vkládá <br> (ne nový <div>/<p> - execCommand
@@ -272,13 +278,13 @@
             <div class="form-group"><label class="form-label">Název</label><input id="f-nazev" class="form-control"></div>
             <div class="form-group"><label class="form-label">Místo</label><input id="f-místo" class="form-control"></div>
             <div class="form-group"><label class="form-label">Lokalita (přesná adresa, po platbě)</label><input id="f-lokalita_presna" class="form-control"></div>
-            <div class="form-group"><label class="form-label">Kapacita (počet lidí, nepovinné) <span class="hint-icon" data-tip="Na webu se z toho nikdy neukáže číslo, jen orientační &quot;zaplněnost&quot; (Spousta prostoru / Začíná se plnit / ... / Obsazeno). Prázdné pole = zaplněnost se na webu vůbec nezobrazuje.">?</span></label><input id="f-kapacita" class="form-control" inputmode="numeric" placeholder="např. 20"></div>
+            <div class="form-group"><label class="form-label">Kapacita (počet lidí, nepovinné) <span class="hint-icon" data-tip="Na webu se z toho nikdy neukáže číslo, jen orientační &quot;zaplněnost&quot; (Spousta prostoru / Začíná se plnit / ... / Obsazeno). || Prázdné pole = zaplněnost se na webu vůbec nezobrazuje.">?</span></label><input id="f-kapacita" class="form-control" inputmode="numeric" placeholder="např. 20"></div>
             <div class="form-group">
-              <label class="form-label">Vyžadovaná Discord role (přesný název sloupce) <span class="hint-icon" data-tip="Předvyplní se podle typu akce. Víc rolí odděl čárkou - stačí, když má člověk aspoň jednu z nich.">?</span></label>
+              <label class="form-label">Vyžadovaná Discord role (přesný název sloupce) <span class="hint-icon" data-tip="Předvyplní se podle typu akce. || Víc rolí odděl čárkou - stačí, když má člověk aspoň jednu z nich.">?</span></label>
               <input id="f-discord_role_required" class="form-control">
             </div>
             <div class="form-group hidden" id="organizatori-group">
-              <label class="form-label">Organizátoři (jen Rada může měnit) <span class="hint-icon" data-tip="Až 5 lidí. Kdo je tu zapsaný, uvidí v administraci jen tuhle jednu akci - i bez role Rada/Spolupracovník.">?</span></label>
+              <label class="form-label">Organizátoři (jen Rada může měnit) <span class="hint-icon" data-tip="Až 5 lidí. || Kdo je tu zapsaný, uvidí v administraci jen tuhle jednu akci - i bez role Rada/Spolupracovník.">?</span></label>
               <div id="organizatori-chips" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;"></div>
               <div class="autocomplete-wrap">
                 <input type="text" id="organizator-search" class="form-control" placeholder="Napiš jméno…" autocomplete="off">
@@ -326,10 +332,10 @@
             <div class="form-group"><label class="form-label">IBAN</label><input id="f-IBAN" class="form-control"></div>
           </div>
 
-          <div class="form-section-label">Preference <span class="hint-icon" data-tip="Volitelné možnosti k výběru u přihlášky (např. jídlo/bez jídla, nebo u speed dating &quot;hledám ženu&quot;/&quot;hledám muže&quot;). Kapacita u možnosti je nezávislá na kapacitě celé akce - když se možnost naplní, další přihláška s ní jde na čekačku, i kdyby akce jako celek ještě měla místo.">?</span></div>
+          <div class="form-section-label">Preference <span class="hint-icon" data-tip="Volitelné možnosti k výběru u přihlášky (např. jídlo/bez jídla, nebo u speed dating &quot;hledám ženu&quot;/&quot;hledám muže&quot;). || Kapacita u možnosti je nezávislá na kapacitě celé akce - když se možnost naplní, další přihláška s ní jde na čekačku, i kdyby akce jako celek ještě měla místo.">?</span></div>
           <div class="pref-toggles">
-            <label class="pref-toggle"><input type="checkbox" id="f-pref_required"> Povinná <span class="hint-icon" data-tip="Zapnuto: člověk si u přihlášky musí vybrat aspoň jednu možnost, jinak se nemůže přihlásit. Vypnuto: výběr je dobrovolný, dá se přihlásit i bez něj.">?</span></label>
-            <label class="pref-toggle"><input type="checkbox" id="f-pref_exclusive"> Jen jedna možnost <span class="hint-icon" data-tip="Zapnuto: na webu se možnosti zobrazí jako přepínače (jde vybrat jen JEDNA), např. 'hledám ženu' NEBO 'hledám muže'. Vypnuto: zaškrtávátka, jde vybrat víc možností najednou, např. u jídla 'bez lepku' i 'vegetariánské'.">?</span></label>
+            <label class="pref-toggle"><input type="checkbox" id="f-pref_required"> Povinná <span class="hint-icon" data-tip="Zapnuto: člověk si u přihlášky musí vybrat aspoň jednu možnost, jinak se nemůže přihlásit. || Vypnuto: výběr je dobrovolný, dá se přihlásit i bez něj.">?</span></label>
+            <label class="pref-toggle"><input type="checkbox" id="f-pref_exclusive"> Jen jedna možnost <span class="hint-icon" data-tip="Zapnuto: na webu se možnosti zobrazí jako přepínače (jde vybrat jen JEDNA), např. 'hledám ženu' NEBO 'hledám muže'. || Vypnuto: zaškrtávátka, jde vybrat víc možností najednou, např. u jídla 'bez lepku' i 'vegetariánské'.">?</span></label>
             <label class="pref-toggle"><input type="checkbox" id="f-par_povolen" checked> Povolit registraci jako pár <span class="hint-icon" data-tip="Vypnuto: na tuhle akci se dá přihlásit jen sólo, možnost 'jako pár' se na webu vůbec nenabídne.">?</span></label>
           </div>
           <table class="pref-table">
@@ -689,7 +695,15 @@
       if (icon && icon.dataset.tip && !wasOpenOnThisIcon) {
         const bubble = document.createElement('span');
         bubble.className = 'hint-icon-bubble';
-        bubble.textContent = icon.dataset.tip;
+        // "||" v data-tip odděluje samostatné myšlenky (2026-09-26) - každá jako vlastní
+        // <p>, ať to není jedna dlouhá zeď textu. Obsah je vždycky napsaný vývojářem
+        // (ne uživatelský vstup), takže textContent při stavbě uzlů stačí, žádné HTML
+        // se nikdy neinterpretuje.
+        icon.dataset.tip.split('||').forEach(part => {
+          const p = document.createElement('p');
+          p.textContent = part.trim();
+          bubble.appendChild(p);
+        });
         icon.appendChild(bubble);
       }
     });
