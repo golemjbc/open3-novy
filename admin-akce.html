@@ -137,7 +137,11 @@
        těžko čitelná, jak je všechno velkým v jednom bloku textu") - dvě různé myšlenky v
        jednom data-tip se oddělí "||" (viz JS níž) a vykreslí jako samostatné odstavce s
        mezerou mezi nimi, místo jedné nepřerušené zdi textu. */
-    .hint-icon-bubble p { margin: 0 0 8px; }
+    /* color: #fff MUSÍ být explicitně i tady, ne spoléhat na dědění z .hint-icon-bubble -
+       živě nalezeno (2026-09-26, "modré písmo na modrém pozadí"): nějaké obecnější pravidlo
+       pro <p> se specifičtějším selektorem (kontejner stránky) přebíjelo bílou barvu bubliny
+       tlumenou --text-muted (#565b7d) - na tmavě modrém pozadí bubliny skoro nečitelné. */
+    .hint-icon-bubble p { margin: 0 0 8px; color: #fff; }
     .hint-icon-bubble p:last-child { margin-bottom: 0; }
     /* Popis akce (2026-08-28, na žádost - "formátuju rovnou v tom okně kde píšu", ne
        textarea+náhled vedle sebe) - skutečné WYSIWYG contenteditable pole. Tučně/kurzíva
