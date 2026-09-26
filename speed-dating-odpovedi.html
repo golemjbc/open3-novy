@@ -41,9 +41,19 @@
     .sd-answer-btn.active[data-value="ano"] { background: var(--success); border-color: var(--success); color: #fff; }
     .sd-answer-btn.active[data-value="mozna"] { background: var(--warning); border-color: var(--warning); color: #fff; }
     .sd-answer-btn.active[data-value="ne"] { background: var(--text-muted); border-color: var(--text-muted); color: #fff; }
+    .sd-answer-btn:disabled { opacity: 0.45; cursor: not-allowed; }
     .sd-save-note { font-size: 0.76rem; color: var(--text-muted); width: 100%; min-height: 1.2em; }
     .sd-submit-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 20px; }
     .sd-submit-status { font-size: 0.9rem; color: var(--text-muted); }
+    .sd-sraz-link { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+
+    /* Odpovědi na téma kola (2026-09-26, na žádost - "druhé okno kde budou vidět
+       odpovědi na otázky od bota, půjde je editovat") - stejný karetní jazyk jako kola
+       setkání výš, jen s textovým polem místo tlačítek. */
+    .sd-tema-card { padding: 14px 18px; }
+    .sd-tema-card + .sd-tema-card { margin-top: 10px; }
+    .sd-tema-question { font-weight: 600; margin-bottom: 6px; }
+    .sd-tema-textarea { width: 100%; min-height: 60px; padding: 8px 10px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); font-family: inherit; font-size: 0.9rem; resize: vertical; }
   </style>
 </head>
 <body>
@@ -60,7 +70,7 @@
           <li><a href="galerie.html">Galerie</a></li>
           <li><a href="pravidla.html">Pravidla</a></li>
           <li><a href="contact.html">Kontakt</a></li>
-          <li id="nav-speed-dating" class="hidden"><a href="speed-dating-odpovedi.html" class="active">Speed dating</a></li>
+          <li id="nav-speed-dating" class="hidden"><a href="speed-dating-odpovedi.html" class="active">Dating</a></li>
           <li id="nav-admin" style="display:none;"><a href="admin-akce.html">Administrace</a></li>
         </ul>
       </nav>
@@ -79,6 +89,8 @@
       <div id="gate-message" class="status-panel info">Ověřuji přihlášení…</div>
 
       <div id="sd-content" class="hidden">
+        <p id="sd-sraz-link" class="sd-sraz-link hidden"><a href="#" target="_blank" rel="noopener" class="btn btn-outline btn-sm">🎤 Sraz kanál na Discordu</a></p>
+
         <div id="sd-rounds"></div>
         <div class="sd-submit-bar">
           <button type="button" class="btn btn-primary" id="sd-submit-btn">Odeslat</button>
@@ -88,6 +100,12 @@
           Odpovědi se ukládají průběžně, jak klikáš - "Odeslat" je jen potvrzení, že máš hotovo. Klidně to potvrď klidně
           znovu, kdyby ses spletl/a - nic se tím nerozbije.
         </p>
+
+        <div id="sd-tema-section" class="hidden" style="margin-top:32px;">
+          <h2 style="margin-bottom:6px;">Odpovědi na téma kola</h2>
+          <p class="form-hint" style="margin-top:0;">Co jsi napsal/a botovi do hlasového kanálu ke společné otázce kola - dá se tu i dodatečně upravit. Přibývá to postupně, jak se kola uzavírají.</p>
+          <div id="sd-tema-list"></div>
+        </div>
       </div>
     </div>
   </section>
@@ -109,6 +127,16 @@
     const subtitleEl = document.getElementById('page-subtitle');
     const submitBtn = document.getElementById('sd-submit-btn');
     const submitStatus = document.getElementById('sd-submit-status');
+    const srazLinkEl = document.getElementById('sd-sraz-link');
+    const temaSectionEl = document.getElementById('sd-tema-section');
+    const temaListEl = document.getElementById('sd-tema-list');
+
+    // Auto-obnova (2026-09-26, na žádost - "moje karta se sama neaktualizuje, hodnoty se
+    // upravují až po znovu načtení") - pravidelně dotáhne čerstvá data (fáze kola se mění
+    // na pozadí, i když sám nic neklikáš). Přeskočí se, když zrovna píšeš do textového pole
+    // odpovědi na téma, ať tě to při psaní nepřeruší.
+    const REFRESH_MS = 15000;
+    let refreshTimer = null;
 
     function showGate(html) {
       gateMessage.innerHTML = html;
@@ -137,16 +165,20 @@
     function renderRounds(meetings, identityPayload) {
       roundsEl.innerHTML = meetings.map(m => {
         const isDone = m.phase === 'hotovo';
+        // Odpovídat jde od chvíle, co kolo ZAČALO - ne dřív (na žádost - "už po zahájení
+        // kola mohu kliknout na rozhodnutí, nemusí to čekat až po skončení, ale určitě ne
+        // před zahájením"). "nezahajeno" = jen zobrazit, tlačítka needisabled.
+        const notStarted = m.phase === 'nezahajeno';
         const avatarHtml = m.partner_avatars && m.partner_avatars.length
           ? m.partner_avatars.map(url => `<img class="sd-round-avatar" src="${url}" alt="">`).join('')
           : '<span class="sd-round-avatar"></span>';
         const phaseLabel = isDone ? '' : (PHASE_LABELS[m.phase] || 'ještě se nepotkali');
         const buttons = ['ano', 'mozna', 'ne'].map(v => `
           <button type="button" class="sd-answer-btn${m.value === v ? ' active' : ''}" data-value="${v}"
-            data-round="${m.round_no}" data-partner="${m.partner_participant_id}">${ANSWER_LABELS[v]}</button>
+            data-round="${m.round_no}" data-partner="${m.partner_participant_id}"${notStarted ? ' disabled' : ''}>${ANSWER_LABELS[v]}</button>
         `).join('');
         return `
-          <div class="admin-card sd-round-card${isDone ? '' : ' sd-round-card--pending'}" data-round-card="${m.round_no}">
+          <div class="admin-card sd-round-card${notStarted ? ' sd-round-card--pending' : ''}" data-round-card="${m.round_no}">
             <div class="sd-round-no">Kolo ${m.round_no}</div>
             <div class="sd-round-partner">
               ${avatarHtml}
@@ -161,7 +193,7 @@
         `;
       }).join('') || '<p class="form-hint">Zatím pro tebe není vygenerovaný žádný rozpis kol.</p>';
 
-      roundsEl.querySelectorAll('.sd-answer-btn').forEach(btn => btn.addEventListener('click', () => {
+      roundsEl.querySelectorAll('.sd-answer-btn:not(:disabled)').forEach(btn => btn.addEventListener('click', () => {
         const roundNo = btn.dataset.round;
         const partnerId = btn.dataset.partner;
         const value = btn.dataset.value;
@@ -183,13 +215,60 @@
       }));
     }
 
+    // Odpovědi na téma kola (2026-09-26) - jen kola, co appka/web už zaznamenaly (roste
+    // postupně, jak se kola uzavírají - ne dopředu jako karty setkání výš). Auto-uložení
+    // s malým zpožděním po psaní (debounce), stejný princip jako tlačítka výš, jen pro
+    // text nejde ukládat po každém písmenku.
+    let temaSaveTimers = {};
+    function renderTema(temaOdpovedi, identityPayload) {
+      if (!temaOdpovedi || !temaOdpovedi.length) { temaSectionEl.classList.add('hidden'); return; }
+      temaSectionEl.classList.remove('hidden');
+      temaListEl.innerHTML = temaOdpovedi.map(t => `
+        <div class="admin-card sd-tema-card" data-tema-round="${t.round_no}">
+          <div class="sd-round-no" style="margin-bottom:6px;">Kolo ${t.round_no}</div>
+          <div class="sd-tema-question">${escapeHtml(t.question || '')}</div>
+          <textarea class="sd-tema-textarea" data-round="${t.round_no}" placeholder="Tvoje odpověď…">${escapeHtml(t.text || '')}</textarea>
+          <div class="sd-save-note" id="sd-tema-note-${t.round_no}"></div>
+        </div>
+      `).join('');
+
+      temaListEl.querySelectorAll('.sd-tema-textarea').forEach(el => el.addEventListener('input', () => {
+        const roundNo = el.dataset.round;
+        const noteEl = document.getElementById(`sd-tema-note-${roundNo}`);
+        noteEl.textContent = 'Píšeš…';
+        clearTimeout(temaSaveTimers[roundNo]);
+        temaSaveTimers[roundNo] = setTimeout(() => {
+          noteEl.textContent = 'Ukládám…';
+          fetch(API_BASE + '/api/speed-dating-save-topic-answer', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...identityPayload, round_no: Number(roundNo), text: el.value }),
+          })
+            .then(r => r.json())
+            .then(res => {
+              if (!res.ok) { noteEl.textContent = 'Chyba: ' + (res.error || 'nepodařilo se uložit'); return; }
+              noteEl.textContent = 'Uloženo ✓';
+              setTimeout(() => { if (noteEl.textContent === 'Uloženo ✓') noteEl.textContent = ''; }, 2500);
+            })
+            .catch(err => { noteEl.textContent = 'Chyba: ' + err.message; });
+        }, 800);
+      }));
+    }
+
+    function isTemaTextareaFocused() {
+      return document.activeElement && document.activeElement.classList.contains('sd-tema-textarea');
+    }
+
     function escapeHtml(str) {
       const div = document.createElement('div');
       div.textContent = str || '';
       return div.innerHTML;
     }
 
-    function loadSchedule() {
+    function loadSchedule(isRefresh) {
+      // Auto-obnova nesmí přerušit psaní do odpovědi na téma - jen se přeskočí tenhle
+      // pokus, další se zkusí za REFRESH_MS znovu.
+      if (isRefresh && isTemaTextareaFocused()) return;
+
       const user = getLoggedUser();
       if (!user || !user.userId) {
         showGate('<h4 style="margin-top:0;">Musíš se nejdřív přihlásit</h4><p style="margin-bottom:0;">Přihlas se prosím přes Discord tlačítkem v hlavičce a vrať se zpátky na tuhle stránku.</p>');
@@ -213,7 +292,10 @@
           gateMessage.classList.add('hidden');
           sdContent.classList.remove('hidden');
           subtitleEl.textContent = data.event_name ? `${data.event_name} — ${data.jmeno || ''}` : (data.jmeno || '');
+          if (data.sraz_url) { srazLinkEl.classList.remove('hidden'); srazLinkEl.querySelector('a').href = data.sraz_url; }
+          else { srazLinkEl.classList.add('hidden'); }
           renderRounds(data.meetings || [], identityPayload);
+          renderTema(data.tema_odpovedi || [], identityPayload);
           updateSubmitStatus(data.submitted_at);
 
           submitBtn.onclick = () => {
@@ -228,8 +310,10 @@
               })
               .catch(err => { submitStatus.textContent = 'Chyba: ' + err.message; });
           };
+
+          if (!refreshTimer) refreshTimer = setInterval(() => loadSchedule(true), REFRESH_MS);
         })
-        .catch(err => showGate('<p style="margin-bottom:0;">Chyba: ' + escapeHtml(err.message) + '</p>'));
+        .catch(err => { if (!isRefresh) showGate('<p style="margin-bottom:0;">Chyba: ' + escapeHtml(err.message) + '</p>'); });
     }
 
     function updateSubmitStatus(submittedAt) {
