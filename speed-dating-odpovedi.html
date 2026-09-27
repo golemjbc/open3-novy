@@ -135,7 +135,10 @@
     // upravují až po znovu načtení") - pravidelně dotáhne čerstvá data (fáze kola se mění
     // na pozadí, i když sám nic neklikáš). Přeskočí se, když zrovna píšeš do textového pole
     // odpovědi na téma, ať tě to při psaní nepřeruší.
-    const REFRESH_MS = 30000;
+    // 5s - bezpečné i s víc účastníky najednou, protože backend má sdílenou mezipaměť
+    // (viz komentář v speed-dating-my-schedule/index.js) - skutečný dotaz do Google
+    // Sheets se dělá nejvýš jednou za pár vteřin CELKEM, ne jednou na osobu na dotaz.
+    const REFRESH_MS = 5000;
     let refreshTimer = null;
 
     function showGate(html) {
