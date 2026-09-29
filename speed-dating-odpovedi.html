@@ -289,7 +289,7 @@
         .then(data => {
           if (!data.ok) { showGate('<p style="margin-bottom:0;">Chyba: ' + escapeHtml(data.error || 'nepodařilo se načíst.') + '</p>'); return; }
           if (!data.is_participant) {
-            showGate('<h4 style="margin-top:0;">Nejsi vedený/á jako účastník</h4><p style="margin-bottom:0;">Podle našich záznamů nejsi (dnes) veden/a jako dorazivší účastník aktuální akce OOOnline Speed Dating.</p>');
+            showGate('<h4 style="margin-top:0;">Nejsi vedený/á jako účastník</h4><p style="margin-bottom:0;">Podle našich záznamů nejsi (zatím) veden/a jako účastník aktuální akce OOOnline Speed Dating.</p>');
             return;
           }
           gateMessage.classList.add('hidden');
