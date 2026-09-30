@@ -132,14 +132,32 @@
     const temaListEl = document.getElementById('sd-tema-list');
 
     // Auto-obnova (2026-09-26, na žádost - "moje karta se sama neaktualizuje, hodnoty se
-    // upravují až po znovu načtení") - pravidelně dotáhne čerstvá data (fáze kola se mění
-    // na pozadí, i když sám nic neklikáš). Přeskočí se, když zrovna píšeš do textového pole
+    // upravují až po znovu načtení") - přeskočí se, když zrovna píšeš do textového pole
     // odpovědi na téma, ať tě to při psaní nepřeruší.
-    // 5s - bezpečné i s víc účastníky najednou, protože backend má sdílenou mezipaměť
-    // (viz komentář v speed-dating-my-schedule/index.js) - skutečný dotaz do Google
-    // Sheets se dělá nejvýš jednou za pár vteřin CELKEM, ne jednou na osobu na dotaz.
-    const REFRESH_MS = 5000;
-    let refreshTimer = null;
+    //
+    // Od 2026-09-30 dvoufázově (na žádost - "reagovat rychleji než jen pravidelný
+    // refresh"), místo prostého pravidelného stažení celé karty: lehká kontrola
+    // "změnilo se něco?" (`speed-dating-check-update`, jen jedno malé čtení otisku
+    // poslední změny appky) se volá velmi často (CHECK_MS), celá karta
+    // (`speed-dating-my-schedule`) se stahuje znovu, jen když se otisk skutečně liší od
+    // posledního známého. Appka zapisuje otisk při každé změně viditelné na kartě
+    // (rozpis, fáze kola, otázka kola) - viz db.py `_touch_web_update`.
+    const CHECK_MS = 1500;
+    let checkTimer = null;
+    let lastKnownUpdate = null;
+    let currentIdentityPayload = null;
+
+    function checkForUpdate() {
+      if (isTemaTextareaFocused() || !currentIdentityPayload) return;
+      fetch(API_BASE + '/api/speed-dating-check-update', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(currentIdentityPayload),
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.ok && data.last_updated !== lastKnownUpdate) loadSchedule(true);
+        })
+        .catch(() => { /* tichá chyba - zkusí to znovu za CHECK_MS */ });
+    }
 
     function showGate(html) {
       gateMessage.innerHTML = html;
@@ -269,7 +287,7 @@
 
     function loadSchedule(isRefresh) {
       // Auto-obnova nesmí přerušit psaní do odpovědi na téma - jen se přeskočí tenhle
-      // pokus, další se zkusí za REFRESH_MS znovu.
+      // pokus, další kontrola přijde za CHECK_MS znovu.
       if (isRefresh && isTemaTextareaFocused()) return;
 
       const user = getLoggedUser();
@@ -282,6 +300,7 @@
         return;
       }
       const identityPayload = getIdentityPayload(user);
+      currentIdentityPayload = identityPayload;
       fetch(API_BASE + '/api/speed-dating-my-schedule', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(identityPayload),
       })
@@ -300,6 +319,7 @@
           renderRounds(data.meetings || [], identityPayload);
           renderTema(data.tema_odpovedi || [], identityPayload);
           updateSubmitStatus(data.submitted_at);
+          lastKnownUpdate = data.last_updated;
 
           submitBtn.onclick = () => {
             submitStatus.textContent = 'Odesílám…';
@@ -314,7 +334,7 @@
               .catch(err => { submitStatus.textContent = 'Chyba: ' + err.message; });
           };
 
-          if (!refreshTimer) refreshTimer = setInterval(() => loadSchedule(true), REFRESH_MS);
+          if (!checkTimer) checkTimer = setInterval(checkForUpdate, CHECK_MS);
         })
         .catch(err => { if (!isRefresh) showGate('<p style="margin-bottom:0;">Chyba: ' + escapeHtml(err.message) + '</p>'); });
     }
