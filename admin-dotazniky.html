@@ -238,7 +238,11 @@
       fetch(API_BASE + '/api/my-roles', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(identityPayload()),
       })
-        .then(r => r.json())
+        // 2026-10-05, oprava - "už zase to nefungovalo, pak samo přestalo": dřív se
+        // odpověď brala jako platná i při chybě (500) - backend teď skutečné chyby
+        // (dočasný výpadek Google Sheets API) posílá jako chybu, ne jako "nemáš roli",
+        // ale frontend to musí taky rozlišit, jinak by se to tvářilo úplně stejně.
+        .then(r => (r.ok ? r.json() : Promise.reject(new Error('my-roles vrátilo chybu'))))
         .then(data => {
           gateLoading.classList.add('hidden');
           if (!data.rada && !data.patron) {
@@ -255,6 +259,8 @@
         .catch(() => {
           gateLoading.classList.add('hidden');
           gateDenied.classList.remove('hidden');
+          const p = gateDenied.querySelector('p');
+          if (p) p.textContent = 'Nepodařilo se ověřit oprávnění - dočasná chyba (např. výpadek Google Sheets API). Zkus prosím stránku za chvíli znovu načíst.';
         });
     }
   </script>
