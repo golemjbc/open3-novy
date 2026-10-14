@@ -396,6 +396,8 @@
           ${statusBadge(c.status, c.status_label)}
         </div>
         ${c.owner_jmeno && !isOoo ? `<div class="lib-meta">Nabízí: <strong>${esc(c.owner_jmeno)}</strong></div>` : ''}
+        ${isOoo && c.keeper_jmeno ? `<div class="lib-meta">Správce knih OOO: <strong>${esc(c.keeper_jmeno)}</strong></div>` : ''}
+        ${c.holder_jmeno ? `<div class="lib-meta">Teď ji má: <strong>${esc(c.holder_jmeno)}</strong>${c.holder_is_home ? ' (doma, u majitele)' : ''}</div>` : ''}
         <div class="lib-meta">${esc(rulesText)}${c.queue_count ? ` · ve frontě ${c.queue_count}` : ''}</div>
         ${c.stav_poznamka ? `<div class="lib-meta">Stav výtisku: ${esc(c.stav_poznamka)}</div>` : ''}
         ${c.doporuceni ? `<div class="lib-quote">${esc(c.doporuceni)}</div>` : ''}
@@ -460,11 +462,90 @@
           if (!confirm(`Odebrat ${btn.dataset.name} z fronty?`)) return;
           return runAction(copyId, action, { target_ooo_id: btn.dataset.target }, { ...opts, noConfirm: true });
         }
-        if (action === 'request') {
-          return runAction(copyId, action, {}, { ...opts, okMsg: 'Jsi ve frontě. Dáme vědět, až na tebe přijde řada.' });
-        }
+        if (action === 'request') return openRequestModal(c, c.title || title);
         runAction(copyId, action, {}, opts);
       }));
+    }
+
+    // ----- Okno "Chci si půjčit" -----
+    // Kdo knihu má, jak ti má dorazit (Zásilkovna s výdejním místem / osobně) a kontakty.
+    function openRequestModal(c, t) {
+      const profile = (state.my && state.my.profile) || { instagram: '', whatsapp: '' };
+      const isOoo = c.owner_type === 'ooo';
+      const homeName = isOoo ? (c.keeper_jmeno || 'správce knih OOO') : c.owner_jmeno;
+      const holderLine = c.holder_is_home
+        ? `Kniha je teď <strong>doma u ${esc(homeName)}</strong>.`
+        : `Knihu má teď u sebe <strong>${esc(c.holder_jmeno)}</strong>${isOoo ? '' : ` (majitel: ${esc(c.owner_jmeno)})`}.`;
+      let chosen = null; // výdejní místo
+      const m = openModal(`
+        <h3 style="margin-top:0;">Chci si půjčit: ${esc(t ? t.nazev : '')}</h3>
+        <div class="lib-info" style="margin-top:0;">${holderLine}${c.queue_count ? ` Před tebou ${c.queue_count === 1 ? 'čeká 1 zájemce' : `čekají ${c.queue_count} zájemci`}.` : ''}</div>
+        <form id="rq" autocomplete="off">
+          <div class="form-group" style="margin-top:16px;"><label class="form-label">Jak ti má kniha dorazit?</label>
+            <div class="lib-method">
+              <label><input type="radio" name="rq-method" value="packeta"><span>📦 Zásilkovna / Z-BOX</span></label>
+              <label><input type="radio" name="rq-method" value="osobne"><span>🤝 Osobně</span></label>
+            </div></div>
+          <div id="rq-packeta" class="hidden">
+            ${PACKETA_API_KEY
+              ? `<div id="rq-point" class="lib-info hidden"></div><button type="button" class="btn btn-outline" id="rq-pick">Vybrat výdejní místo na mapě</button>`
+              : `<div class="form-hint" style="margin-bottom:8px;">Najdi si místo nebo Z-BOX na <a href="https://www.zasilkovna.cz/pobocky" target="_blank" rel="noopener">mapě Zásilkovny</a> a opiš jeho údaje.</div>
+                 <div class="form-group"><input class="form-control" id="rq-name" placeholder="Název místa, např. Z-BOX Praha 7, Dukelských hrdinů"></div>
+                 <div class="lib-row2"><input class="form-control" id="rq-addr" placeholder="Adresa"><input class="form-control" id="rq-pid" placeholder="ID místa (nepovinné)"></div>`}
+            <div class="form-hint">Výdejní místo uvidí jen člověk, který ti knihu pošle.</div>
+          </div>
+          <div id="rq-osobne" class="hidden"><div class="form-hint">Domluvíte se s druhou stranou, kde a kdy se potkáte.</div></div>
+          <hr style="border:none;border-top:1px solid var(--border);margin:20px 0;">
+          <div class="form-group"><label class="form-label">Jak se s tebou spojí</label>
+            <div class="form-hint" style="margin:0 0 10px;">Až na tebe přijde řada, uvidíte si navzájem <strong>Discord</strong> (ten se předává vždy). <strong>Instagram a WhatsApp se ukážou jen tehdy, když je vyplníte oba</strong> – vyplněním dáváš najevo, že se přes ně chceš nechat kontaktovat. Údaje se ukládají do tvého členského profilu (stejné jako v dotazníku).</div>
+            <div class="lib-row2">
+              <input class="form-control" id="rq-wa" type="tel" required placeholder="Telefon – WhatsApp (povinné)" value="${esc(profile.whatsapp)}">
+              <input class="form-control" id="rq-ig" placeholder="Instagram (nepovinné)" value="${esc(profile.instagram)}">
+            </div>
+            <div class="form-hint">Telefon je <strong>povinný</strong> – Zásilkovna ho vyžaduje u každého výdejního místa i Z-BOXu. Jako WhatsApp se ukáže jen druhé straně, která má telefon vyplněný taky.</div></div>
+          <div class="form-group"><label class="form-label">Vzkaz majiteli (nepovinné)</label><textarea class="form-control" id="rq-note" rows="2"></textarea></div>
+          <div class="lib-actions"><button type="submit" class="btn btn-primary" id="rq-submit">Zařadit se do fronty</button></div>
+        </form>`);
+      const radios = m.querySelectorAll('input[name=rq-method]');
+      const toggle = () => {
+        const sel = m.querySelector('input[name=rq-method]:checked');
+        m.querySelector('#rq-packeta').classList.toggle('hidden', !sel || sel.value !== 'packeta');
+        m.querySelector('#rq-osobne').classList.toggle('hidden', !sel || sel.value !== 'osobne');
+      };
+      radios.forEach(r => r.addEventListener('change', toggle));
+      const pick = m.querySelector('#rq-pick');
+      if (pick) pick.addEventListener('click', () => pickPacketaPoint(point => {
+        chosen = point;
+        const box = m.querySelector('#rq-point');
+        box.classList.remove('hidden');
+        box.innerHTML = `📍 <strong>${esc(point.name)}</strong>${point.address ? `<br>${esc(point.address)}` : ''}`;
+        pick.textContent = 'Změnit výdejní místo';
+      }));
+      m.querySelector('#rq').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const sel = m.querySelector('input[name=rq-method]:checked');
+        if (!sel) { toast('Vyber, jak ti má kniha dorazit.', true); return; }
+        const params = { method: sel.value, note: m.querySelector('#rq-note').value };
+        if (sel.value === 'packeta') {
+          const point = PACKETA_API_KEY ? chosen : { name: m.querySelector('#rq-name').value.trim(), address: m.querySelector('#rq-addr').value.trim(), id: m.querySelector('#rq-pid').value.trim() };
+          if (!point || !point.name) { toast('Vyber výdejní místo Zásilkovny.', true); return; }
+          params.packeta = point;
+        }
+        const ig = m.querySelector('#rq-ig').value.trim(), wa = m.querySelector('#rq-wa').value.trim();
+        if (wa.replace(/\D/g, '').length < 9) { toast('Vyplň prosím telefonní číslo (aspoň 9 číslic) - Zásilkovna ho vyžaduje.', true); return; }
+        const btn = m.querySelector('#rq-submit');
+        btn.disabled = true;
+        try {
+          if (ig !== (profile.instagram || '') || wa !== (profile.whatsapp || '')) await api('library-profile', { instagram: ig, whatsapp: wa });
+          await api('library-action', { copy_id: c.id, action: 'request', params });
+          toast('Jsi ve frontě. Dáme vědět, až na tebe přijde řada.');
+          closeModal();
+          await refresh();
+        } catch (err) {
+          toast(err.message, true);
+          btn.disabled = false;
+        }
+      });
     }
 
     // ----- Panel výtisku (Moje knihy, Výpůjčky, Správa) -----
@@ -487,7 +568,11 @@
       }
       if (c.due_date) lines.push(`<span class="${c.overdue ? 'lib-overdue' : ''}">Vrátit do ${fmtDate(c.due_date)}${c.overdue ? ' – po termínu' : ''}</span>`);
       if (c.reader_done && mode !== 'holder') lines.push('Čtenář už dočetl.');
-      if (mode === 'request') lines.push(`Jsi ve frontě na <strong>${c.queue_position}. místě</strong> · ${esc(c.status_label)}`);
+      if (mode === 'request') {
+        lines.push(`Jsi ve frontě na <strong>${c.queue_position}. místě</strong> · ${esc(c.status_label)}`);
+        if (c.holder_jmeno) lines.push(`Teď ji má: <strong>${esc(c.holder_jmeno)}</strong>${c.holder_is_home ? ' (doma, u majitele)' : ''}`);
+        if (c.my_request && c.my_request.method) lines.push(c.my_request.method === 'packeta' ? `Doručení: 📦 ${esc(c.my_request.packeta ? c.my_request.packeta.name : 'Zásilkovna')}` : 'Doručení: 🤝 osobně');
+      }
 
       let alert = '';
       if (c.return_request) {
@@ -562,8 +647,9 @@
         <div class="lib-contact">
           ${cp.discord_url ? `<a href="${esc(cp.discord_url)}" target="_blank" rel="noopener">💬 Discord${cp.discord_username ? ` (${esc(cp.discord_username)})` : ''}</a>` : ''}
           ${cp.instagram ? `<a href="https://instagram.com/${encodeURIComponent(cp.instagram)}" target="_blank" rel="noopener">📷 Instagram @${esc(cp.instagram)}</a>` : ''}
-          ${cp.whatsapp ? `<a href="https://wa.me/${esc(cp.whatsapp.replace(/[^0-9]/g, ''))}" target="_blank" rel="noopener">🟢 WhatsApp</a>` : ''}
-        </div>` : `<div class="lib-meta">${esc(t.from_jmeno)} → ${esc(t.to_jmeno)}</div>`;
+          ${cp.whatsapp && cp.whatsapp_link ? `<a href="https://wa.me/${esc(cp.whatsapp_link)}" target="_blank" rel="noopener">🟢 WhatsApp ${esc(cp.whatsapp)}</a>` : ''}
+        </div>
+        <div class="lib-meta" style="margin-top:6px;">Discord se předává vždy. ${t.my_contact && (!t.my_contact.instagram || !t.my_contact.whatsapp) ? 'Instagram a WhatsApp se ukážou jen tehdy, když je vyplní oba – svoje si doplň v záložce <em>Oznámení a kontakt</em>.' : 'Instagram a WhatsApp vidíte jen ty sítě, které máte vyplněné oba.'}</div>` : `<div class="lib-meta">${esc(t.from_jmeno)} → ${esc(t.to_jmeno)}</div>`;
 
       let methodPart = '';
       if (canEdit) {
@@ -717,10 +803,10 @@
       body.innerHTML = `
         <div class="lib-panel">
           <h3>Kontakt pro předávání</h3>
-          <p class="lib-meta">Výchozí je Discord – při předání se protistraně ukáže odkaz na tvůj Discord účet. Pokud chceš, můžeš navíc nabídnout Instagram nebo WhatsApp. <strong>Uvidí je jen člověk, se kterým si zrovna předáváš knihu</strong>, nikdy katalog ani nikdo další.</p>
+          <p class="lib-meta">Výchozí je Discord – při předání se protistraně ukáže odkaz na tvůj Discord účet. Instagram a WhatsApp (telefon) se evidují v tvém členském profilu – stejné údaje jako v dotazníku, takže tu bývají už předvyplněné. <strong>Ukážou se jen člověku, se kterým si zrovna předáváš knihu, a jen když je má vyplněné i on</strong> – nikdy v katalogu ani nikomu dalšímu.</p>
           <div class="lib-row2">
             <div class="form-group"><label class="form-label">Instagram (nepovinné)</label><input class="form-control" id="pf-ig" placeholder="uživatelské jméno" value="${esc(my.profile.instagram)}"></div>
-            <div class="form-group"><label class="form-label">WhatsApp (nepovinné)</label><input class="form-control" id="pf-wa" placeholder="+420…" value="${esc(my.profile.whatsapp)}"></div>
+            <div class="form-group"><label class="form-label">WhatsApp – telefon (nepovinné)</label><input class="form-control" id="pf-wa" placeholder="+420…" value="${esc(my.profile.whatsapp)}"></div>
           </div>
           <button type="button" class="btn btn-primary btn-sm" id="pf-save">Uložit</button>
         </div>
@@ -752,6 +838,16 @@
       const transfers = copies.filter(c => c.transfer).length;
       body.innerHTML = `
         <div class="lib-info" style="margin-bottom:16px;">Správa vidí všechny výtisky včetně toho, kdo je má u sebe. Tlačítka tady jednají s pravomocí Rady (i nad cizími knihami) – používej je jen k řešení problémů. Celkem ${copies.length} výtisků · ${transfers} probíhajících předání · ${overdue ? `<span class="lib-overdue">${overdue} po termínu</span>` : '0 po termínu'}.</div>
+        <div class="lib-panel">
+          <h3>Správce knih OOO</h3>
+          <p class="lib-meta">Knihy fondu OOO se chovají, jako by byly jeho: jsou u něj doma, on je předává dál a k němu se vracejí. Změna se promítne do všech knih fondu (knihy, které jsou doma, přejdou k novému správci, půjčené se budou vracet jemu).</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <select class="form-control" id="kp-select" style="flex:1;min-width:200px;">
+              ${(a.members || []).map(x => `<option value="${esc(x.ooo_id)}"${(a.settings && a.settings.ooo_keeper_ooo_id) === x.ooo_id ? ' selected' : ''}>${esc(x.jmeno)} (${esc(x.ooo_id)})</option>`).join('')}
+            </select>
+            <button type="button" class="btn btn-primary btn-sm" id="kp-save">Uložit správce</button>
+          </div>
+        </div>
         <div style="margin-bottom:16px;"><button type="button" class="btn btn-primary btn-sm" id="lib-add-ooo">+ Přidat knihu do fondu OOO</button></div>
         <div class="lib-filters filters" style="margin-bottom:16px;">
           <button type="button" class="filter-btn active" data-af="">Vše</button>
@@ -778,6 +874,15 @@
         draw(b.dataset.af);
       }));
       body.querySelector('#lib-add-ooo').addEventListener('click', () => openBookForm({ admin: true, forceMode: 'ooo' }));
+      body.querySelector('#kp-save').addEventListener('click', async () => {
+        const target = body.querySelector('#kp-select').value;
+        try {
+          const r = await api('library-settings', { admin_mode: true, ooo_keeper_ooo_id: target });
+          toast(r.moved ? `Správce uložen, ${r.moved} knih přešlo k němu.` : 'Správce uložen.');
+          await loadAdmin();
+          render();
+        } catch (e) { toast(e.message, true); }
+      });
     }
 
     function openSetHolder(c) {
@@ -829,9 +934,7 @@
           <div class="form-group"><label class="form-label">Doba výpůjčky (dní, nepovinné)</label><input type="number" min="1" max="365" class="form-control" name="loan_days" value="${rules.loan_days || ''}" style="max-width:140px;"></div>
           <div class="form-group"><label class="form-label">${mode === 'ooo' ? 'Doporučení' : 'Moje doporučení'} (nepovinné)</label><textarea class="form-control" name="doporuceni" rows="2" placeholder="Proč si ji přečíst?">${esc(copy ? copy.doporuceni : '')}</textarea></div>
           <div class="form-group"><label class="form-label">Stav výtisku (nepovinné)</label><input class="form-control" name="stav_poznamka" value="${esc(copy ? copy.stav_poznamka : '')}" placeholder="např. podtrhané pasáže, ohnutý roh"></div>
-          ${(forceMode === 'ooo' || mode === 'ooo') && admin ? `<div class="form-group"><label class="form-label">Kde je kniha uložená (správce)</label>
-            <select class="form-control" name="keeper_ooo_id">${(state.admin ? state.admin.members : []).map(x => `<option value="${esc(x.ooo_id)}"${(copy ? copy.keeper_ooo_id : c.me.ooo_id) === x.ooo_id ? ' selected' : ''}>${esc(x.jmeno)}</option>`).join('')}</select>
-            <div class="form-hint">Odsud se kniha půjčuje a sem se vrací.</div></div>` : ''}
+          ${(forceMode === 'ooo' || mode === 'ooo') ? '<div class="lib-info" style="margin-bottom:14px;">Kniha bude patřit správci knih OOO a bude u něj doma (nastavuje se ve Správě fondu).</div>' : ''}
           <div class="lib-actions"><button type="submit" class="btn btn-primary" id="bf-submit">${editing ? 'Uložit změny' : 'Nabídnout'}</button></div>
         </form>`);
       const form = m.querySelector('#bf');
@@ -862,7 +965,6 @@
         if (!titleLocked) {
           Object.assign(payload, { isbn: fd.get('isbn') || '', nazev: fd.get('nazev') || '', autori: fd.get('autori') || '', popis: fd.get('popis') || '', temata: fd.getAll('temata') });
         }
-        if (fd.get('keeper_ooo_id')) payload.keeper_ooo_id = fd.get('keeper_ooo_id');
         if (coverDataUrl) payload.cover_data_url = coverDataUrl;
         if (editing) payload.copy_id = copy.id;
         if (isNewCopyOfExisting) payload.title_id = title.id;
