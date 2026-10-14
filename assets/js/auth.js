@@ -74,6 +74,8 @@ const GHOST_SAFE_ENDPOINTS = new Set([
   // Veřejné/vlastní čtení (co běžný uživatel vidí procházením webu):
   'events', 'members', 'my-registrations', 'get-deposit-info', 'get-questionnaire', 'my-profile', 'my-roles',
   'event-gallery', 'gallery-events',
+  // Knihovna - jen čtení (katalog, "moje knihovna"); zápisy library-* zůstávají zablokované.
+  'library-catalog', 'library-my',
   // Admin čtení (pro případ, že by se v náhledu omylem otevřela admin stránka - i tak
   // to zůstává jen ČTENÍ, žádný z panel-*-list/detail endpointů nic nezapisuje):
   'panel-list-events', 'panel-list-members', 'panel-list-registrations', 'panel-list-questionnaires',
@@ -224,8 +226,34 @@ function initAdminNavLink(user) {
       if (link && isPatronOnly) link.setAttribute('href', 'admin-dotazniky.html');
       else if (link) link.setAttribute('href', 'admin-akce.html');
       localStorage.setItem(cacheKey, isAdmin ? '1' : '0');
+      localStorage.setItem('oooIsRada_' + user.userId, data.ok && data.rada ? '1' : '0');
+      initLibraryNavLink(user);
     })
     .catch(() => {});
+}
+
+// Položka "Knihovna" v hlavičce (2026-10-14). Vkládá se odsud, ať se nemusí upravovat
+// hlavička na každé stránce zvlášť. Dokud je knihovna ve zkušebním provozu jen pro Radu
+// (LIBRARY_PUBLIC = false, backend LIBRARY_PHASE=rada), ukáže se jen Radě - podle výsledku
+// my-roles z initAdminNavLink (cache v localStorage, admin stránky si my-roles řeší samy,
+// tam se použije cache z dřívější návštěvy). Po spuštění pro všechny stačí přepnout na true.
+const LIBRARY_PUBLIC = false;
+function initLibraryNavLink(user) {
+  const links = document.getElementById('nav-links');
+  if (!links) return;
+  let li = document.getElementById('nav-knihovna');
+  if (!li) {
+    li = document.createElement('li');
+    li.id = 'nav-knihovna';
+    li.className = 'hidden';
+    li.innerHTML = '<a href="knihovna.html">Knihovna</a>';
+    const galerie = links.querySelector('a[href="galerie.html"]');
+    const after = galerie ? galerie.parentElement : null;
+    links.insertBefore(li, after ? after.nextSibling : null);
+  }
+  if (LIBRARY_PUBLIC) { li.classList.remove('hidden'); return; }
+  const isRada = !!(user && user.userId && localStorage.getItem('oooIsRada_' + user.userId) === '1');
+  li.classList.toggle('hidden', !isRada);
 }
 
 // Položka "Speed dating" v hlavičce (2026-09-26, na žádost - "záložka vedle
@@ -403,6 +431,7 @@ function initAuthUI() {
     clearGhostTarget();
     initAdminNavLink(null);
     initSpeedDatingNavLink(null);
+    initLibraryNavLink(null);
   }
 
   const stored = getLoggedUser();
@@ -413,6 +442,7 @@ function initAuthUI() {
   // 2026-09-12, "duplicitní členové" - viz oprava v lib/members-row.js). Řetězení přes
   // .finally() na všech třech místech v týhle funkci to řeší u zdroje (frontend), zámek
   // v findOrCreateMemberRow to řeší i u zdroje (backend) - obojí pro jistotu.
+  initLibraryNavLink(stored);
   Promise.resolve(initAdminNavLink(stored)).finally(() => refreshDisplayName(stored));
   initSpeedDatingNavLink(stored);
 

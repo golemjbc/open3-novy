@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OOO Community - Knihovna: sdílení knih mezi členy.">
+  <meta name="robots" content="noindex">
+  <meta property="og:title" content="Knihovna — OOO Community">
+  <meta property="og:description" content="Knihy o vztazích, sexualitě a komunikaci, které si členové OOO půjčují mezi sebou.">
+  <meta property="og:image" content="https://open3.cz/assets/images/LogoMETA.png">
+  <meta property="og:url" content="https://open3.cz/knihovna.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="OOO Community">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="favicon.ico">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <title>Knihovna — OOO Community</title>
+  <style>
+    /* Knihovna (2026-10-14) - styly jen pro tuhle stránku, prefix lib- */
+    .lib-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+    .lib-tab { position: relative; }
+    .lib-badge { display: inline-block; min-width: 20px; padding: 0 6px; margin-left: 6px; border-radius: 999px; background: var(--primary); color: #fff; font-size: 0.72rem; line-height: 20px; text-align: center; }
+    .lib-toolbar { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-bottom: 14px; }
+    .lib-topics { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 24px; }
+    .lib-topics .filter-btn { padding: 6px 14px; font-size: 0.8rem; }
+    .lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr)); gap: 20px; }
+    .lib-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden; cursor: pointer; display: flex; flex-direction: column; transition: transform .15s ease, box-shadow .15s ease; border: none; padding: 0; text-align: left; font: inherit; color: inherit; }
+    .lib-card:hover, .lib-card:focus-visible { transform: translateY(-2px); box-shadow: var(--shadow); }
+    .lib-cover { aspect-ratio: 2 / 3; background: var(--bg-alt); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .lib-cover img { width: 100%; height: 100%; object-fit: cover; }
+    .lib-cover-ph { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--text-muted); padding: 16px; text-align: center; line-height: 1.1; }
+    .lib-card-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+    .lib-card-title { font-weight: 700; line-height: 1.25; }
+    .lib-card-author { font-size: 0.82rem; color: var(--text-muted); }
+    .lib-status { display: inline-flex; align-items: center; gap: 6px; font-size: 0.76rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; width: fit-content; }
+    .lib-status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    .lib-st-ok { background: var(--success-bg); color: var(--success); }
+    .lib-st-busy { background: var(--warning-bg); color: var(--warning); }
+    .lib-st-off { background: var(--bg-alt); color: var(--text-muted); }
+    .lib-tag { display: inline-block; font-size: 0.72rem; font-weight: 600; padding: 2px 8px; border-radius: 6px; background: var(--bg-alt); color: var(--text-muted); margin: 0 4px 4px 0; }
+    .lib-tag-ooo { background: var(--navy); color: #fff; }
+
+    .lib-panel { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 18px; margin-bottom: 16px; }
+    .lib-panel-head { display: grid; grid-template-columns: 56px 1fr; gap: 14px; align-items: start; }
+    .lib-thumb { width: 56px; aspect-ratio: 2 / 3; border-radius: 6px; background: var(--bg-alt); overflow: hidden; }
+    .lib-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .lib-panel h3 { margin: 0 0 4px; font-size: 1.05rem; }
+    .lib-meta { font-size: 0.85rem; color: var(--text-muted); margin: 4px 0; }
+    .lib-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .lib-actions .btn { padding: 7px 14px; font-size: 0.82rem; }
+    .lib-btn-danger { color: #b42318 !important; }
+    .lib-alert { background: var(--warning-bg); color: var(--warning); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 0.85rem; font-weight: 600; margin-top: 10px; }
+    .lib-info { background: var(--bg-alt); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 0.85rem; margin-top: 10px; }
+    .lib-queue { list-style: none; padding: 0; margin: 8px 0 0; font-size: 0.85rem; }
+    .lib-queue li { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 5px 0; border-top: 1px solid var(--border); }
+    .lib-link-btn { background: none; border: none; color: var(--primary); cursor: pointer; font: inherit; font-size: 0.8rem; font-weight: 600; padding: 0; }
+    .lib-section-title { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.03em; font-size: 1.5rem; margin: 28px 0 12px; }
+    .lib-section-title:first-child { margin-top: 0; }
+
+    .lib-transfer { border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 14px; margin-top: 12px; }
+    .lib-steps { display: flex; gap: 4px; margin: 8px 0 12px; }
+    .lib-step { flex: 1; text-align: center; font-size: 0.68rem; font-weight: 700; color: var(--text-muted); }
+    .lib-step::before { content: ''; display: block; height: 5px; border-radius: 3px; background: var(--border); margin-bottom: 5px; }
+    .lib-step.done { color: var(--success); }
+    .lib-step.done::before { background: var(--success); }
+    .lib-contact { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .lib-contact a { font-size: 0.82rem; font-weight: 600; padding: 5px 12px; border-radius: 999px; background: var(--bg-alt); }
+    .lib-method { display: flex; gap: 8px; margin: 8px 0; }
+    .lib-method label { flex: 1; text-align: center; padding: 9px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85rem; font-weight: 600; }
+    .lib-method input { display: none; }
+    .lib-method input:checked + span { color: var(--primary); }
+    .lib-method label:has(input:checked) { border-color: var(--primary); background: var(--bg-alt); }
+
+    .lib-modal-overlay { position: fixed; inset: 0; background: rgba(10,16,69,0.6); z-index: 1000; display: flex; align-items: flex-start; justify-content: center; padding: 24px 12px; overflow-y: auto; }
+    .lib-modal { background: var(--surface); border-radius: var(--radius); width: 100%; max-width: 640px; padding: 24px; position: relative; box-shadow: var(--shadow-lg); }
+    .lib-modal-close { position: absolute; top: 10px; right: 12px; background: none; border: none; font-size: 1.6rem; cursor: pointer; color: var(--text-muted); line-height: 1; }
+    .lib-detail-head { display: grid; grid-template-columns: 130px 1fr; gap: 18px; margin-bottom: 14px; }
+    .lib-detail-head .lib-cover { border-radius: var(--radius-sm); }
+    .lib-detail-head h2 { margin: 0 0 6px; font-size: 1.35rem; line-height: 1.2; }
+    .lib-copy { border-top: 1px solid var(--border); padding-top: 14px; margin-top: 14px; }
+    .lib-quote { font-style: italic; border-left: 3px solid var(--primary); padding-left: 10px; margin: 8px 0; font-size: 0.9rem; }
+    .lib-check { display: flex; gap: 8px; align-items: flex-start; font-size: 0.88rem; margin-bottom: 8px; }
+    .lib-topic-picks { display: flex; flex-wrap: wrap; gap: 6px; }
+    .lib-topic-picks label { font-size: 0.8rem; padding: 5px 10px; border: 1.5px solid var(--border); border-radius: 999px; cursor: pointer; }
+    .lib-topic-picks label:has(input:checked) { border-color: var(--primary); color: var(--primary); background: var(--bg-alt); }
+    .lib-topic-picks input { display: none; }
+    .lib-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .lib-notice { padding: 8px 0; border-top: 1px solid var(--border); font-size: 0.86rem; }
+    .lib-notice.unread { font-weight: 600; }
+    .lib-notice time { display: block; font-size: 0.72rem; color: var(--text-muted); font-weight: 400; }
+    .lib-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    .lib-table th, .lib-table td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .lib-overdue { color: #b42318; font-weight: 700; }
+    .lib-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--navy); color: #fff; padding: 10px 18px; border-radius: 999px; font-size: 0.88rem; font-weight: 600; z-index: 1100; box-shadow: var(--shadow-lg); max-width: calc(100% - 32px); text-align: center; }
+    .lib-toast.error { background: #b42318; }
+    @media (max-width: 600px) {
+      .lib-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      .lib-toolbar { grid-template-columns: 1fr; }
+      .lib-detail-head { grid-template-columns: 90px 1fr; gap: 12px; }
+      .lib-row2 { grid-template-columns: 1fr; }
+      .lib-modal { padding: 20px 16px; }
+      .lib-table-wrap { overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <script src="assets/js/age-gate.js"></script>
+
+  <header class="site-header">
+    <div class="container">
+      <button class="nav-toggle" id="nav-toggle" aria-label="Menu">☰</button>
+      <a class="brand" href="index.html"><img src="assets/images/OOOlogo.png" alt="OOO logo"> <span>OOO Community</span></a>
+      <nav>
+        <ul class="nav-links" id="nav-links">
+          <li><a href="index.html">Domů</a></li>
+          <li><a href="akce.html">Akce</a></li>
+          <li><a href="galerie.html">Galerie</a></li>
+          <li id="nav-knihovna"><a href="knihovna.html" class="active">Knihovna</a></li>
+          <li><a href="pravidla.html">Pravidla</a></li>
+          <li><a href="contact.html">Kontakt</a></li>
+          <li id="nav-speed-dating" class="hidden"><a href="speed-dating-odpovedi.html">Dating</a></li>
+          <li id="nav-admin" style="display:none;"><a href="admin-akce.html">Administrace</a></li>
+        </ul>
+      </nav>
+      <div class="header-actions">
+        <div id="user-info"><img id="user-avatar" src="" alt=""><span id="user-name"></span></div>
+        <a id="login-button" href="#" class="btn btn-primary btn-sm">Přihlásit</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="section" style="padding-bottom: 0;">
+    <div class="container">
+      <span class="eyebrow">Sdílíme</span>
+      <h1>Knihovna</h1>
+      <p class="form-hint" style="font-size:0.95rem;">Knihy o vztazích, sexualitě, komunikaci a sobě samých, které si členové OOO půjčují mezi sebou – poštou přes Zásilkovnu nebo z ruky do ruky.</p>
+      <div id="lib-phase-note" class="lib-info hidden">🔒 Zkušební provoz – knihovnu zatím vidí jen Rada.</div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top: 24px;">
+    <div class="container">
+      <div id="lib-root"><div class="loading-state">Načítám…</div></div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">OOO Community</div>
+        <ul class="footer-links">
+          <li><a href="mailto:info@open3.cz">info@open3.cz</a></li>
+          <li><a href="tel:+420735593621">+420 735 593 621</a></li>
+          <li><a href="https://discord.gg/qYCAubmDQc">Discord</a></li>
+          <li><a href="https://www.instagram.com/ooo.community">Instagram</a></li>
+        </ul>
+      </div>
+      <div class="footer-bottom">© 2026 OOO Community z.s. — Design: Adam</div>
+    </div>
+  </footer>
+
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/profile-modal.js"></script>
+  <script>
+    // Knihovna OOO (2026-10-14) - veškerá logika stránky. Backend: library-* funkce
+    // (viz docs/BACKEND-AZURE-FUNCTIONS.md, sekce Knihovna). Pravidla oběhu rozhoduje
+    // server - stránka jen zobrazuje tlačítka podle `allowed_actions`, co vrátí.
+
+    // Zásilkovna - API klíč widgetu výdejních míst (z klientské sekce Zásilkovny). Dokud je
+    // prázdný, zadává se výdejní místo ručně (název/adresa/ID z mapy zasilkovna.cz).
+    const PACKETA_API_KEY = '';
+
+    const root = document.getElementById('lib-root');
+    const state = { tab: 'katalog', catalog: null, my: null, admin: null, q: '', topic: '', avail: '' };
+
+    // ---------- Pomocné ----------
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+    function fmtDate(iso) { return iso ? new Date(iso).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric' }) : ''; }
+    function fmtDateTime(iso) { return iso ? new Date(iso).toLocaleString('cs-CZ', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''; }
+    function coverSrc(url) { return url ? API_BASE + url : ''; }
+    function toast(msg, isError) {
+      const el = document.createElement('div');
+      el.className = 'lib-toast' + (isError ? ' error' : '');
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), isError ? 6000 : 3000);
+    }
+    function identity() { return getIdentityPayload(getLoggedUser()); }
+    async function api(endpoint, body = {}) {
+      const id = identity() || {};
+      const res = await fetch(`${API_BASE}/api/${endpoint}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...id, ...body }),
+      });
+      let data = {};
+      try { data = await res.json(); } catch (e) { /* prázdná odpověď */ }
+      if (!res.ok || !data.ok) {
+        const err = new Error(data.error || `Chyba ${res.status}`);
+        err.status = res.status;
+        throw err;
+      }
+      return data;
+    }
+    const STATUS_CLASS = { dostupna: 'lib-st-ok', ceka_na_ctenare: 'lib-st-ok', pujcena: 'lib-st-busy', na_ceste: 'lib-st-busy', vraci_se: 'lib-st-busy', pozastavena: 'lib-st-off', stazena: 'lib-st-off' };
+    function statusBadge(status, label) { return `<span class="lib-status ${STATUS_CLASS[status] || 'lib-st-off'}">${esc(label)}</span>`; }
+    function coverHtml(t, cls = 'lib-cover') {
+      return `<div class="${cls}">${t && t.cover_url ? `<img src="${esc(coverSrc(t.cover_url))}" alt="" loading="lazy">` : (cls === 'lib-cover' ? `<div class="lib-cover-ph">${esc(t ? t.nazev : '')}</div>` : '')}</div>`;
+    }
+    // Nejlepší stav titulu přes všechny výtisky (pro kartu v katalogu).
+    function titleStatus(t) {
+      const order = ['dostupna', 'ceka_na_ctenare', 'pujcena', 'na_ceste', 'vraci_se', 'pozastavena', 'stazena'];
+      return t.copies.map(c => c.status).sort((a, b) => order.indexOf(a) - order.indexOf(b))[0];
+    }
+
+    // ---------- Načtení ----------
+    async function loadAll() {
+      const user = getLoggedUser();
+      try {
+        state.catalog = await api('library-catalog');
+      } catch (e) {
+        if (e.status === 403 || e.status === 401) {
+          root.innerHTML = `<div class="empty-state">📚 Knihovna se teprve připravuje. Brzy tady najdeš knihy, které si členové OOO půjčují mezi sebou.</div>`;
+          return;
+        }
+        root.innerHTML = `<div class="empty-state">Knihovnu se nepodařilo načíst (${esc(e.message)}). Zkus prosím stránku za chvíli obnovit.</div>`;
+        return;
+      }
+      if (state.catalog.phase === 'rada') document.getElementById('lib-phase-note').classList.remove('hidden');
+      const me = state.catalog.me;
+      state.my = null;
+      if (user && me && me.is_member) {
+        try { state.my = await api('library-my'); } catch (e) { console.error(e); }
+      }
+      if (me && me.is_admin && state.tab === 'sprava') await loadAdmin();
+      render();
+    }
+    async function loadAdmin() {
+      try { state.admin = await api('library-my', { admin_mode: true }); } catch (e) { toast(e.message, true); }
+    }
+    async function refresh() {
+      await loadAll();
+    }
+
+    // ---------- Vykreslení ----------
+    function render() {
+      const me = state.catalog.me;
+      const isMember = !!(me && me.is_member);
+      const my = state.my;
+      const unread = my ? my.profile.notices.filter(n => !n.read).length : 0;
+      const activeTransfers = my ? my.transfers.length : 0;
+      const tabs = [['katalog', 'Katalog', 0]];
+      if (isMember) {
+        tabs.push(['moje', 'Moje knihy', 0], ['vypujcky', 'Výpůjčky a předání', activeTransfers], ['kontakt', 'Oznámení a kontakt', unread]);
+      }
+      if (me && me.is_admin) tabs.push(['sprava', 'Správa fondu', 0]);
+      if (!tabs.some(t => t[0] === state.tab)) state.tab = 'katalog';
+
+      root.innerHTML = `
+        <div class="lib-tabs">${tabs.map(([k, l, n]) => `<button type="button" class="filter-btn lib-tab${state.tab === k ? ' active' : ''}" data-tab="${k}">${l}${n ? `<span class="lib-badge">${n}</span>` : ''}</button>`).join('')}</div>
+        ${!getLoggedUser() ? '<div class="lib-info" style="margin-bottom:20px;">Půjčovat si a nabízet knihy můžou přihlášení členové OOO.</div>' : ''}
+        <div id="lib-tab-body"></div>`;
+      root.querySelectorAll('.lib-tab').forEach(b => b.addEventListener('click', async () => {
+        state.tab = b.dataset.tab;
+        if (state.tab === 'sprava' && !state.admin) { render(); await loadAdmin(); }
+        if (state.tab === 'kontakt' && unread) markNoticesRead();
+        render();
+      }));
+      const body = document.getElementById('lib-tab-body');
+      if (state.tab === 'katalog') renderCatalog(body);
+      else if (state.tab === 'moje') renderMine(body);
+      else if (state.tab === 'vypujcky') renderLoans(body);
+      else if (state.tab === 'kontakt') renderContact(body);
+      else if (state.tab === 'sprava') renderAdmin(body);
+    }
+
+    // ----- Katalog -----
+    function renderCatalog(body) {
+      const c = state.catalog;
+      const isMember = !!(c.me && c.me.is_member);
+      body.innerHTML = `
+        <div class="lib-toolbar">
+          <input type="search" class="form-control" id="lib-q" placeholder="Hledat podle názvu nebo autora…" value="${esc(state.q)}">
+          <select class="form-control" id="lib-avail" style="width:auto;">
+            <option value="">Všechny knihy</option>
+            <option value="dostupne"${state.avail === 'dostupne' ? ' selected' : ''}>Jen dostupné hned</option>
+            <option value="pujcene"${state.avail === 'pujcene' ? ' selected' : ''}>Půjčené (můžu se zařadit do fronty)</option>
+          </select>
+        </div>
+        <div class="lib-topics">
+          <button type="button" class="filter-btn${!state.topic ? ' active' : ''}" data-topic="">Všechna témata</button>
+          ${c.topics.map(t => `<button type="button" class="filter-btn${state.topic === t ? ' active' : ''}" data-topic="${esc(t)}">${esc(t)}</button>`).join('')}
+        </div>
+        ${isMember ? '<div style="margin-bottom:20px;"><button type="button" class="btn btn-primary btn-sm" id="lib-add">+ Nabídnout knihu</button></div>' : ''}
+        <div class="lib-grid" id="lib-grid"></div>`;
+      const grid = body.querySelector('#lib-grid');
+      const draw = () => {
+        const q = state.q.trim().toLowerCase();
+        const list = c.titles.filter(t => {
+          if (q && !(`${t.nazev} ${t.autori.join(' ')}`.toLowerCase().includes(q))) return false;
+          if (state.topic && !t.temata.includes(state.topic)) return false;
+          const st = titleStatus(t);
+          if (state.avail === 'dostupne' && !['dostupna', 'ceka_na_ctenare'].includes(st)) return false;
+          if (state.avail === 'pujcene' && !['pujcena', 'na_ceste', 'vraci_se'].includes(st)) return false;
+          return true;
+        });
+        if (!list.length) {
+          grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">${c.titles.length ? 'Nic takového jsme nenašli.' : 'V knihovně zatím nejsou žádné knihy.'}</div>`;
+          return;
+        }
+        grid.innerHTML = list.map(t => {
+          const st = titleStatus(t);
+          const copy = t.copies.find(x => x.status === st);
+          const ooo = t.copies.some(x => x.owner_type === 'ooo');
+          return `<button type="button" class="lib-card" data-title="${esc(t.id)}">
+            ${coverHtml(t)}
+            <div class="lib-card-body">
+              <div class="lib-card-title">${esc(t.nazev)}</div>
+              <div class="lib-card-author">${esc(t.autori.join(', '))}</div>
+              ${statusBadge(st, copy.status_label)}
+              <div>${ooo ? '<span class="lib-tag lib-tag-ooo">Knihovna OOO</span>' : ''}${t.copies.length > 1 ? `<span class="lib-tag">${t.copies.length} výtisky</span>` : ''}</div>
+            </div>
+          </button>`;
+        }).join('');
+        grid.querySelectorAll('.lib-card').forEach(el => el.addEventListener('click', () => openDetail(el.dataset.title)));
+      };
+      draw();
+      body.querySelector('#lib-q').addEventListener('input', e => { state.q = e.target.value; draw(); });
+      body.querySelector('#lib-avail').addEventListener('change', e => { state.avail = e.target.value; draw(); });
+      body.querySelectorAll('.lib-topics .filter-btn').forEach(b => b.addEventListener('click', () => {
+        state.topic = b.dataset.topic;
+        body.querySelectorAll('.lib-topics .filter-btn').forEach(x => x.classList.toggle('active', x === b));
+        draw();
+      }));
+      const add = body.querySelector('#lib-add');
+      if (add) add.addEventListener('click', () => openBookForm({}));
+    }
+
+    // ----- Modální okno -----
+    function openModal(html) {
+      closeModal();
+      const ov = document.createElement('div');
+      ov.className = 'lib-modal-overlay';
+      ov.id = 'lib-modal';
+      ov.innerHTML = `<div class="lib-modal" role="dialog" aria-modal="true"><button type="button" class="lib-modal-close" aria-label="Zavřít">×</button>${html}</div>`;
+      document.body.appendChild(ov);
+      document.body.style.overflow = 'hidden';
+      ov.addEventListener('click', e => { if (e.target === ov) closeModal(); });
+      ov.querySelector('.lib-modal-close').addEventListener('click', closeModal);
+      return ov.querySelector('.lib-modal');
+    }
+    function closeModal() {
+      const ov = document.getElementById('lib-modal');
+      if (ov) ov.remove();
+      document.body.style.overflow = '';
+    }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+    // ----- Detail titulu -----
+    function openDetail(titleId) {
+      const t = state.catalog.titles.find(x => x.id === titleId);
+      if (!t) return;
+      const me = state.catalog.me;
+      const isMember = !!(me && me.is_member);
+      const hasOwnCopy = t.copies.some(c => c.is_owner || c.is_home);
+      const m = openModal(`
+        <div class="lib-detail-head">
+          ${coverHtml(t)}
+          <div>
+            <h2>${esc(t.nazev)}</h2>
+            <div class="lib-meta">${esc(t.autori.join(', '))}</div>
+            ${t.isbn ? `<div class="lib-meta">ISBN ${esc(t.isbn)}</div>` : ''}
+            <div style="margin-top:8px;">${t.temata.map(x => `<span class="lib-tag">${esc(x)}</span>`).join('')}</div>
+          </div>
+        </div>
+        ${t.popis ? `<p style="white-space:pre-line;font-size:0.92rem;">${esc(t.popis)}</p>` : ''}
+        <div>${t.copies.map(c => copyInDetail(c)).join('')}</div>
+        ${isMember && !hasOwnCopy ? `<div class="lib-actions" style="margin-top:18px;"><button type="button" class="lib-link-btn" id="lib-have-too">📚 Mám tuhle knihu taky – nabídnout svůj výtisk</button></div>` : ''}
+        ${!getLoggedUser() ? '<div class="lib-info">Pro půjčení se prosím přihlas.</div>' : ''}
+      `);
+      wireCopyActions(m, (copyId) => t.copies.find(c => c.id === copyId), t);
+      const have = m.querySelector('#lib-have-too');
+      if (have) have.addEventListener('click', () => openBookForm({ title: t }));
+    }
+
+    function copyInDetail(c) {
+      const isOoo = c.owner_type === 'ooo';
+      const rulesText = [
+        c.rules.loan_days ? `výpůjčka na ${c.rules.loan_days} dní` : null,
+        c.rules.expects_return ? 'vrací se majiteli' : 'majitel nečeká návrat',
+        c.rules.allow_pass_on ? 'čtenář smí předat rovnou dalšímu' : null,
+      ].filter(Boolean).join(' · ');
+      const acts = (c.allowed_actions || []).filter(a => ['request', 'cancel_request'].includes(a));
+      return `<div class="lib-copy" data-copy="${esc(c.id)}">
+        <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center;">
+          <div>${isOoo ? '<span class="lib-tag lib-tag-ooo">Knihovna OOO</span>' : `<span class="lib-tag">${esc(c.mode_label)}</span>`}</div>
+          ${statusBadge(c.status, c.status_label)}
+        </div>
+        ${c.owner_jmeno && !isOoo ? `<div class="lib-meta">Nabízí: <strong>${esc(c.owner_jmeno)}</strong></div>` : ''}
+        <div class="lib-meta">${esc(rulesText)}${c.queue_count ? ` · ve frontě ${c.queue_count}` : ''}</div>
+        ${c.stav_poznamka ? `<div class="lib-meta">Stav výtisku: ${esc(c.stav_poznamka)}</div>` : ''}
+        ${c.doporuceni ? `<div class="lib-quote">${esc(c.doporuceni)}</div>` : ''}
+        ${c.queue_position ? `<div class="lib-info">Jsi ve frontě na <strong>${c.queue_position}. místě</strong>. Až na tebe přijde řada, objeví se ti předání v záložce Výpůjčky a předání.</div>` : ''}
+        ${c.is_owner || c.is_home ? '<div class="lib-info">Tohle je tvůj výtisk – spravuješ ho v záložce Moje knihy.</div>' : ''}
+        ${acts.length ? `<div class="lib-actions">${acts.map(a => actionButton(a, c)).join('')}</div>` : ''}
+      </div>`;
+    }
+
+    // ---------- Akce nad výtiskem ----------
+    const ACTION_LABELS = {
+      request: 'Chci si půjčit',
+      cancel_request: 'Zrušit žádost',
+      start_transfer: 'Předat dalšímu ve frontě',
+      start_return: 'Vrátit majiteli',
+      mark_done: 'Dočteno',
+      request_return: 'Požádat o vrácení',
+      cancel_return_request: 'Zrušit požadavek na vrácení',
+      pause: 'Pozastavit sdílení',
+      resume: 'Obnovit sdílení',
+      withdraw: 'Stáhnout z nabídky',
+      relist: 'Znovu nabídnout',
+      edit: 'Upravit',
+      delete: 'Smazat',
+    };
+    const CONFIRMS = {
+      withdraw: 'Stáhnout knihu z nabídky? Fronta zájemců se zruší (dostanou oznámení). Pokud je kniha právě půjčená, výpůjčka i předání pokračují.',
+      delete: 'Opravdu knihu úplně smazat?',
+      request_return: 'Požádat o vrácení? Další předání se zastaví a čtenář i fronta dostanou oznámení. Předání, které už bylo odesláno, doběhne.',
+      cancel_transfer: 'Zrušit toto předání?',
+      start_return: 'Zahájit vrácení knihy majiteli?',
+    };
+    function actionButton(action, c, extraLabel) {
+      const primary = ['request', 'start_transfer', 'confirm_received'].includes(action);
+      const danger = ['withdraw', 'delete', 'cancel_transfer'].includes(action);
+      let label = ACTION_LABELS[action] || action;
+      if (action === 'start_transfer' && c.next_in_queue) label = `Předat dalšímu (${c.next_in_queue})`;
+      return `<button type="button" class="btn ${primary ? 'btn-primary' : 'btn-outline'}${danger ? ' lib-btn-danger' : ''}" data-act="${action}" data-copy="${esc(c.id)}">${esc(extraLabel || label)}</button>`;
+    }
+
+    async function runAction(copyId, action, params = {}, opts = {}) {
+      if (CONFIRMS[action] && !opts.noConfirm && !confirm(CONFIRMS[action])) return;
+      try {
+        await api('library-action', { copy_id: copyId, action, params, ...(opts.admin ? { admin_mode: true } : {}) });
+        toast(opts.okMsg || 'Hotovo.');
+        closeModal();
+        if (opts.admin) await loadAdmin();
+        await refresh();
+      } catch (e) {
+        toast(e.message, true);
+      }
+    }
+
+    // Napojí tlačítka [data-act] uvnitř `container`. `findCopy` vrací pohled výtisku.
+    function wireCopyActions(container, findCopy, title, opts = {}) {
+      container.querySelectorAll('[data-act]').forEach(btn => btn.addEventListener('click', () => {
+        const copyId = btn.dataset.copy;
+        const action = btn.dataset.act;
+        const c = findCopy(copyId);
+        if (action === 'edit') return openBookForm({ copy: c, title: c.title || title, admin: opts.admin });
+        if (action === 'remove_from_queue') {
+          if (!confirm(`Odebrat ${btn.dataset.name} z fronty?`)) return;
+          return runAction(copyId, action, { target_ooo_id: btn.dataset.target }, { ...opts, noConfirm: true });
+        }
+        if (action === 'request') {
+          return runAction(copyId, action, {}, { ...opts, okMsg: 'Jsi ve frontě. Dáme vědět, až na tebe přijde řada.' });
+        }
+        runAction(copyId, action, {}, opts);
+      }));
+    }
+
+    // ----- Panel výtisku (Moje knihy, Výpůjčky, Správa) -----
+    function copyPanel(c, { mode }) {
+      const t = c.title || {};
+      const ownerActs = ['start_transfer', 'request_return', 'cancel_return_request', 'pause', 'resume', 'edit', 'withdraw', 'relist', 'delete'];
+      const holderActs = ['mark_done', 'start_transfer', 'start_return'];
+      const wanted = mode === 'owner' || mode === 'admin' ? ownerActs : mode === 'holder' ? holderActs : ['cancel_request'];
+      const acts = (c.allowed_actions || []).filter(a => wanted.includes(a));
+      const showQueue = (mode === 'owner' || mode === 'admin') && c.queue && c.queue.length;
+      const lines = [];
+      if (mode === 'owner' || mode === 'admin') {
+        if (c.holder_jmeno && !c.holder_is_home) lines.push(`Teď u: <strong>${esc(c.holder_jmeno)}</strong>${c.holder_since ? ` (od ${fmtDate(c.holder_since)})` : ''}`);
+        if (mode === 'admin' && c.owner_type === 'ooo') lines.push(`Správce fondu: ${esc(c.home_jmeno)}`);
+        if (mode === 'admin' && c.owner_type === 'private') lines.push(`Majitel: ${esc(c.home_jmeno)}`);
+      }
+      if (mode === 'holder') {
+        lines.push(`Majitel: <strong>${esc(c.owner_jmeno || '')}</strong> · ${esc(c.mode_label)}`);
+        if (c.holder_since) lines.push(`U tebe od ${fmtDate(c.holder_since)}`);
+      }
+      if (c.due_date) lines.push(`<span class="${c.overdue ? 'lib-overdue' : ''}">Vrátit do ${fmtDate(c.due_date)}${c.overdue ? ' – po termínu' : ''}</span>`);
+      if (c.reader_done && mode !== 'holder') lines.push('Čtenář už dočetl.');
+      if (mode === 'request') lines.push(`Jsi ve frontě na <strong>${c.queue_position}. místě</strong> · ${esc(c.status_label)}`);
+
+      let alert = '';
+      if (c.return_request) {
+        alert = mode === 'holder'
+          ? '<div class="lib-alert">Majitel žádá o vrácení – až dočteš, vrať prosím knihu (tlačítko Vrátit majiteli). Dál ji nepředávej.</div>'
+          : mode === 'request'
+            ? '<div class="lib-alert">Majitel si knihu vyžádal zpět. Tvoje místo ve frontě zůstává, další předání počká.</div>'
+            : mode === 'admin'
+              ? '<div class="lib-alert">Majitel požádal o vrácení – fronta čeká, dokud se kniha nevrátí.</div>'
+              : '<div class="lib-alert">Požádal(a) jsi o vrácení – fronta čeká, dokud se kniha nevrátí.</div>';
+      }
+      let hint = '';
+      if (mode === 'holder' && c.reader_done && !c.transfer) {
+        if (c.allowed_actions.includes('start_transfer')) hint = '<div class="lib-info">Dočteno 👍 Na knihu čeká další zájemce – předej ji dál.</div>';
+        else if (c.rules.expects_return) hint = '<div class="lib-info">Dočteno 👍 Majitel čeká návrat – domluv se na vrácení.</div>';
+        else hint = '<div class="lib-info">Dočteno 👍 Kniha teď čeká u tebe na dalšího zájemce. Až se někdo přihlásí, dostaneš oznámení.</div>';
+      }
+      if ((mode === 'owner' || mode === 'admin') && c.queue_count && !c.transfer && c.allowed_actions.includes('start_transfer') && c.status === 'dostupna') {
+        hint = `<div class="lib-info">Na knihu čeká ${c.queue_count === 1 ? 'zájemce' : `${c.queue_count} zájemců`} – předej ji prvnímu ve frontě.</div>`;
+      }
+
+      return `<div class="lib-panel" data-copy="${esc(c.id)}">
+        <div class="lib-panel-head">
+          ${coverHtml(t, 'lib-thumb')}
+          <div>
+            <h3>${esc(t.nazev || '')}</h3>
+            <div class="lib-meta">${esc((t.autori || []).join(', '))}</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px;">
+              ${statusBadge(c.status, c.status_label)}
+              ${c.owner_type === 'ooo' ? '<span class="lib-tag lib-tag-ooo">Knihovna OOO</span>' : `<span class="lib-tag">${esc(c.mode_label)}</span>`}
+              ${c.queue_count && mode !== 'request' ? `<span class="lib-tag">ve frontě ${c.queue_count}</span>` : ''}
+            </div>
+            ${lines.map(l => `<div class="lib-meta">${l}</div>`).join('')}
+          </div>
+        </div>
+        ${alert}${hint}
+        ${showQueue ? `<div class="lib-meta" style="margin-top:10px;font-weight:700;">Fronta zájemců</div>
+          <ol class="lib-queue">${c.queue.map((q, i) => `<li><span>${i + 1}. ${esc(q.jmeno)}${q.note ? ` – <em>${esc(q.note)}</em>` : ''} <span class="lib-meta">(${fmtDate(q.at)})</span></span>
+            ${c.allowed_actions.includes('remove_from_queue') ? `<button type="button" class="lib-link-btn" data-act="remove_from_queue" data-copy="${esc(c.id)}" data-target="${esc(q.ooo_id)}" data-name="${esc(q.jmeno)}">odebrat</button>` : ''}</li>`).join('')}</ol>` : ''}
+        ${c.transfer && mode !== 'request' ? transferBox(c, mode) : ''}
+        ${acts.length ? `<div class="lib-actions">${acts.map(a => actionButton(a, c)).join('')}</div>` : ''}
+        ${(mode === 'owner' || mode === 'admin') && c.history && c.history.length ? historyDetails(c) : ''}
+      </div>`;
+    }
+
+    const HISTORY_LABELS = {
+      nabidnuto: 'nabídnuto', upraveno: 'upraveno', zadost: 'žádost o půjčení', zadost_zrusena: 'žádost zrušena', odebran_z_fronty: 'odebrán(a) z fronty',
+      predani_zahajeno: 'předání zahájeno', vraceni_zahajeno: 'vracení zahájeno', predano: 'převzato', predani_zruseno: 'předání zrušeno', doceteno: 'dočteno',
+      pozadavek_na_vraceni: 'požadavek na vrácení', pozadavek_na_vraceni_zrusen: 'požadavek na vrácení zrušen', vraceni_splneno: 'vrácení splněno',
+      pozastaveno: 'pozastaveno', obnoveno: 'obnoveno', stazeno: 'staženo z nabídky', znovu_nabidnuto: 'znovu nabídnuto', drzitel_opraven: 'držitel ručně opraven',
+    };
+    function historyDetails(c) {
+      return `<details style="margin-top:10px;"><summary class="lib-meta" style="cursor:pointer;">Historie</summary>
+        <ul class="lib-queue">${c.history.map(h => {
+          const who = h.type === 'predano' || h.type === 'predani_zahajeno' || h.type === 'drzitel_opraven' || h.type === 'vraceni_zahajeno'
+            ? `${esc(h.from)} → ${esc(h.to)}` : esc(h.by);
+          return `<li><span>${fmtDateTime(h.at)} · ${esc(HISTORY_LABELS[h.type] || h.type)}${h.method ? ` (${h.method === 'packeta' ? 'Zásilkovna' : 'osobně'})` : ''}</span><span class="lib-meta">${who}</span></li>`;
+        }).join('')}</ul></details>`;
+    }
+
+    // ----- Předání -----
+    const STEP_LABELS = [['ceka_na_domluvu', 'Domluva'], ['domluveno', 'Domluveno'], ['odeslano', 'Odesláno / předáno'], ['prevzato', 'Převzato']];
+    function transferBox(c, mode) {
+      const t = c.transfer;
+      const idx = STEP_LABELS.findIndex(s => s[0] === t.status);
+      const kindText = t.kind === 'vraceni' ? 'Vracení majiteli' : 'Předání';
+      const party = t.i_am;
+      const acts = c.allowed_actions || [];
+      const canEdit = acts.includes('update_transfer') && (party || mode === 'admin');
+      const cp = t.counterpart;
+      const contact = cp ? `<div class="lib-meta" style="margin-top:8px;">${party === 'from' ? 'Příjemce' : 'Od'}: <strong>${esc(cp.jmeno)}</strong></div>
+        <div class="lib-contact">
+          ${cp.discord_url ? `<a href="${esc(cp.discord_url)}" target="_blank" rel="noopener">💬 Discord${cp.discord_username ? ` (${esc(cp.discord_username)})` : ''}</a>` : ''}
+          ${cp.instagram ? `<a href="https://instagram.com/${encodeURIComponent(cp.instagram)}" target="_blank" rel="noopener">📷 Instagram @${esc(cp.instagram)}</a>` : ''}
+          ${cp.whatsapp ? `<a href="https://wa.me/${esc(cp.whatsapp.replace(/[^0-9]/g, ''))}" target="_blank" rel="noopener">🟢 WhatsApp</a>` : ''}
+        </div>` : `<div class="lib-meta">${esc(t.from_jmeno)} → ${esc(t.to_jmeno)}</div>`;
+
+      let methodPart = '';
+      if (canEdit) {
+        methodPart = `
+          <div class="lib-method">
+            <label><input type="radio" name="m_${esc(c.id)}" value="packeta"${t.method === 'packeta' ? ' checked' : ''}><span>📦 Zásilkovna / Z-BOX</span></label>
+            <label><input type="radio" name="m_${esc(c.id)}" value="osobne"${t.method === 'osobne' ? ' checked' : ''}><span>🤝 Osobně</span></label>
+          </div>
+          <div class="lib-packeta ${t.method === 'packeta' ? '' : 'hidden'}">
+            ${t.packeta ? `<div class="lib-info">📍 <strong>${esc(t.packeta.name)}</strong>${t.packeta.address ? `<br>${esc(t.packeta.address)}` : ''}${t.packeta.id ? `<br><span class="lib-meta">ID místa: ${esc(t.packeta.id)}</span>` : ''}</div>` : ''}
+            ${party === 'to' || mode === 'admin' ? `<div class="lib-actions"><button type="button" class="btn btn-outline lib-pick-point">${t.packeta ? 'Změnit výdejní místo' : 'Vybrat výdejní místo'}</button></div>` : (!t.packeta ? '<div class="lib-meta">Výdejní místo vybírá příjemce.</div>' : '')}
+            ${party === 'from' || mode === 'admin' ? `<div class="form-group" style="margin:10px 0 0;"><input type="text" class="form-control lib-tracking" placeholder="Číslo zásilky (nepovinné)" value="${esc(t.sledovani || '')}"></div>` : (t.sledovani ? `<div class="lib-meta">Číslo zásilky: ${esc(t.sledovani)}</div>` : '')}
+          </div>
+          <div class="lib-osobne ${t.method === 'osobne' ? '' : 'hidden'}">
+            <textarea class="form-control lib-note" rows="2" placeholder="Kde a kdy se potkáte (vidíte jen vy dva)">${esc(t.poznamka || '')}</textarea>
+          </div>
+          <div class="lib-actions"><button type="button" class="btn btn-outline lib-save-transfer">Uložit</button></div>`;
+      } else {
+        methodPart = t.method ? `<div class="lib-meta">Způsob: ${t.method === 'packeta' ? '📦 Zásilkovna' : '🤝 osobně'}</div>` : '';
+        if (t.packeta && t.method === 'packeta') methodPart += `<div class="lib-info">📍 <strong>${esc(t.packeta.name)}</strong>${t.packeta.address ? `<br>${esc(t.packeta.address)}` : ''}</div>`;
+        if (t.poznamka && t.method === 'osobne') methodPart += `<div class="lib-info">${esc(t.poznamka)}</div>`;
+        if (t.sledovani) methodPart += `<div class="lib-meta">Číslo zásilky: ${esc(t.sledovani)}</div>`;
+      }
+
+      const sentLabel = t.method === 'packeta' ? 'Odesláno' : 'Předáno';
+      const btns = [];
+      if (acts.includes('mark_agreed') && (party || mode === 'admin')) btns.push(`<button type="button" class="btn btn-outline" data-tact="mark_agreed">Máme domluveno</button>`);
+      if (acts.includes('mark_sent') && (party === 'from' || mode === 'admin')) btns.push(`<button type="button" class="btn btn-primary" data-tact="mark_sent">${sentLabel}</button>`);
+      if (acts.includes('confirm_received') && (party === 'to' || mode === 'admin')) btns.push(`<button type="button" class="btn btn-primary" data-tact="confirm_received">Potvrdit převzetí</button>`);
+      if (acts.includes('cancel_transfer') && (party || mode === 'admin')) btns.push(`<button type="button" class="btn btn-outline lib-btn-danger" data-tact="cancel_transfer">Zrušit předání</button>`);
+
+      let guide = '';
+      if (party === 'to' && t.status === 'ceka_na_domluvu') guide = 'Napiš druhé straně (Discord je výchozí) a domluvte se, jestli knihu pošle přes Zásilkovnu, nebo si ji předáte osobně. U Zásilkovny vyber výdejní místo.';
+      if (party === 'from' && t.status === 'ceka_na_domluvu') guide = 'Domluv se s příjemcem na způsobu předání. Zásilku objednáváš a platíš sám/sama mimo web, tady jen zaznamenáš odeslání.';
+      if (party === 'from' && t.status === 'domluveno') guide = t.method === 'packeta' ? 'Až zásilku podáš, klikni na Odesláno.' : 'Až knihu předáš, klikni na Předáno.';
+      if (party === 'to' && t.status === 'odeslano') guide = 'Až budeš mít knihu v ruce, potvrď převzetí.';
+
+      return `<div class="lib-transfer" data-copy="${esc(c.id)}">
+        <div style="font-weight:700;">${kindText}</div>
+        <div class="lib-steps">${STEP_LABELS.map((s, i) => `<div class="lib-step${i <= idx ? ' done' : ''}">${s[1]}</div>`).join('')}</div>
+        ${guide ? `<div class="lib-meta">${guide}</div>` : ''}
+        ${contact}
+        ${methodPart}
+        ${btns.length ? `<div class="lib-actions">${btns.join('')}</div>` : ''}
+      </div>`;
+    }
+
+    function wireTransfers(container, opts = {}) {
+      container.querySelectorAll('.lib-transfer').forEach(box => {
+        const copyId = box.dataset.copy;
+        const radios = box.querySelectorAll('input[type=radio]');
+        radios.forEach(r => r.addEventListener('change', () => {
+          box.querySelector('.lib-packeta').classList.toggle('hidden', r.value !== 'packeta' || !r.checked);
+          box.querySelector('.lib-osobne').classList.toggle('hidden', r.value !== 'osobne' || !r.checked);
+        }));
+        const save = box.querySelector('.lib-save-transfer');
+        if (save) save.addEventListener('click', () => {
+          const sel = box.querySelector('input[type=radio]:checked');
+          const params = { method: sel ? sel.value : null };
+          const note = box.querySelector('.lib-note');
+          if (note) params.poznamka = note.value;
+          const tr = box.querySelector('.lib-tracking');
+          if (tr) params.sledovani = tr.value;
+          runAction(copyId, 'update_transfer', params, { ...opts, okMsg: 'Uloženo.' });
+        });
+        const pick = box.querySelector('.lib-pick-point');
+        if (pick) pick.addEventListener('click', () => pickPacketaPoint(point => {
+          runAction(copyId, 'update_transfer', { method: 'packeta', packeta: point }, { ...opts, okMsg: 'Výdejní místo uloženo.' });
+        }));
+        box.querySelectorAll('[data-tact]').forEach(b => b.addEventListener('click', () => {
+          const a = b.dataset.tact;
+          const msgs = { mark_agreed: 'Domluveno.', mark_sent: 'Zaznamenáno. Příjemce dostal oznámení.', confirm_received: 'Převzetí potvrzeno. Příjemné čtení!' };
+          runAction(copyId, a, {}, { ...opts, okMsg: msgs[a] });
+        }));
+      });
+    }
+
+    // Výběr výdejního místa: widget Zásilkovny (s API klíčem), jinak ruční zadání.
+    function pickPacketaPoint(onPick) {
+      if (PACKETA_API_KEY) {
+        const go = () => window.Packeta.Widget.pick(PACKETA_API_KEY, (point) => {
+          if (!point) return;
+          onPick({ id: String(point.id), name: point.name || point.place || '', address: point.formatedValue || [point.street, point.city, point.zip].filter(Boolean).join(', ') });
+        }, { language: 'cs', country: 'cz,sk', view: 'modal' });
+        if (window.Packeta) return go();
+        const s = document.createElement('script');
+        s.src = 'https://widget.packeta.com/v6/www/js/library.js';
+        s.onload = go;
+        s.onerror = () => toast('Mapu Zásilkovny se nepodařilo načíst, zadej místo ručně.', true);
+        document.head.appendChild(s);
+        return;
+      }
+      const m = openModal(`
+        <h3 style="margin-top:0;">Výdejní místo Zásilkovny</h3>
+        <p class="form-hint">Najdi si místo nebo Z-BOX na <a href="https://www.zasilkovna.cz/pobocky" target="_blank" rel="noopener">mapě Zásilkovny</a> a opiš sem jeho údaje. Uvidí je jen odesílatel.</p>
+        <div class="form-group"><label class="form-label">Název místa *</label><input class="form-control" id="pp-name" placeholder="např. Z-BOX Praha 7, Dukelských hrdinů"></div>
+        <div class="form-group"><label class="form-label">Adresa</label><input class="form-control" id="pp-addr" placeholder="ulice, město"></div>
+        <div class="form-group"><label class="form-label">ID místa (nepovinné)</label><input class="form-control" id="pp-id" placeholder="číslo z mapy Zásilkovny"></div>
+        <div class="lib-actions"><button type="button" class="btn btn-primary" id="pp-save">Uložit místo</button></div>`);
+      m.querySelector('#pp-save').addEventListener('click', () => {
+        const name = m.querySelector('#pp-name').value.trim();
+        if (!name) { toast('Vyplň název místa.', true); return; }
+        onPick({ id: m.querySelector('#pp-id').value.trim(), name, address: m.querySelector('#pp-addr').value.trim() });
+      });
+    }
+
+    // ----- Moje knihy -----
+    function renderMine(body) {
+      const my = state.my;
+      if (!my) { body.innerHTML = '<div class="empty-state">Nepodařilo se načíst tvoje knihy.</div>'; return; }
+      body.innerHTML = `
+        <div style="margin-bottom:16px;"><button type="button" class="btn btn-primary btn-sm" id="lib-add2">+ Nabídnout knihu</button></div>
+        ${my.owned.length ? my.owned.map(c => copyPanel(c, { mode: 'owner' })).join('') : '<div class="empty-state">Zatím nenabízíš žádnou knihu. Máš doma něco, co by stálo za přečtení i ostatním?</div>'}`;
+      body.querySelector('#lib-add2').addEventListener('click', () => openBookForm({}));
+      const find = (id) => my.owned.find(c => c.id === id);
+      wireCopyActions(body, find);
+      wireTransfers(body);
+    }
+
+    // ----- Výpůjčky a předání -----
+    function renderLoans(body) {
+      const my = state.my;
+      if (!my) { body.innerHTML = '<div class="empty-state">Nepodařilo se načíst výpůjčky.</div>'; return; }
+      const ownedIds = new Set(my.owned.map(c => c.id));
+      const holdingIds = new Set(my.holding.map(c => c.id));
+      // Předání u mých vlastních knih (odcházející) a u knih, které mám půjčené, se ukazují
+      // v jejich panelu - sem zvlášť jen příchozí předání (kniha teprve jede ke mně).
+      const incoming = my.transfers.filter(c => !ownedIds.has(c.id) && !holdingIds.has(c.id));
+      const ownTransfers = my.transfers.filter(c => ownedIds.has(c.id));
+      body.innerHTML = `
+        <h2 class="lib-section-title">Předání</h2>
+        ${incoming.length || ownTransfers.length
+          ? [...incoming.map(c => copyPanel(c, { mode: 'incoming' })), ...ownTransfers.map(c => copyPanel(c, { mode: 'owner' }))].join('')
+          : '<div class="lib-meta">Žádné probíhající předání.</div>'}
+        <h2 class="lib-section-title">Knihy, které mám u sebe</h2>
+        ${my.holding.length ? my.holding.map(c => copyPanel(c, { mode: 'holder' })).join('') : '<div class="lib-meta">Teď u sebe nemáš žádnou vypůjčenou knihu.</div>'}
+        <h2 class="lib-section-title">Moje žádosti</h2>
+        ${my.requests.length ? my.requests.map(c => copyPanel(c, { mode: 'request' })).join('') : '<div class="lib-meta">Nečekáš ve frontě na žádnou knihu. <a href="#" id="lib-to-cat">Projdi katalog</a>.</div>'}`;
+      const all = [...my.transfers, ...my.holding, ...my.requests, ...my.owned];
+      const find = (id) => all.find(c => c.id === id);
+      wireCopyActions(body, find);
+      wireTransfers(body);
+      const toCat = body.querySelector('#lib-to-cat');
+      if (toCat) toCat.addEventListener('click', e => { e.preventDefault(); state.tab = 'katalog'; render(); });
+    }
+
+    // ----- Oznámení a kontakt -----
+    function renderContact(body) {
+      const my = state.my;
+      if (!my) { body.innerHTML = '<div class="empty-state">Nepodařilo se načíst.</div>'; return; }
+      body.innerHTML = `
+        <div class="lib-panel">
+          <h3>Kontakt pro předávání</h3>
+          <p class="lib-meta">Výchozí je Discord – při předání se protistraně ukáže odkaz na tvůj Discord účet. Pokud chceš, můžeš navíc nabídnout Instagram nebo WhatsApp. <strong>Uvidí je jen člověk, se kterým si zrovna předáváš knihu</strong>, nikdy katalog ani nikdo další.</p>
+          <div class="lib-row2">
+            <div class="form-group"><label class="form-label">Instagram (nepovinné)</label><input class="form-control" id="pf-ig" placeholder="uživatelské jméno" value="${esc(my.profile.instagram)}"></div>
+            <div class="form-group"><label class="form-label">WhatsApp (nepovinné)</label><input class="form-control" id="pf-wa" placeholder="+420…" value="${esc(my.profile.whatsapp)}"></div>
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" id="pf-save">Uložit</button>
+        </div>
+        <div class="lib-panel">
+          <h3>Oznámení</h3>
+          ${my.profile.notices.length ? my.profile.notices.map(n => `<div class="lib-notice${n.read ? '' : ' unread'}"><time>${fmtDateTime(n.at)}</time>${esc(n.text)}</div>`).join('') : '<div class="lib-meta">Zatím žádná oznámení.</div>'}
+        </div>`;
+      body.querySelector('#pf-save').addEventListener('click', async () => {
+        try {
+          await api('library-profile', { instagram: body.querySelector('#pf-ig').value, whatsapp: body.querySelector('#pf-wa').value });
+          toast('Uloženo.');
+          await refresh();
+        } catch (e) { toast(e.message, true); }
+      });
+    }
+    async function markNoticesRead() {
+      try {
+        await api('library-profile', { mark_notices_read: true });
+        state.my.profile.notices.forEach(n => { n.read = true; });
+      } catch (e) { /* nevadí */ }
+    }
+
+    // ----- Správa fondu (Rada) -----
+    function renderAdmin(body) {
+      const a = state.admin;
+      if (!a) { body.innerHTML = '<div class="loading-state">Načítám…</div>'; return; }
+      const copies = a.admin_copies;
+      const overdue = copies.filter(c => c.overdue).length;
+      const transfers = copies.filter(c => c.transfer).length;
+      body.innerHTML = `
+        <div class="lib-info" style="margin-bottom:16px;">Správa vidí všechny výtisky včetně toho, kdo je má u sebe. Tlačítka tady jednají s pravomocí Rady (i nad cizími knihami) – používej je jen k řešení problémů. Celkem ${copies.length} výtisků · ${transfers} probíhajících předání · ${overdue ? `<span class="lib-overdue">${overdue} po termínu</span>` : '0 po termínu'}.</div>
+        <div style="margin-bottom:16px;"><button type="button" class="btn btn-primary btn-sm" id="lib-add-ooo">+ Přidat knihu do fondu OOO</button></div>
+        <div class="lib-filters filters" style="margin-bottom:16px;">
+          <button type="button" class="filter-btn active" data-af="">Vše</button>
+          <button type="button" class="filter-btn" data-af="ooo">Fond OOO</button>
+          <button type="button" class="filter-btn" data-af="transfer">Probíhající předání</button>
+          <button type="button" class="filter-btn" data-af="overdue">Po termínu</button>
+          <button type="button" class="filter-btn" data-af="return">Požadavek na vrácení</button>
+        </div>
+        <div id="lib-admin-list"></div>`;
+      const list = body.querySelector('#lib-admin-list');
+      const draw = (f) => {
+        const filtered = copies.filter(c => !f || (f === 'ooo' && c.owner_type === 'ooo') || (f === 'transfer' && c.transfer) || (f === 'overdue' && c.overdue) || (f === 'return' && c.return_request));
+        list.innerHTML = filtered.length
+          ? filtered.map(c => copyPanel(c, { mode: 'admin' }).replace(/<\/div>\s*$/, `<div class="lib-actions"><button type="button" class="btn btn-outline" data-holder="${esc(c.id)}">Opravit držitele</button></div></div>`)).join('')
+          : '<div class="empty-state">Nic.</div>';
+        const find = (id) => copies.find(c => c.id === id);
+        wireCopyActions(list, find, null, { admin: true });
+        wireTransfers(list, { admin: true });
+        list.querySelectorAll('[data-holder]').forEach(b => b.addEventListener('click', () => openSetHolder(find(b.dataset.holder))));
+      };
+      draw('');
+      body.querySelectorAll('[data-af]').forEach(b => b.addEventListener('click', () => {
+        body.querySelectorAll('[data-af]').forEach(x => x.classList.toggle('active', x === b));
+        draw(b.dataset.af);
+      }));
+      body.querySelector('#lib-add-ooo').addEventListener('click', () => openBookForm({ admin: true, forceMode: 'ooo' }));
+    }
+
+    function openSetHolder(c) {
+      const members = state.admin.members || [];
+      const m = openModal(`
+        <h3 style="margin-top:0;">Opravit držitele</h3>
+        <p class="form-hint">Pro případy, kdy se kniha předala mimo web, ztratila se nebo je evidence špatně. Probíhající předání se zruší.</p>
+        <p class="lib-meta">${esc(c.title ? c.title.nazev : '')} – teď u: <strong>${esc(c.holder_jmeno)}</strong></p>
+        <div class="form-group"><label class="form-label">Nový držitel</label>
+          <select class="form-control" id="sh-target">
+            <option value="home">Domů (${esc(c.home_jmeno)})</option>
+            ${members.map(x => `<option value="${esc(x.ooo_id)}">${esc(x.jmeno)} (${esc(x.ooo_id)})</option>`).join('')}
+          </select></div>
+        <div class="lib-actions"><button type="button" class="btn btn-primary" id="sh-save">Uložit</button></div>`);
+      m.querySelector('#sh-save').addEventListener('click', () => runAction(c.id, 'admin_set_holder', { target_ooo_id: m.querySelector('#sh-target').value }, { admin: true, noConfirm: true }));
+    }
+
+    // ---------- Formulář knihy ----------
+    function openBookForm({ copy, title, admin, forceMode }) {
+      const c = state.catalog;
+      const modes = c.modes;
+      const editing = !!copy;
+      const t = title || (copy && copy.title) || {};
+      const isNewCopyOfExisting = !editing && !!title;
+      const mode = forceMode || (copy && copy.mode) || 'navrat';
+      const modeChoices = Object.entries(modes).filter(([k, m]) => (admin ? true : m.owner_type === 'private'));
+      const rules = copy ? copy.rules : modes[mode].rules;
+      const titleLocked = isNewCopyOfExisting;
+      const m = openModal(`
+        <h3 style="margin-top:0;">${editing ? 'Upravit knihu' : isNewCopyOfExisting ? 'Nabídnout svůj výtisk' : mode === 'ooo' ? 'Přidat knihu do fondu OOO' : 'Nabídnout knihu'}</h3>
+        <form id="bf" autocomplete="off">
+          ${titleLocked ? `<p class="lib-meta"><strong>${esc(t.nazev)}</strong> – ${esc((t.autori || []).join(', '))}</p>` : `
+          <div class="form-group"><label class="form-label">ISBN (nepovinné)</label>
+            <div style="display:flex;gap:8px;"><input class="form-control" name="isbn" value="${esc(t.isbn || '')}" placeholder="978…"><button type="button" class="btn btn-outline btn-sm" id="bf-isbn" style="white-space:nowrap;">Doplnit podle ISBN</button></div>
+            <div class="form-hint">Podle ISBN se kniha spojí s jinými výtisky stejného titulu a umíme dohledat název a autora.</div></div>
+          <div class="form-group"><label class="form-label">Název *</label><input class="form-control" name="nazev" required value="${esc(t.nazev || '')}"></div>
+          <div class="form-group"><label class="form-label">Autor / autoři</label><input class="form-control" name="autori" value="${esc((t.autori || []).join(', '))}" placeholder="oddělené čárkou"></div>
+          <div class="form-group"><label class="form-label">Popis</label><textarea class="form-control" name="popis" rows="3">${esc(t.popis || '')}</textarea></div>
+          <div class="form-group"><label class="form-label">Témata</label>
+            <div class="lib-topic-picks">${c.topics.map(x => `<label><input type="checkbox" name="temata" value="${esc(x)}"${(t.temata || []).includes(x) ? ' checked' : ''}>${esc(x)}</label>`).join('')}</div></div>`}
+          ${!titleLocked || !t.cover_url ? `<div class="form-group"><label class="form-label">Fotka obálky</label>
+            <input type="file" accept="image/*" class="form-control" id="bf-cover">
+            <div class="form-hint">Stačí vyfotit mobilem, zmenšíme ji.</div>
+            <img id="bf-cover-prev" alt="" style="max-width:120px;margin-top:8px;border-radius:6px;${t.cover_url ? '' : 'display:none;'}" src="${t.cover_url ? esc(coverSrc(t.cover_url)) : ''}"></div>` : ''}
+          <hr style="border:none;border-top:1px solid var(--border);margin:20px 0;">
+          ${forceMode === 'ooo' || mode === 'ooo' ? '<input type="hidden" name="mode" value="ooo">' : `<div class="form-group"><label class="form-label">Jak chceš knihu sdílet?</label>
+            ${modeChoices.map(([k, md]) => `<label class="lib-check"><input type="radio" name="mode" value="${k}"${k === mode ? ' checked' : ''}><span><strong>${esc(md.label)}</strong><br><span class="lib-meta">${k === 'navrat' ? 'Kniha koluje mezi zájemci, ale zůstává tvoje – můžeš si ji kdykoliv vyžádat zpět.' : k === 'volne' ? 'Daruješ ji do oběhu – putuje dál od čtenáře ke čtenáři, návrat nečekáš (i tak si o ni můžeš říct).' : ''}</span></span></label>`).join('')}</div>`}
+          <label class="lib-check"><input type="checkbox" name="allow_pass_on"${rules.allow_pass_on ? ' checked' : ''}><span>Čtenář smí knihu předat rovnou dalšímu ve frontě (bez vracení ke mně mezi čtenáři)</span></label>
+          <div class="form-group"><label class="form-label">Doba výpůjčky (dní, nepovinné)</label><input type="number" min="1" max="365" class="form-control" name="loan_days" value="${rules.loan_days || ''}" style="max-width:140px;"></div>
+          <div class="form-group"><label class="form-label">${mode === 'ooo' ? 'Doporučení' : 'Moje doporučení'} (nepovinné)</label><textarea class="form-control" name="doporuceni" rows="2" placeholder="Proč si ji přečíst?">${esc(copy ? copy.doporuceni : '')}</textarea></div>
+          <div class="form-group"><label class="form-label">Stav výtisku (nepovinné)</label><input class="form-control" name="stav_poznamka" value="${esc(copy ? copy.stav_poznamka : '')}" placeholder="např. podtrhané pasáže, ohnutý roh"></div>
+          ${(forceMode === 'ooo' || mode === 'ooo') && admin ? `<div class="form-group"><label class="form-label">Kde je kniha uložená (správce)</label>
+            <select class="form-control" name="keeper_ooo_id">${(state.admin ? state.admin.members : []).map(x => `<option value="${esc(x.ooo_id)}"${(copy ? copy.keeper_ooo_id : c.me.ooo_id) === x.ooo_id ? ' selected' : ''}>${esc(x.jmeno)}</option>`).join('')}</select>
+            <div class="form-hint">Odsud se kniha půjčuje a sem se vrací.</div></div>` : ''}
+          <div class="lib-actions"><button type="submit" class="btn btn-primary" id="bf-submit">${editing ? 'Uložit změny' : 'Nabídnout'}</button></div>
+        </form>`);
+      const form = m.querySelector('#bf');
+      let coverDataUrl = null;
+      const coverInput = m.querySelector('#bf-cover');
+      if (coverInput) coverInput.addEventListener('change', async () => {
+        const f = coverInput.files[0];
+        if (!f) return;
+        try {
+          coverDataUrl = await resizeImage(f);
+          const prev = m.querySelector('#bf-cover-prev');
+          prev.src = coverDataUrl; prev.style.display = '';
+        } catch (e) { toast('Fotku se nepodařilo načíst.', true); }
+      });
+      const isbnBtn = m.querySelector('#bf-isbn');
+      if (isbnBtn) isbnBtn.addEventListener('click', () => lookupIsbn(form));
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(form);
+        const payload = {
+          mode: fd.get('mode') || mode,
+          allow_pass_on: !!fd.get('allow_pass_on'),
+          loan_days: fd.get('loan_days') || null,
+          doporuceni: fd.get('doporuceni') || '',
+          stav_poznamka: fd.get('stav_poznamka') || '',
+        };
+        if (!titleLocked) {
+          Object.assign(payload, { isbn: fd.get('isbn') || '', nazev: fd.get('nazev') || '', autori: fd.get('autori') || '', popis: fd.get('popis') || '', temata: fd.getAll('temata') });
+        }
+        if (fd.get('keeper_ooo_id')) payload.keeper_ooo_id = fd.get('keeper_ooo_id');
+        if (coverDataUrl) payload.cover_data_url = coverDataUrl;
+        if (editing) payload.copy_id = copy.id;
+        if (isNewCopyOfExisting) payload.title_id = title.id;
+        if (admin) payload.admin_mode = true;
+        const btn = m.querySelector('#bf-submit');
+        btn.disabled = true;
+        try {
+          await api('library-save-book', payload);
+          toast(editing ? 'Uloženo.' : 'Kniha je v knihovně. Díky!');
+          closeModal();
+          if (admin) await loadAdmin();
+          await refresh();
+        } catch (err) {
+          toast(err.message, true);
+          btn.disabled = false;
+        }
+      });
+    }
+
+    // Zmenšení fotky obálky v prohlížeči (max 800 px, JPEG) - server přijme max ~600 kB.
+    function resizeImage(file) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          const max = 800;
+          const scale = Math.min(1, max / Math.max(img.width, img.height));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          URL.revokeObjectURL(url);
+          let q = 0.82;
+          let out = canvas.toDataURL('image/jpeg', q);
+          while (out.length > 750000 && q > 0.4) { q -= 0.12; out = canvas.toDataURL('image/jpeg', q); }
+          resolve(out);
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('img')); };
+        img.src = url;
+      });
+    }
+
+    // Dohledání názvu/autora/popisu podle ISBN (veřejné Google Books API, bez klíče).
+    async function lookupIsbn(form) {
+      const isbn = (form.isbn.value || '').replace(/[^0-9Xx]/g, '');
+      if (!isbn) { toast('Nejdřív vyplň ISBN.', true); return; }
+      try {
+        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
+        const data = await res.json();
+        const info = data.items && data.items[0] && data.items[0].volumeInfo;
+        if (!info) { toast('Knihu s tímhle ISBN jsme nenašli, vyplň údaje ručně.', true); return; }
+        if (!form.nazev.value) form.nazev.value = [info.title, info.subtitle].filter(Boolean).join(': ');
+        if (!form.autori.value && info.authors) form.autori.value = info.authors.join(', ');
+        if (!form.popis.value && info.description) form.popis.value = info.description.slice(0, 1500);
+        toast('Doplněno – zkontroluj prosím údaje.');
+      } catch (e) {
+        toast('Dohledání se nepovedlo, vyplň údaje ručně.', true);
+      }
+    }
+
+    // ---------- Start ----------
+    window.onOooLogin = () => { state.my = null; state.admin = null; loadAll(); };
+    window.onOooLogout = () => { state.my = null; state.admin = null; state.tab = 'katalog'; loadAll(); };
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof logPageView === 'function') logPageView('knihovna');
+      loadAll();
+    });
+  </script>
+</body>
+</html>
