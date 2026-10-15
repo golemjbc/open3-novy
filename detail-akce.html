@@ -633,6 +633,10 @@
         }, 10000);
       }
 
+      // Ghost mode ("Zobrazit jako", 2026-10-15): platba (QR, VS, částka) se musí generovat
+      // pro ZOBRAZOVANÉHO člověka, ne pro přihlášeného admina - viz checkAlreadyRegistered.
+      let ghostViewAs = null;
+
       function loadPaymentInfo(userId, userName, typUcasti, paymentType, idParam) {
         if (!userId) return;
         const qp = new URLSearchParams({
@@ -640,6 +644,7 @@
           typ_ucasti: typUcasti || 'single', payment_type: paymentType || 'deposit',
           jednorazova: event.jednorazova || 'ne'
         });
+        if (ghostViewAs) qp.set('admin_view_as', ghostViewAs);
         fetch(API_BASE + '/api/get-deposit-info?' + qp.toString())
           .then(r => r.json())
           .then(data => {
@@ -756,6 +761,19 @@
           const u = JSON.parse(storedUserJson);
           userId = u.userId; userName = u.userName; provider = u.provider; discordSession = u.discordSession;
         } catch (e) { return; }
+        // Ghost mode (2026-10-15, hlášeno - "přepnu na něj a platba se generuje pro mě"):
+        // tahle kontrola čte přihlášení rovnou z localStorage, tedy SKUTEČNÉHO admina, a
+        // dřív vůbec nezohlednila "Zobrazit jako". Teď se pošle admin_view_as s cílem
+        // (backend ho u my-registrations i get-deposit-info už uměl, ověřuje, že volající
+        // je Rada) a jméno do zprávy platby je jméno zobrazovaného člověka.
+        const ghost = getGhostTarget();
+        let adminViewAs = '';
+        if (ghost) {
+          if (!discordSession || isGoogleUser({ provider, userId })) return; // ghost mode umí jen Discord admin
+          adminViewAs = ghost.discord_id;
+          ghostViewAs = adminViewAs;
+          userName = ghost.jmeno || userName;
+        }
         if (!userId) return;
         // Google účty se ověřují výhradně přes credential blok níž (čerstvé, server-side
         // ověřené) - tahle stará (Discord) kontrola posílala syrové userId z localStorage
@@ -765,7 +783,7 @@
         if (isGoogleUser({ provider, userId })) return;
         if (!discordSession) return; // starší uložená session bez lístku - přihlásit se prosím znovu
 
-        fetch(API_BASE + '/api/my-registrations?user_id=' + encodeURIComponent(discordSession))
+        fetch(API_BASE + '/api/my-registrations?user_id=' + encodeURIComponent(discordSession) + (adminViewAs ? '&admin_view_as=' + encodeURIComponent(adminViewAs) : ''))
           .then(r => r.json())
           .then(list => {
             if (!Array.isArray(list)) return;
