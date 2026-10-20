@@ -651,13 +651,19 @@
             if (!data || !data.deposit_amount || data.deposit_amount === '0') return;
             const isFinal = paymentType === 'final';
             const targetId = isFinal ? 'final-payment-info' : 'deposit-info';
-            const label = isFinal ? 'Doplatek' : 'Záloha';
+            // Souhrnná platba (2026-10-20): doplatek je určený dřív, než je zaplacená záloha ->
+            // jedna společná platba, na webu rozpis částek.
+            const combined = !!data.combined;
+            const label = combined ? 'Záloha + doplatek' : (isFinal ? 'Doplatek' : 'Záloha');
             const amount = parseFloat(data.deposit_amount);
             const isPar = typUcasti === 'par';
-            const amountText = isPar ? `2 × ${(amount / 2).toFixed(0)} Kč = ${amount} Kč` : `${amount} Kč`;
+            const amountText = combined
+              ? `Záloha ${data.zaloha_amount} Kč + doplatek ${data.doplatek_amount} Kč = ${amount} Kč`
+              : (isPar ? `2 × ${(amount / 2).toFixed(0)} Kč = ${amount} Kč` : `${amount} Kč`);
             showPanel(targetId, `
               <h4>${label}</h4>
               <p style="margin:0 0 4px;color:var(--text);font-weight:700;">${amountText}</p>
+              ${combined ? '<p class="form-hint" style="margin:0 0 8px;">Záloha i doplatek zaplatíš jednou platbou, ať nemusíš platit dvakrát.</p>' : ''}
               <div class="qr-wrap">
                 <img src="data:image/png;base64,${data.qr_base64}" alt="QR platba">
                 <div class="qr-info">

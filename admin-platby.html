@@ -171,6 +171,7 @@
     function typPlatbyLabel(t) {
       if (t === 'zaloha') return 'záloha';
       if (t === 'doplatek') return 'doplatek';
+      if (t === 'zaloha_doplatek') return 'záloha + doplatek';
       if (t === 'vratka') return 'vratka';
       return '';
     }
@@ -219,6 +220,7 @@
                 <select data-field="typ_platby">
                   <option value="zaloha" ${p.typ_platby === 'zaloha' ? 'selected' : ''}>záloha</option>
                   <option value="doplatek" ${p.typ_platby === 'doplatek' ? 'selected' : ''}>doplatek</option>
+                  <option value="zaloha_doplatek" ${p.typ_platby === 'zaloha_doplatek' ? 'selected' : ''}>záloha + doplatek (souhrnná platba)</option>
                   <option value="vratka" ${p.typ_platby === 'vratka' ? 'selected' : ''}>vratka</option>
                 </select>
               </div>
