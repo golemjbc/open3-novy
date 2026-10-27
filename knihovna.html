@@ -208,6 +208,24 @@
     .lib-toast.error { background: #b42318; }
     .lib-footer-links { text-align: center; margin-top: 40px; font-size: 0.84rem; }
 
+    /* kostry karet při načítání */
+    .lib-skel { border-radius: 12px; background: linear-gradient(90deg, var(--bg-alt) 25%, #f4f4f8 50%, var(--bg-alt) 75%); background-size: 200% 100%; animation: lib-shimmer 1.2s infinite linear; }
+    @keyframes lib-shimmer { to { background-position: -200% 0; } }
+    .lib-badge-new { position: absolute; left: 8px; top: 8px; padding: 2px 8px; border-radius: 6px; background: var(--mint); color: var(--navy); font-size: 0.64rem; font-weight: 800; letter-spacing: .04em; }
+    .lib-sort { border: 1.5px solid var(--border); background: var(--surface); border-radius: 999px; padding: 9px 14px; font: inherit; font-size: 0.84rem; font-weight: 600; color: var(--text); cursor: pointer; }
+    .lib-count { font-size: 0.8rem; color: var(--text-muted); margin: -8px 0 12px; }
+    /* našeptávač knih při přidávání */
+    .lib-suggest { position: relative; }
+    .lib-suggest-list { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 5; background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; box-shadow: var(--shadow-lg); max-height: 320px; overflow-y: auto; }
+    .lib-sg { display: grid; grid-template-columns: 36px 1fr; gap: 10px; align-items: center; width: 100%; padding: 8px 10px; border: none; background: none; text-align: left; font: inherit; cursor: pointer; color: var(--text); }
+    .lib-sg:hover, .lib-sg:focus { background: var(--bg-alt); outline: none; }
+    .lib-sg img, .lib-sg .nocover { width: 36px; height: 52px; object-fit: cover; border-radius: 4px; background: var(--bg-alt); }
+    .lib-sg strong { display: block; font-size: 0.86rem; line-height: 1.2; }
+    .lib-sg span { font-size: 0.74rem; color: var(--text-muted); }
+    .lib-sg-head { padding: 6px 12px; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; }
+    .lib-scan { position: fixed; inset: 0; z-index: 1200; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; color: #fff; }
+    .lib-scan video { width: min(92vw, 520px); border-radius: 16px; }
+    .lib-scan-frame { position: absolute; width: min(70vw, 360px); height: 120px; border: 3px solid var(--mint); border-radius: 12px; box-shadow: 0 0 0 9999px rgba(0,0,0,.35); pointer-events: none; }
     @media (max-width: 600px) {
       .lib-overlay { align-items: flex-end; padding: 0; }
       .lib-modal { border-radius: 22px 22px 0 0; max-height: 92vh; padding: 22px 18px calc(22px + env(safe-area-inset-bottom)); animation: lib-up .25s cubic-bezier(.2,.9,.3,1); }
@@ -265,7 +283,7 @@
 
   <section class="section" style="padding-top: 28px;">
     <div class="container">
-      <div id="lib-root"><div class="loading-state">Načítám…</div></div>
+      <div id="lib-root"><div class="lib-grid" aria-label="Načítám"><div><div class="lib-skel" style="aspect-ratio:2/3;"></div><div class="lib-skel" style="height:14px;margin-top:10px;width:80%;"></div><div class="lib-skel" style="height:10px;margin-top:6px;width:55%;"></div></div><div><div class="lib-skel" style="aspect-ratio:2/3;"></div><div class="lib-skel" style="height:14px;margin-top:10px;width:80%;"></div><div class="lib-skel" style="height:10px;margin-top:6px;width:55%;"></div></div><div><div class="lib-skel" style="aspect-ratio:2/3;"></div><div class="lib-skel" style="height:14px;margin-top:10px;width:80%;"></div><div class="lib-skel" style="height:10px;margin-top:6px;width:55%;"></div></div><div><div class="lib-skel" style="aspect-ratio:2/3;"></div><div class="lib-skel" style="height:14px;margin-top:10px;width:80%;"></div><div class="lib-skel" style="height:10px;margin-top:6px;width:55%;"></div></div><div><div class="lib-skel" style="aspect-ratio:2/3;"></div><div class="lib-skel" style="height:14px;margin-top:10px;width:80%;"></div><div class="lib-skel" style="height:10px;margin-top:6px;width:55%;"></div></div><div><div class="lib-skel" style="aspect-ratio:2/3;"></div><div class="lib-skel" style="height:14px;margin-top:10px;width:80%;"></div><div class="lib-skel" style="height:10px;margin-top:6px;width:55%;"></div></div><div><div class="lib-skel" style="aspect-ratio:2/3;"></div><div class="lib-skel" style="height:14px;margin-top:10px;width:80%;"></div><div class="lib-skel" style="height:10px;margin-top:6px;width:55%;"></div></div><div><div class="lib-skel" style="aspect-ratio:2/3;"></div><div class="lib-skel" style="height:14px;margin-top:10px;width:80%;"></div><div class="lib-skel" style="height:10px;margin-top:6px;width:55%;"></div></div></div></div>
     </div>
   </section>
 
@@ -316,7 +334,7 @@
     };
 
     const root = document.getElementById('lib-root');
-    const state = { catalog: null, my: null, admin: null, view: 'home', q: '', topic: '', onlyFree: false };
+    const state = { catalog: null, my: null, admin: null, view: 'home', q: '', topic: '', onlyFree: false, sort: 'new' };
 
     // ---------- Pomocné ----------
     function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
@@ -407,7 +425,13 @@
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
     // ---------- Načtení ----------
+    // Rychlé načtení (2026-10-27): katalog a "moje" běží souběžně a poslední stav se drží
+    // v sessionStorage - stránka se při návratu ukáže hned a pak se tiše obnoví.
+    const cacheKey = () => `ooo_lib_cache_${(getLoggedUser() || {}).userId || 'anon'}`;
+    function readCache() { try { return JSON.parse(sessionStorage.getItem(cacheKey()) || 'null'); } catch (e) { return null; } }
+    function writeCache() { try { sessionStorage.setItem(cacheKey(), JSON.stringify({ catalog: state.catalog, my: state.my })); } catch (e) { /* plná / zakázaná */ } }
     async function loadAll() {
+      const myP = getLoggedUser() ? api('library-my').catch(() => null) : Promise.resolve(null);
       try {
         state.catalog = await api('library-catalog');
       } catch (e) {
@@ -418,11 +442,9 @@
         return;
       }
       document.getElementById('lib-phase-note').classList.toggle('hidden', state.catalog.phase !== 'rada');
-      state.my = null;
-      if (getLoggedUser() && isMember()) {
-        try { state.my = await api('library-my'); } catch (e) { console.error(e); }
-      }
+      state.my = getLoggedUser() && isMember() ? await myP : null;
       if (state.view === 'admin' && canAdmin()) await loadAdmin();
+      writeCache();
       render();
     }
     async function loadAdmin() {
@@ -465,6 +487,8 @@
     }
 
     function render() {
+      const qEl = document.getElementById('lib-q');
+      const keepFocus = qEl && document.activeElement === qEl ? qEl.selectionStart : null;
       renderHeroActions();
       if (state.view === 'admin' && canAdmin()) { renderAdmin(); return; }
       const parts = [];
@@ -476,16 +500,19 @@
       parts.push(`<div class="lib-block" id="lib-catalog"><div class="lib-block-head"><h2>Katalog</h2></div>
         ${!getLoggedUser() ? '<div class="lib-note" style="margin-bottom:16px;">Půjčovat si a přidávat knihy můžou přihlášení členové OOO.</div>' : ''}
         <div class="lib-toolbar">
-          <div class="lib-search">${ICON.search}<input type="search" id="lib-q" placeholder="Hledat název nebo autora" value="${esc(state.q)}" aria-label="Hledat"></div>
+          <div class="lib-search">${ICON.search}<input type="search" id="lib-q" placeholder="Hledat název, autora nebo téma" value="${esc(state.q)}" aria-label="Hledat"></div>
+          <select class="lib-sort" id="lib-sort" aria-label="Řazení">${[['new', 'Nejnovější'], ['az', 'A–Z'], ['free', 'Volné první']].map(([k, l]) => `<option value="${k}"${state.sort === k ? ' selected' : ''}>${l}</option>`).join('')}</select>
           <label class="lib-switch"><input type="checkbox" id="lib-free"${state.onlyFree ? ' checked' : ''}> Jen volné</label>
         </div>
         <div class="lib-chips" id="lib-chips"></div>
+        <div class="lib-count" id="lib-count"></div>
         <div class="lib-grid" id="lib-grid"></div></div>`);
       if (canAdmin()) parts.push('<div class="lib-footer-links"><button type="button" class="lib-link" id="lib-to-admin">Správa knihovny (Rada) →</button></div>');
       root.innerHTML = parts.join('');
       wireTasks();
       root.querySelectorAll('[data-mine]').forEach(b => b.addEventListener('click', () => openManage(findMy(b.dataset.mine), {})));
       renderCatalog();
+      if (keepFocus !== null) { const n = document.getElementById('lib-q'); n.focus(); n.setSelectionRange(keepFocus, keepFocus); }
       const toAdmin = root.querySelector('#lib-to-admin');
       if (toAdmin) toAdmin.addEventListener('click', async () => { state.view = 'admin'; root.innerHTML = '<div class="loading-state">Načítám…</div>'; await loadAdmin(); render(); window.scrollTo(0, 0); });
     }
@@ -592,13 +619,22 @@
       chips.style.display = used.length ? '' : 'none';
       const grid = root.querySelector('#lib-grid');
       const draw = () => {
-        const q = state.q.trim().toLowerCase();
+        // hledá se bez diakritiky v názvu, autorech, tématech, popisu i v tom, kdo knihu půjčuje
+        const fold = (v) => String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const q = fold(state.q.trim());
         const list = c.titles.filter(t => {
-          if (q && !`${t.nazev} ${t.autori.join(' ')}`.toLowerCase().includes(q)) return false;
+          if (q && !q.split(/\s+/).every(w => fold(`${t.nazev} ${t.autori.join(' ')} ${t.temata.join(' ')} ${t.popis} ${t.copies.map(x => x.owner_jmeno || '').join(' ')}`).includes(w))) return false;
           if (state.topic && !t.temata.includes(state.topic)) return false;
           if (state.onlyFree && !FREE.includes(bestCopy(t).status)) return false;
           return true;
         });
+        const added = (t) => Math.max(...t.copies.map(x => Date.parse(x.created_at) || 0));
+        const rank = (t) => FREE.includes(bestCopy(t).status) ? 0 : 1;
+        if (state.sort === 'new') list.sort((a, b) => added(b) - added(a));
+        else if (state.sort === 'free') list.sort((a, b) => rank(a) - rank(b) || a.nazev.localeCompare(b.nazev, 'cs'));
+        else list.sort((a, b) => a.nazev.localeCompare(b.nazev, 'cs'));
+        const countEl = root.querySelector('#lib-count');
+        countEl.textContent = c.titles.length ? (list.length === c.titles.length ? `${list.length} ${list.length === 1 ? 'kniha' : list.length < 5 ? 'knihy' : 'knih'}` : `Nalezeno ${list.length} z ${c.titles.length}`) : '';
         if (!list.length) {
           grid.innerHTML = `<div class="lib-empty" style="grid-column:1/-1;"><span class="big">${c.titles.length ? '🔍' : '📚'}</span>${c.titles.length ? 'Nic takového jsme nenašli.' : 'V knihovně zatím nejsou žádné knihy. Buď první, kdo nějakou přidá!'}</div>`;
           return;
@@ -606,7 +642,7 @@
         grid.innerHTML = list.map(t => {
           const b = bestCopy(t);
           return `<button type="button" class="lib-card" data-title="${esc(t.id)}">
-            <div class="lib-cover">${coverInner(t)}<span class="lib-pill ${statusCls(b.status)}">${esc(pillText(b))}</span>${t.copies.some(x => x.owner_type === 'ooo') ? '<span class="lib-badge-ooo">OOO</span>' : ''}</div>
+            <div class="lib-cover">${coverInner(t)}${Date.now() - added(t) < 21 * 86400000 ? '<span class="lib-badge-new">NOVÉ</span>' : ''}<span class="lib-pill ${statusCls(b.status)}">${esc(pillText(b))}</span>${t.copies.some(x => x.owner_type === 'ooo') ? '<span class="lib-badge-ooo">OOO</span>' : ''}</div>
             <div class="lib-card-title">${esc(t.nazev)}</div>
             <div class="lib-card-author">${esc(t.autori.join(', '))}</div>
           </button>`;
@@ -616,6 +652,7 @@
       draw();
       root.querySelector('#lib-q').addEventListener('input', e => { state.q = e.target.value; draw(); });
       root.querySelector('#lib-free').addEventListener('change', e => { state.onlyFree = e.target.checked; draw(); });
+      root.querySelector('#lib-sort').addEventListener('change', e => { state.sort = e.target.value; draw(); });
       chips.querySelectorAll('.lib-chip').forEach(b => b.addEventListener('click', () => {
         state.topic = b.dataset.topic;
         chips.querySelectorAll('.lib-chip').forEach(x => x.classList.toggle('active', x === b));
@@ -641,7 +678,17 @@
         ${t.popis ? `<div class="lib-desc clamp" id="lib-desc">${esc(t.popis)}</div>${t.popis.length > 320 ? '<button type="button" class="lib-link" id="lib-more">Celý popis</button>' : ''}` : ''}
         ${t.copies.map(c => copyBlock(c, t, t.copies.length > 1)).join('')}
         ${!logged ? '<div class="lib-note" style="margin-top:14px;">Pro půjčení se prosím přihlas (vpravo nahoře).</div>' : ''}
-        ${logged && isMember() && !ownsOne ? '<div style="text-align:center;margin-top:16px;"><button type="button" class="lib-link" id="lib-have-too">Mám ji doma taky – přidat svůj výtisk</button></div>' : ''}`, { wide: true });
+        <div style="display:flex;justify-content:center;gap:18px;flex-wrap:wrap;margin-top:16px;">
+          ${logged && isMember() && !ownsOne ? '<button type="button" class="lib-link" id="lib-have-too">Mám ji doma taky – přidat svůj výtisk</button>' : ''}
+          <button type="button" class="lib-link" id="lib-share">Sdílet odkaz</button>
+        </div>`, { wide: true });
+      m.querySelector('#lib-share').addEventListener('click', async () => {
+        const url = `${location.origin}${location.pathname}#t=${t.id}`;
+        try {
+          if (navigator.share && window.innerWidth <= 600) await navigator.share({ title: t.nazev, url });
+          else { await navigator.clipboard.writeText(url); toast('Odkaz zkopírován.'); }
+        } catch (e) { /* zrušeno */ }
+      });
       const more = m.querySelector('#lib-more');
       if (more) more.addEventListener('click', () => { m.querySelector('#lib-desc').classList.remove('clamp'); more.remove(); });
       m.querySelectorAll('[data-req]').forEach(b => b.addEventListener('click', () => openRequest(t.copies.find(c => c.id === b.dataset.req), t)));
@@ -1075,12 +1122,13 @@
       const rules = copy ? copy.rules : c.modes[mode].rules;
       const m = openModal(`
         <h2>${editing ? 'Upravit knihu' : addingCopy ? 'Přidat svůj výtisk' : ooo ? 'Kniha do fondu OOO' : 'Přidat knihu'}</h2>
-        <p class="lib-sub">${editing || addingCopy ? esc(t.nazev || '') : 'Stačí název a fotka obálky. Zabere to minutu.'}</p>
+        <p class="lib-sub">${editing || addingCopy ? esc(t.nazev || '') : 'Začni psát název a vyber knihu z nabídky – obálku, autora i popis doplníme sami.'}</p>
         <form id="bf" autocomplete="off">
           ${addingCopy ? '' : `
           <label class="lib-photo" for="bf-cover"><span class="lib-photo-prev" id="bf-prev">${t.cover_url ? `<img src="${esc(API_BASE + t.cover_url)}" alt="">` : ICON.camera}</span><span><strong>${t.cover_url ? 'Změnit fotku obálky' : 'Vyfoť obálku'}</strong><br><span class="lib-small" style="margin:0;">Stačí mobilem, zmenšíme ji.</span></span></label>
           <input type="file" accept="image/*" id="bf-cover" hidden>
-          <div class="lib-field"><label for="bf-nazev">Název</label><input id="bf-nazev" name="nazev" required value="${esc(t.nazev || '')}"></div>
+          <div class="lib-field lib-suggest"><label for="bf-nazev">Název</label><input id="bf-nazev" name="nazev" required value="${esc(t.nazev || '')}" autocomplete="off" placeholder="např. Etická děvka"><div class="lib-suggest-list" id="bf-sg" hidden></div></div>
+          ${!editing && 'BarcodeDetector' in window ? '<div style="margin:-4px 0 12px;"><button type="button" class="lib-link" id="bf-scan">📷 Načíst čárový kód (ISBN) fotoaparátem</button></div>' : ''}
           <div class="lib-field"><label for="bf-autori">Autor</label><input id="bf-autori" name="autori" value="${esc((t.autori || []).join(', '))}" placeholder="víc autorů odděl čárkou"></div>
           ${c.topics.length ? `<div class="lib-field"><label>Téma</label><div class="lib-pick-chips">${c.topics.map(x => `<label><input type="checkbox" name="temata" value="${esc(x)}"${(t.temata || []).includes(x) ? ' checked' : ''}>${esc(x)}</label>`).join('')}</div></div>` : ''}`}
           ${ooo ? '<input type="hidden" name="mode" value="ooo">' : `
@@ -1102,17 +1150,68 @@
         </form>`);
       const form = m.querySelector('#bf');
       let coverDataUrl = null;
+      let coverRemote = null; // obálka vybraná z katalogu knih (stáhne ji server)
+      // Doplnění formuláře z vybrané knihy (našeptávač / ISBN). Nepřepisuje, co už člověk vyplnil sám,
+      // kromě názvu a autora, které se berou z výběru.
+      const applyBook = (b) => {
+        form.nazev.value = b.title;
+        if (b.authors) form.autori.value = b.authors;
+        if (b.isbn && form.isbn && !form.isbn.value) form.isbn.value = b.isbn;
+        if (b.description && form.popis && !form.popis.value) form.popis.value = b.description.slice(0, 1500);
+        if (b.cover && !coverDataUrl && !t.cover_url) {
+          coverRemote = b.cover;
+          m.querySelector('#bf-prev').innerHTML = `<img src="${esc(b.cover)}" alt="" referrerpolicy="no-referrer">`;
+        }
+      };
+      const sg = m.querySelector('#bf-sg');
+      if (sg) {
+        let timer = null, seq = 0, items = [];
+        const hide = () => { sg.hidden = true; };
+        form.nazev.addEventListener('input', () => {
+          clearTimeout(timer);
+          const q = form.nazev.value.trim();
+          if (q.length < 3) { hide(); return; }
+          timer = setTimeout(async () => {
+            const my = ++seq;
+            items = await searchBooks(q);
+            if (my !== seq) return;
+            if (!items.length) { hide(); return; }
+            sg.innerHTML = '<div class="lib-sg-head">Vyber knihu</div>' + items.map((b, i) => `<button type="button" class="lib-sg" data-i="${i}">${b.cover ? `<img src="${esc(b.cover)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="nocover"></span>'}<span><strong>${esc(b.title)}</strong><span>${esc([b.authors, b.year].filter(Boolean).join(' · '))}</span></span></button>`).join('');
+            sg.hidden = false;
+            sg.querySelectorAll('.lib-sg').forEach(el => el.addEventListener('click', () => { applyBook(items[+el.dataset.i]); hide(); }));
+          }, 350);
+        });
+        form.nazev.addEventListener('keydown', e => { if (e.key === 'Escape' && !sg.hidden) { e.stopPropagation(); hide(); } if (e.key === 'ArrowDown' && !sg.hidden) { e.preventDefault(); sg.querySelector('.lib-sg').focus(); } });
+        m.addEventListener('click', e => { if (!sg.contains(e.target) && e.target !== form.nazev) hide(); });
+      }
+      const scan = m.querySelector('#bf-scan');
+      if (scan) scan.addEventListener('click', () => scanIsbn(async (isbn) => {
+        if (form.isbn) form.isbn.value = isbn;
+        const b = await lookupByIsbn(isbn);
+        if (b) { applyBook(b); toast('Kniha nalezena – zkontroluj údaje.'); }
+        else toast('ISBN načteno, knihu jsme ale v katalogu nenašli – vyplň název ručně.', true);
+      }));
       const coverInput = m.querySelector('#bf-cover');
       if (coverInput) coverInput.addEventListener('change', async () => {
         const f = coverInput.files[0];
         if (!f) return;
         try {
           coverDataUrl = await resizeImage(f);
+          coverRemote = null;
           m.querySelector('#bf-prev').innerHTML = `<img src="${coverDataUrl}" alt="">`;
         } catch (e) { toast('Fotku se nepodařilo načíst.', true); }
       });
       const lookup = m.querySelector('#bf-lookup');
-      if (lookup) lookup.addEventListener('click', () => lookupIsbn(form));
+      if (lookup) lookup.addEventListener('click', async () => {
+        const isbn = (form.isbn.value || '').replace(/[^0-9Xx]/g, '');
+        if (!isbn) { toast('Nejdřív vyplň ISBN.', true); return; }
+        const b = await lookupByIsbn(isbn);
+        if (!b) { toast('Knihu s tímhle ISBN jsme nenašli, vyplň údaje ručně.', true); return; }
+        const keepTitle = form.nazev.value;
+        applyBook(b);
+        if (keepTitle) form.nazev.value = keepTitle;
+        toast('Doplněno – zkontroluj prosím údaje.');
+      });
       // Přepnutí Půjčuju/Daruju u nové knihy nastaví výchozí "smí poslat dál" podle režimu.
       if (!editing) form.querySelectorAll('input[name=mode]').forEach(r => r.addEventListener('change', () => { form.allow_pass_on.checked = c.modes[r.value].rules.allow_pass_on; }));
 
@@ -1131,6 +1230,7 @@
           Object.assign(payload, { isbn: fd.get('isbn') || '', nazev: fd.get('nazev') || '', autori: fd.get('autori') || '', popis: fd.get('popis') || '', temata: fd.getAll('temata') });
         }
         if (coverDataUrl) payload.cover_data_url = coverDataUrl;
+        else if (coverRemote) payload.cover_remote_url = coverRemote;
         if (editing) payload.copy_id = copy.id;
         if (addingCopy) payload.title_id = title.id;
         if (admin) payload.admin_mode = true;
@@ -1172,22 +1272,72 @@
       });
     }
 
-    // Dohledání názvu/autora/popisu podle ISBN (veřejné Google Books API, bez klíče).
-    async function lookupIsbn(form) {
-      const isbn = (form.isbn.value || '').replace(/[^0-9Xx]/g, '');
-      if (!isbn) { toast('Nejdřív vyplň ISBN.', true); return; }
-      try {
-        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
-        const data = await res.json();
-        const info = data.items && data.items[0] && data.items[0].volumeInfo;
-        if (!info) { toast('Knihu s tímhle ISBN jsme nenašli, vyplň údaje ručně.', true); return; }
-        if (!form.nazev.value) form.nazev.value = [info.title, info.subtitle].filter(Boolean).join(': ');
-        if (!form.autori.value && info.authors) form.autori.value = info.authors.join(', ');
-        if (!form.popis.value && info.description) form.popis.value = info.description.slice(0, 1500);
-        toast('Doplněno – zkontroluj prosím údaje.');
-      } catch (e) {
-        toast('Dohledání se nepovedlo, vyplň údaje ručně.', true);
-      }
+    // ----- Katalog knih pro našeptávač (Google Books, záložně Open Library; obě bez klíče) -----
+    function fromGoogle(it) {
+      const v = it.volumeInfo || {};
+      const ids = v.industryIdentifiers || [];
+      const isbn = ((ids.find(x => x.type === 'ISBN_13') || ids.find(x => x.type === 'ISBN_10')) || {}).identifier || '';
+      const img = v.imageLinks && (v.imageLinks.thumbnail || v.imageLinks.smallThumbnail);
+      return {
+        title: [v.title, v.subtitle].filter(Boolean).join(': '),
+        authors: (v.authors || []).join(', '),
+        year: (v.publishedDate || '').slice(0, 4),
+        isbn, description: v.description || '',
+        cover: img ? img.replace(/^http:/, 'https:').replace('&edge=curl', '') : '',
+      };
+    }
+    function fromOpenLibrary(d) {
+      return {
+        title: d.title || '', authors: (d.author_name || []).join(', '), year: d.first_publish_year ? String(d.first_publish_year) : '',
+        isbn: (d.isbn || []).find(x => x.length === 13) || (d.isbn || [])[0] || '', description: '',
+        cover: d.cover_i ? `https://covers.openlibrary.org/b/id/${d.cover_i}-M.jpg` : '',
+      };
+    }
+    async function searchGoogle(q) {
+      const r = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=6&printType=books`);
+      if (!r.ok) throw new Error('google');
+      return ((await r.json()).items || []).map(fromGoogle).filter(b => b.title);
+    }
+    async function searchOpenLibrary(q) {
+      const r = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=6&fields=title,author_name,cover_i,isbn,first_publish_year`);
+      if (!r.ok) throw new Error('ol');
+      return ((await r.json()).docs || []).map(fromOpenLibrary).filter(b => b.title);
+    }
+    async function searchBooks(q) {
+      try { const g = await searchGoogle(q); if (g.length) return g; } catch (e) { /* kvóta / výpadek → záloha */ }
+      try { return await searchOpenLibrary(q); } catch (e) { return []; }
+    }
+    async function lookupByIsbn(isbn) {
+      try { const g = await searchGoogle(`isbn:${isbn}`); if (g.length) return g[0]; } catch (e) { /* záloha */ }
+      try { const o = await searchOpenLibrary(`isbn:${isbn}`); return o[0] || null; } catch (e) { return null; }
+    }
+
+    // Čtečka čárového kódu (ISBN = EAN-13 začínající 978/979) přes fotoaparát. BarcodeDetector
+    // umí Chrome na Androidu; jinde se tlačítko vůbec neukáže.
+    async function scanIsbn(onIsbn) {
+      let stream;
+      try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); } catch (e) { toast('Bez přístupu k fotoaparátu to nepůjde.', true); return; }
+      const ov = document.createElement('div');
+      ov.className = 'lib-scan';
+      ov.innerHTML = '<video playsinline muted></video><div class="lib-scan-frame"></div><div>Namiř na čárový kód na zadní straně knihy</div><button type="button" class="lib-btn ghost" style="color:#fff;border-color:#fff;">Zavřít</button>';
+      document.body.appendChild(ov);
+      const video = ov.querySelector('video');
+      video.srcObject = stream;
+      await video.play().catch(() => {});
+      let done = false;
+      const stop = () => { done = true; stream.getTracks().forEach(tr => tr.stop()); ov.remove(); };
+      ov.querySelector('button').addEventListener('click', stop);
+      const det = new window.BarcodeDetector({ formats: ['ean_13'] });
+      const tick = async () => {
+        if (done) return;
+        try {
+          const codes = await det.detect(video);
+          const hit = codes.map(c => c.rawValue).find(v => /^97[89]\d{10}$/.test(v));
+          if (hit) { stop(); onIsbn(hit); return; }
+        } catch (e) { /* další snímek */ }
+        setTimeout(tick, 250);
+      };
+      tick();
     }
 
     // ----- Správa knihovny (Rada) -----
@@ -1282,12 +1432,35 @@
       });
     }
 
+    // ---------- Odkazy ze zpráv ----------
+    // #c=<výtisk> (z Discord DM / e-mailu) otevře rovnou to, co je potřeba udělat;
+    // #t=<titul> (sdílený odkaz) otevře detail knihy.
+    function handleHash() {
+      const m = /^#([ct])=([\w-]+)$/.exec(location.hash || '');
+      if (!m || !state.catalog) return;
+      history.replaceState(null, '', location.pathname + location.search);
+      const [, kind, id] = m;
+      if (kind === 'c' && state.my) {
+        const mine = findMy(id);
+        if (mine && mine.transfer && mine.transfer.i_am === 'from') return openSend(mine);
+        if (mine && mine.transfer && mine.transfer.i_am === 'to') return openReceive(mine);
+        if (mine && mine.is_holder && (mine.allowed_actions || []).includes('finish')) return openFinish(mine);
+        if (mine && state.my.owned.some(o => o.id === id)) return openManage(state.my.owned.find(o => o.id === id), {});
+      }
+      const title = kind === 't' ? state.catalog.titles.find(t => t.id === id) : state.catalog.titles.find(t => t.copies.some(x => x.id === id));
+      if (title) openDetail(title.id);
+    }
+    window.addEventListener('hashchange', handleHash);
+
     // ---------- Start ----------
     window.onOooLogin = () => { state.my = null; state.admin = null; loadAll(); };
     window.onOooLogout = () => { state.my = null; state.admin = null; state.view = 'home'; loadAll(); };
     document.addEventListener('DOMContentLoaded', async () => {
       if (typeof logPageView === 'function') logPageView('knihovna');
+      const cached = readCache();
+      if (cached && cached.catalog) { state.catalog = cached.catalog; state.my = cached.my; render(); }
       await loadAll();
+      handleHash();
       // Vítací okno při první návštěvě (jen když se knihovna opravdu načetla).
       if (state.catalog && !lsGet(WELCOME_KEY) && !document.getElementById('lib-modal')) openWelcome(0);
     });
