@@ -97,7 +97,86 @@ function wirePairingSection(payload) {
   });
 }
 
-function openProfileModal() {
+// Kontaktní údaje (2026-10-28, na žádost - "Moje údaje v knihovně jsou duplicitní s
+// profilem na webu"). Profil je JEDINÉ místo, kde se upravují: jméno a příjmení, telefon,
+// kontaktní e-mail a Instagram (members.jmeno_prijmeni/telefon/korespondencni_email/
+// instagram přes update-contact-info). Knihovna je jen čte (Zásilkovna, kontakt mezi
+// stranami předání) a sem odkazuje.
+function profileEsc(v) {
+  return (v == null ? '' : String(v)).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function renderContactSection(data, editing, intro) {
+  const kontaktniEmail = data.kontaktni_email || data.emails[0] || '';
+  if (!editing) {
+    const row = (label, value) => `<div style="display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--border);"><span style="color:var(--text-muted);">${label}</span><span style="text-align:right;word-break:break-word;">${value ? profileEsc(value) : '<span style="color:var(--text-muted);">nevyplněno</span>'}</span></div>`;
+    return `
+      <div id="profile-contact">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px;"><h4 style="margin:0;">Kontaktní údaje</h4><button type="button" class="btn btn-outline btn-sm" id="pc-edit">Upravit</button></div>
+        <div style="font-size:0.9rem;margin-top:6px;">
+          ${row('Jméno a příjmení', data.jmeno_prijmeni)}
+          ${row('Telefon', data.telefon)}
+          ${row('Kontaktní e-mail', kontaktniEmail)}
+          ${row('Instagram', data.instagram)}
+        </div>
+        <p style="font-size:0.78rem;color:var(--text-muted);margin:6px 0 0;">Používají se třeba v Knihovně, když ti někdo posílá knihu přes Zásilkovnu – uvidí je jen ten, kdo ti ji posílá.</p>
+      </div>`;
+  }
+  const field = (id, label, value, type, extra) => `<label for="${id}" style="display:block;font-size:0.82rem;font-weight:600;margin:10px 0 4px;">${label}</label><input id="${id}" type="${type}" value="${profileEsc(value)}" ${extra || ''} style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid var(--border);font:inherit;">`;
+  return `
+    <form id="profile-contact" style="margin-top:14px;">
+      <h4 style="margin:0;">Kontaktní údaje</h4>
+      ${intro ? `<p style="font-size:0.86rem;margin:6px 0 0;">${profileEsc(intro)}</p>` : ''}
+      ${field('pc-name', 'Jméno a příjmení (na zásilku)', data.jmeno_prijmeni, 'text', 'autocomplete="name"')}
+      ${field('pc-tel', 'Telefon', data.telefon, 'tel', 'autocomplete="tel"')}
+      ${field('pc-mail', 'Kontaktní e-mail', kontaktniEmail, 'email', 'autocomplete="email"')}
+      ${field('pc-ig', 'Instagram (nepovinné)', data.instagram, 'text', 'placeholder="uživatelské jméno"')}
+      <p id="pc-msg" style="font-size:0.82rem;margin:8px 0 0;color:var(--text-muted);"></p>
+      <div style="display:flex;gap:8px;margin-top:10px;"><button type="submit" class="btn btn-primary btn-sm">Uložit</button><button type="button" class="btn btn-outline btn-sm" id="pc-cancel">Zrušit</button></div>
+    </form>`;
+}
+function wireContactSection(data, payload, opts) {
+  const box = () => document.getElementById('profile-contact');
+  const redraw = (editing) => {
+    box().outerHTML = renderContactSection(data, editing, editing ? opts.intro : '');
+    wireContactSection(data, payload, editing ? opts : { ...opts, intro: '' });
+  };
+  const el = box();
+  if (!el) return;
+  if (el.tagName !== 'FORM') {
+    el.querySelector('#pc-edit').addEventListener('click', () => redraw(true));
+    return;
+  }
+  el.querySelector('#pc-cancel').addEventListener('click', () => redraw(false));
+  el.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const msg = el.querySelector('#pc-msg');
+    const vals = {
+      jmeno_prijmeni: el.querySelector('#pc-name').value.trim(),
+      telefon: el.querySelector('#pc-tel').value.trim(),
+      kontaktni_email: el.querySelector('#pc-mail').value.trim(),
+      instagram: el.querySelector('#pc-ig').value.trim(),
+    };
+    if (vals.telefon && vals.telefon.replace(/\D/g, '').length < 9) { msg.textContent = 'Telefon potřebuje aspoň 9 číslic.'; return; }
+    if (vals.kontaktni_email && !/^\S+@\S+\.\S+$/.test(vals.kontaktni_email)) { msg.textContent = 'Zkontroluj prosím e-mail.'; return; }
+    msg.textContent = 'Ukládám…';
+    fetch(API_BASE + '/api/update-contact-info', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, ...vals }),
+    })
+      .then(r => r.json())
+      .then(res => {
+        if (!res.ok) { msg.textContent = res.error || 'Uložení se nepovedlo.'; return; }
+        Object.assign(data, vals);
+        if (opts.onSaved) { closeProfileModal(); opts.onSaved(vals); return; }
+        redraw(false);
+      })
+      .catch(() => { msg.textContent = 'Uložení se nepovedlo, zkus to prosím znovu.'; });
+  });
+}
+
+// opts: { edit: true (rovnou otevřít úpravu kontaktů), intro: text nad formulářem,
+// onSaved(vals): po uložení zavře profil a zavolá se (Knihovna tak pokračuje v žádosti) }.
+function openProfileModal(opts) {
+  opts = opts && typeof opts === 'object' && !(opts instanceof Event) ? opts : {};
   profileModalEnsureDom();
   const overlay = document.getElementById('profile-modal-overlay');
   const body = document.getElementById('profile-modal-body');
@@ -123,15 +202,17 @@ function openProfileModal() {
             <p class="member-modal-contact">${data.emails.join(' · ') || '—'}</p>
           </div>
         </div>
-        ${data.telefon ? `<p class="member-modal-contact">Telefon: ${data.telefon}</p>` : ''}
-        ${data.instagram ? `<p class="member-modal-contact">Instagram: ${data.instagram}</p>` : ''}
+        ${renderContactSection(data, !!opts.edit, opts.intro)}
         ${data.souhlas_datum ? `<p class="member-modal-contact">Souhlas s pravidly/GDPR: ${data.souhlas_datum}</p>` : ''}
         <a href="dotaznik.html" class="btn btn-outline btn-sm" style="margin-top:10px; display:inline-block;">Vyplnit dotazník</a>
+        ${(() => { const li = document.getElementById('nav-knihovna'); return li && !li.classList.contains('hidden') ? '<h4>Knihovna</h4><a href="knihovna.html#historie" class="btn btn-outline btn-sm" onclick="closeProfileModal()" style="display:inline-block;">Moje knihy a historie půjčování →</a>' : ''; })()}
         ${renderPairingSection(data)}
         <h4>Tvoje akce</h4>
         ${akceHtml}
       `;
       wirePairingSection(payload);
+      wireContactSection(data, payload, opts);
+      if (opts.edit) { const f = document.getElementById('pc-name'); if (f) f.focus(); }
     })
     .catch(err => { body.innerHTML = `<p class="member-modal-error">Chyba: ${err.message}</p>`; });
 }

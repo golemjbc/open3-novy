@@ -211,6 +211,15 @@
     /* kostry karet při načítání */
     .lib-skel { border-radius: 12px; background: linear-gradient(90deg, var(--bg-alt) 25%, #f4f4f8 50%, var(--bg-alt) 75%); background-size: 200% 100%; animation: lib-shimmer 1.2s infinite linear; }
     @keyframes lib-shimmer { to { background-position: -200% 0; } }
+    .lib-hist { list-style: none; margin: 0; padding: 0; }
+    .lib-hist li { display: grid; grid-template-columns: 74px 1fr; gap: 10px; padding: 9px 0; border-top: 1px solid var(--border); font-size: 0.86rem; }
+    .lib-hist li:first-child { border-top: none; }
+    .lib-hist time { color: var(--text-muted); font-size: 0.76rem; line-height: 1.35; }
+    .lib-hist .what { font-weight: 600; }
+    .lib-hist .book { color: var(--text-muted); font-size: 0.8rem; }
+    .lib-hist button.lib-link { font-size: inherit; text-align: left; padding: 0; }
+    .lib-hist-tools { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+    .lib-hist-tools .lib-search { flex: 1; min-width: 200px; }
     .lib-stars-in { display: flex; gap: 4px; justify-content: center; margin: 4px 0 10px; }
     .lib-stars-in button { border: none; background: none; padding: 2px; cursor: pointer; font-size: 2rem; line-height: 1; color: var(--border, #d6d6e0); transition: transform .1s, color .1s; }
     .lib-stars-in button.on { color: #f5a623; }
@@ -226,7 +235,7 @@
     .lib-review-top { display: flex; justify-content: space-between; gap: 10px; font-size: 0.82rem; }
     .lib-review-top strong { font-weight: 700; }
     .lib-review p { margin: 4px 0 0; font-size: 0.88rem; white-space: pre-line; }
-    .lib-badge-new { position: absolute; left: 8px; top: 8px; padding: 2px 8px; border-radius: 6px; background: var(--mint); color: var(--navy); font-size: 0.64rem; font-weight: 800; letter-spacing: .04em; }
+    .lib-badge-new { position: absolute; left: 8px; bottom: 40px; padding: 2px 8px; border-radius: 6px; background: var(--mint); color: var(--navy); font-size: 0.64rem; font-weight: 800; letter-spacing: .04em; }
     .lib-sort { border: 1.5px solid var(--border); background: var(--surface); border-radius: 999px; padding: 9px 14px; font: inherit; font-size: 0.84rem; font-weight: 600; color: var(--text); cursor: pointer; }
     .lib-count { font-size: 0.8rem; color: var(--text-muted); margin: -8px 0 12px; }
     /* našeptávač knih při přidávání */
@@ -493,11 +502,11 @@
       box.innerHTML = `
         <button type="button" class="lib-icon-btn" id="lib-help" title="Jak to funguje" aria-label="Jak to funguje">${ICON.help}</button>
         ${my ? `<button type="button" class="lib-icon-btn" id="lib-bell" title="Oznámení" aria-label="Oznámení">${ICON.bell}${unread ? `<span class="lib-dot">${unread}</span>` : ''}</button>
-                <button type="button" class="lib-icon-btn" id="lib-me" title="Moje údaje pro předávání" aria-label="Moje údaje">${ICON.user}</button>` : ''}
+                <button type="button" class="lib-icon-btn" id="lib-me" title="Můj profil a kontaktní údaje" aria-label="Můj profil">${ICON.user}</button>` : ''}
         ${isMember() && getLoggedUser() ? '<button type="button" class="lib-btn add" id="lib-add">＋ Přidat knihu</button>' : ''}`;
       box.querySelector('#lib-help').addEventListener('click', () => openWelcome(0));
       const bell = box.querySelector('#lib-bell'); if (bell) bell.addEventListener('click', openNotices);
-      const me = box.querySelector('#lib-me'); if (me) me.addEventListener('click', openMyDetails);
+      const me = box.querySelector('#lib-me'); if (me) me.addEventListener('click', () => openMyDetails({ edit: false }));
       const add = box.querySelector('#lib-add'); if (add) add.addEventListener('click', () => openBookForm({}));
     }
 
@@ -511,6 +520,10 @@
         const tasks = buildTasks();
         if (tasks.length) parts.push(`<div class="lib-block"><div class="lib-block-head"><h2>Teď na tobě</h2></div><div class="lib-todo">${tasks.map(x => x.html).join('')}</div></div>`);
         if (state.my.owned.length) parts.push(`<div class="lib-block"><div class="lib-block-head"><h2>Moje knihy</h2><span class="lib-small">${state.my.owned.length} ${state.my.owned.length === 1 ? 'kniha' : state.my.owned.length < 5 ? 'knihy' : 'knih'}</span></div><div class="lib-mine">${state.my.owned.map(mineRow).join('')}</div></div>`);
+      }
+      if (state.my && (state.my.history || []).length) {
+        const hist = state.my.history;
+        parts.push(`<div class="lib-block"><div class="lib-block-head"><h2>Moje historie</h2>${hist.length > 4 ? `<button type="button" class="lib-link" id="lib-hist-all">Celá historie (${hist.length}) →</button>` : ''}</div><div class="lib-copy" id="lib-hist-box">${histList(hist.slice(0, 4))}</div></div>`);
       }
       parts.push(`<div class="lib-block" id="lib-catalog"><div class="lib-block-head"><h2>Katalog</h2></div>
         ${!getLoggedUser() ? '<div class="lib-note" style="margin-bottom:16px;">Půjčovat si a přidávat knihy můžou přihlášení členové OOO.</div>' : ''}
@@ -526,6 +539,8 @@
       root.innerHTML = parts.join('');
       wireTasks();
       root.querySelectorAll('[data-mine]').forEach(b => b.addEventListener('click', () => openManage(findMy(b.dataset.mine), {})));
+      const histBox = root.querySelector('#lib-hist-box'); if (histBox) wireHistBooks(histBox);
+      const histAll = root.querySelector('#lib-hist-all'); if (histAll) histAll.addEventListener('click', openMyHistory);
       renderCatalog();
       if (keepFocus !== null) { const n = document.getElementById('lib-q'); n.focus(); n.setSelectionRange(keepFocus, keepFocus); }
       const toAdmin = root.querySelector('#lib-to-admin');
@@ -681,6 +696,8 @@
     function openDetail(titleId) {
       const t = state.catalog.titles.find(x => x.id === titleId);
       if (!t) return;
+      // Statistika webu: kdo si kterou knihu prohlížel (2026-10-28).
+      if (typeof logPageView === 'function') logPageView('kniha:' + t.id);
       const logged = !!getLoggedUser();
       const ownsOne = t.copies.some(c => c.is_owner || c.is_home);
       const m = openModal(`
@@ -798,12 +815,12 @@
       const lead = free
         ? `Kniha je volná – pošle ti ji <strong>${esc(sender || 'majitel')}</strong>.`
         : `${c.queue_count ? `Před tebou ${c.queue_count === 1 ? 'čeká 1 člověk' : `čekají ${c.queue_count} lidé`}.` : 'Kniha je teď půjčená.'} Až na tebe přijde řada, pošle ti ji ten, kdo ji zrovna bude mít.`;
-      // Jméno, telefon a e-mail se vyplňují jednou v "Moje údaje" (na žádost 2026-10-27 -
+      // Jméno, telefon a e-mail se vyplňují jednou v profilu webu (na žádost 2026-10-27 -
       // "ať to tam nedávám pokaždé, u zásilky si vyberu jen kam"). Tady jen shrnutí s odkazem.
       const missing = (pk) => [!phone || phone.replace(/\D/g, '').length < 9 ? 'telefon' : null, pk && !z.jmeno ? 'jméno' : null, pk && !/^\S+@\S+\.\S+$/.test(z.email || '') ? 'e-mail' : null].filter(Boolean);
       const summary = (pk) => {
         const miss = missing(pk);
-        if (miss.length) return `<span>⚠️ Chybí ti ${miss.join(', ')} – vyplň je jednou v Mých údajích.</span><button type="button" class="lib-btn" id="rq-edit" style="padding:6px 14px;">Vyplnit</button>`;
+        if (miss.length) return `<span>⚠️ Chybí ti ${miss.join(', ')} – vyplň je jednou ve svém profilu.</span><button type="button" class="lib-btn" id="rq-edit" style="padding:6px 14px;">Vyplnit</button>`;
         return `<span>${pk ? `👤 <strong>${esc(z.jmeno)}</strong> · ${esc(phone)} · ${esc(z.email)}` : `📞 <strong>${esc(phone)}</strong>`}</span><button type="button" class="lib-link" id="rq-edit">Změnit</button>`;
       };
       const method = z.method || 'packeta';
@@ -825,7 +842,7 @@
         </form>`);
       const getPoint = wirePointPicker(m, z.packeta);
       const isPk = () => m.querySelector('input[name=method]:checked').value === 'packeta';
-      // Úprava údajů otevře Moje údaje a po uložení se vrátí sem (rozpracovaný výběr se zachová).
+      // Úprava údajů otevře profil webu a po uložení se vrátí sem (rozpracovaný výběr se zachová).
       const editDetails = () => {
         const keep = { method: isPk() ? 'packeta' : 'osobne', point: isPk() ? getPoint() : null, note: m.querySelector('#rq-note').value };
         openMyDetails({ intro: 'Vyplníš jednou, příště už jen vybereš, kam knihu chceš.', onDone: () => {
@@ -1154,6 +1171,34 @@
       pozastaveno: 'pozastaveno', obnoveno: 'obnoveno', stazeno: 'staženo z nabídky', znovu_nabidnuto: 'znovu nabídnuto', drzitel_opraven: 'držitel opraven',
     };
 
+    // ----- Historie -----
+    // Jedna událost = co se stalo + kdo (bez skloňování jmen: "Předáno · Káča → Petra").
+    const MOVE_TYPES = ['predani_zahajeno', 'vraceni_zahajeno', 'predano', 'predani_zruseno', 'drzitel_opraven', 'vraceni_splneno'];
+    function histWhat(h) {
+      const label = (HISTORY[h.type] || h.type).replace(/^./, ch => ch.toUpperCase());
+      const how = h.type === 'predano' && h.method ? (h.method === 'packeta' ? ' · Zásilkovna' : ' · osobně') : '';
+      const who = ['predano', 'predani_zahajeno', 'vraceni_zahajeno', 'drzitel_opraven', 'predani_zruseno', 'spravce_zmenen'].includes(h.type) && (h.from || h.to)
+        ? `${h.from || '?'} → ${h.to || '?'}` : (h.type === 'odebran_z_fronty' ? h.to : h.by);
+      return `<span class="what">${esc(label)}</span>${who ? ` · ${esc(who)}` : ''}${how}`;
+    }
+    function fmtDay(iso) { return iso ? new Date(iso).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric', year: '2-digit' }) : ''; }
+    function histList(items, { showBook = true } = {}) {
+      return `<ul class="lib-hist">${items.map(h => `<li><time>${fmtDay(h.at)}<br>${new Date(h.at).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}</time><div>${histWhat(h)}${showBook ? `<div class="book"><button type="button" class="lib-link" data-hist-title="${esc(h.title_id)}">${esc(h.nazev || 'Kniha')}</button></div>` : ''}</div></li>`).join('')}</ul>`;
+    }
+    function wireHistBooks(box) {
+      box.querySelectorAll('[data-hist-title]').forEach(b => b.addEventListener('click', () => {
+        const t = state.catalog && state.catalog.titles.find(x => x.id === b.dataset.histTitle);
+        if (t) openDetail(t.id); else toast('Tahle kniha už v katalogu není.', true);
+      }));
+    }
+    function openMyHistory() {
+      const items = (state.my && state.my.history) || [];
+      const m = openModal(`<h2>Moje historie</h2>
+        <p class="lib-sub">Co sis půjčil(a), komu jsi knihy posílal(a) a co se dělo s tvými knihami. Co je potřeba udělat teď, najdeš nahoře v „Teď na tobě“.</p>
+        ${items.length ? histList(items) : '<p class="lib-sub">Zatím tu nic není.</p>'}`, { wide: true });
+      wireHistBooks(m);
+    }
+
     // ----- Oznámení -----
     function openNotices() {
       const list = state.my.profile.notices;
@@ -1163,43 +1208,16 @@
       }
     }
 
-    // ----- Moje údaje -----
-    function openMyDetails({ intro, onDone } = {}) {
-      const p = state.my.profile;
-      const z = p.zasilka || {};
-      const m = openModal(`
-        <h2>Moje údaje</h2>
-        <p class="lib-sub">${intro ? `${esc(intro)} ` : ''}Použijí se, když ti někdo posílá knihu. Uvidí je jen ten, kdo ti ji zrovna posílá – nikdy v katalogu.</p>
-        <form id="md">
-          <div class="lib-field"><label for="md-name">Jméno a příjmení (na zásilku)</label><input id="md-name" autocomplete="name" value="${esc(z.jmeno)}"></div>
-          <div class="lib-row2">
-            <div class="lib-field"><label for="md-tel">Telefon</label><input id="md-tel" type="tel" autocomplete="tel" value="${esc(p.whatsapp)}"></div>
-            <div class="lib-field"><label for="md-mail">E-mail</label><input id="md-mail" type="email" autocomplete="email" value="${esc(z.email)}"></div>
-          </div>
-          <div class="lib-field"><label>Výdejní místo, kam chceš knihy posílat</label>${pointPickerHtml(z.packeta)}</div>
-          <div class="lib-field"><label for="md-ig">Instagram (nepovinné)</label><input id="md-ig" placeholder="uživatelské jméno" value="${esc(p.instagram)}"></div>
-          <div class="lib-small" style="margin:-4px 0 14px;">Discord druhá strana vidí vždy. Instagram a WhatsApp (telefon) jen tehdy, když je máte vyplněné oba.</div>
-          <button type="submit" class="lib-btn big">Uložit</button>
-        </form>`);
-      const getPoint = wirePointPicker(m, z.packeta);
-      m.querySelector('#md').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const point = getPoint();
-        const tel = m.querySelector('#md-tel').value.trim();
-        const email = m.querySelector('#md-mail').value.trim();
-        if (tel && tel.replace(/\D/g, '').length < 9) { toast('Telefon potřebuje aspoň 9 číslic.', true); return; }
-        if (email && !/^\S+@\S+\.\S+$/.test(email)) { toast('Zkontroluj prosím e-mail.', true); return; }
-        const body = { zasilka: { jmeno: m.querySelector('#md-name').value.trim(), email, packeta: point } };
-        // Telefon a Instagram jsou v tabulce members - zapisují se jen při změně.
-        if (tel !== (p.whatsapp || '')) body.whatsapp = tel;
-        if (m.querySelector('#md-ig').value.trim() !== (p.instagram || '')) body.instagram = m.querySelector('#md-ig').value.trim();
-        try {
-          await api('library-profile', body);
-          closeModal(true);
-          toast('Uloženo.');
-          await refresh();
-          if (onDone) onDone();
-        } catch (err) { toast(err.message, true); }
+    // ----- Moje údaje = profil na webu -----
+    // Jméno, telefon, e-mail a Instagram se upravují jen v profilu webu (profile-modal.js,
+    // 2026-10-28 - "Moje údaje jsou duplicitní s profilem"). Výdejní místo si knihovna
+    // pamatuje sama z poslední žádosti.
+    function openMyDetails({ intro, onDone, edit = true } = {}) {
+      if (typeof window.openProfileModal !== 'function') { toast('Profil se nepodařilo otevřít, obnov prosím stránku.', true); return; }
+      closeModal(true);
+      window.openProfileModal({
+        edit, intro,
+        onSaved: async () => { toast('Uloženo.'); await refresh(); if (onDone) onDone(); },
       });
     }
 
@@ -1511,12 +1529,35 @@
             <button type="button" class="lib-btn ghost" id="kp-save">Uložit</button>
           </div>
         </div>
+        <div class="lib-block-head" style="margin-top:8px;"><h3 style="margin:0;">Pohyby knih</h3></div>
+        <div class="lib-hist-tools">
+          <div class="lib-search">${ICON.search}<input type="search" id="mv-q" placeholder="Hledat jméno nebo knihu" value="${esc(state.mvQ || '')}" aria-label="Hledat v pohybech"></div>
+          <label class="lib-switch"><input type="checkbox" id="mv-all"${state.mvAll ? ' checked' : ''}> I ostatní události</label>
+        </div>
+        <div class="lib-copy" id="mv-box" style="margin-bottom:22px;"></div>
+        <div class="lib-block-head"><h3 style="margin:0;">Všechny výtisky</h3></div>
         <div class="lib-chips">${[['', 'Vše'], ['ooo', 'Fond OOO'], ['transfer', 'Předání'], ['overdue', 'Po termínu'], ['return', 'Vyžádané zpět']].map(([k, l]) => `<button type="button" class="lib-chip${f === k ? ' active' : ''}" data-af="${k}">${l}</button>`).join('')}</div>
         <div class="lib-mine">${filtered.length ? filtered.map(c => {
           const t = c.title || {};
           const where = c.transfer ? `${c.transfer.from_jmeno} → ${c.transfer.to_jmeno}` : c.holder_is_home ? `doma (${c.home_jmeno})` : `má ji ${c.holder_jmeno}`;
           return `<button type="button" class="lib-row" data-ad="${esc(c.id)}">${mini(t)}<div><div class="lib-row-title">${esc(t.nazev || '')}</div><div class="lib-row-sub">${esc(where)}${c.queue_count ? ` · čeká ${c.queue_count}` : ''}${c.overdue ? ' · <span class="lib-overdue">po termínu</span>' : ''}</div></div><span class="lib-chev">›</span></button>`;
         }).join('') : '<div class="lib-empty">Nic.</div>'}</div>`;
+      // Pohyby: výchozí jen předání a vracení (kdo komu kdy), přepínač ukáže i žádosti,
+      // dočtení, pozastavení…; hledá se ve jménech i názvu knihy (bez diakritiky).
+      const fold = (v) => String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const drawMoves = () => {
+        const q = fold(state.mvQ);
+        const list = (a.movements || []).filter(h => (state.mvAll || MOVE_TYPES.includes(h.type)) && (!q || fold([h.nazev, h.by, h.from, h.to].join(' ')).includes(q)));
+        const box = root.querySelector('#mv-box');
+        const shown = list.slice(0, state.mvLimit || 30);
+        box.innerHTML = list.length ? histList(shown) + (list.length > shown.length ? `<div style="text-align:center;margin-top:8px;"><button type="button" class="lib-link" id="mv-more">Zobrazit další (${list.length - shown.length})</button></div>` : '') : '<div class="lib-small">Zatím žádné pohyby.</div>';
+        wireHistBooks(box);
+        const more = box.querySelector('#mv-more');
+        if (more) more.addEventListener('click', () => { state.mvLimit = (state.mvLimit || 30) + 50; drawMoves(); });
+      };
+      drawMoves();
+      root.querySelector('#mv-q').addEventListener('input', e => { state.mvQ = e.target.value; state.mvLimit = 30; drawMoves(); });
+      root.querySelector('#mv-all').addEventListener('change', e => { state.mvAll = e.target.checked; drawMoves(); });
       root.querySelector('#ad-back').addEventListener('click', () => { state.view = 'home'; render(); window.scrollTo(0, 0); });
       root.querySelector('#ad-add').addEventListener('click', () => openBookForm({ admin: true, forceMode: 'ooo' }));
       root.querySelectorAll('[data-af]').forEach(b => b.addEventListener('click', () => { state.adminFilter = b.dataset.af; renderAdmin(); }));
@@ -1587,6 +1628,7 @@
     // #c=<výtisk> (z Discord DM / e-mailu) otevře rovnou to, co je potřeba udělat;
     // #t=<titul> (sdílený odkaz) otevře detail knihy.
     function handleHash() {
+      if (location.hash === '#historie' && state.my) { history.replaceState(null, '', location.pathname + location.search); return openMyHistory(); }
       const m = /^#([ct])=([\w-]+)$/.exec(location.hash || '');
       if (!m || !state.catalog) return;
       history.replaceState(null, '', location.pathname + location.search);

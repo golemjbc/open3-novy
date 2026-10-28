@@ -300,11 +300,15 @@
       // Rozdělené na obecné stránky webu a jednotlivé akce (2026-09-16, na žádost - "chci
       // vidět jaký je zájem o jakou akci") - v jednom seřazeném seznamu by se akce ztrácely
       // mezi Domů/Galerií/Pravidly.
-      const sitePages = currentPages.filter(p => !p.is_event);
-      const eventPages = currentPages.filter(p => p.is_event);
+      // 2026-10-28: navíc galerie jednotlivých akcí a knihy v knihovně (skupina `group`
+      // z panel-page-stats; starší odpověď bez `group` spadne do stránek/akcí podle is_event).
+      const groupOf = (p) => p.group || (p.is_event ? 'event' : 'site');
+      const SECTIONS = [['site', 'Stránky webu'], ['event', 'Jednotlivé akce'], ['gallery', 'Galerie akcí'], ['book', 'Knihy v knihovně']];
       let html = '';
-      if (sitePages.length) html += `<div class="stat-section-title">Stránky webu</div><div class="stat-grid">${sitePages.map(renderCard).join('')}</div>`;
-      if (eventPages.length) html += `<div class="stat-section-title">Jednotlivé akce</div><div class="stat-grid">${eventPages.map(renderCard).join('')}</div>`;
+      SECTIONS.forEach(([g, title]) => {
+        const list = currentPages.filter(p => groupOf(p) === g);
+        if (list.length) html += `<div class="stat-section-title">${title}</div><div class="stat-grid">${list.map(renderCard).join('')}</div>`;
+      });
       statBody.innerHTML = html;
       currentPages.forEach(drawChart);
       statBody.querySelectorAll('.stat-card').forEach(card => {

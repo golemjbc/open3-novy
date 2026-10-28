@@ -80,7 +80,9 @@
   <script src="assets/js/auth.js"></script>
   <script src="assets/js/profile-modal.js"></script>
   <script>
-    logPageView('galerie');
+    // Statistika: přehled galerií = "galerie", konkrétní galerie akce = "gallery:<event_id>"
+    // (2026-10-28, na žádost - "kdo si prohlížel galerie jaké akce").
+    logPageView(new URLSearchParams(location.search).get('event_id') ? 'gallery:' + new URLSearchParams(location.search).get('event_id') : 'galerie');
 
     function identityPayload() { return getIdentityPayload(getLoggedUser()); }
     function thumbUrl(fileId, size) { return `https://drive.google.com/thumbnail?id=${fileId}&sz=w${size || 500}`; }
