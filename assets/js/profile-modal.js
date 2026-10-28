@@ -205,7 +205,6 @@ function openProfileModal(opts) {
         ${renderContactSection(data, !!opts.edit, opts.intro)}
         ${data.souhlas_datum ? `<p class="member-modal-contact">Souhlas s pravidly/GDPR: ${data.souhlas_datum}</p>` : ''}
         <a href="dotaznik.html" class="btn btn-outline btn-sm" style="margin-top:10px; display:inline-block;">Vyplnit dotazník</a>
-        ${(() => { const li = document.getElementById('nav-knihovna'); return li && !li.classList.contains('hidden') ? '<h4>Knihovna</h4><a href="knihovna.html#historie" class="btn btn-outline btn-sm" onclick="closeProfileModal()" style="display:inline-block;">Moje knihy a historie půjčování →</a>' : ''; })()}
         ${renderPairingSection(data)}
         <h4>Tvoje akce</h4>
         ${akceHtml}

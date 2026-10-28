@@ -347,6 +347,7 @@
     const ICON = {
       help: svg('<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>'),
       bell: svg('<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>'),
+      history: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
       user: svg('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'),
       search: svg('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>'),
       box: svg('<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>'),
@@ -502,11 +503,11 @@
       box.innerHTML = `
         <button type="button" class="lib-icon-btn" id="lib-help" title="Jak to funguje" aria-label="Jak to funguje">${ICON.help}</button>
         ${my ? `<button type="button" class="lib-icon-btn" id="lib-bell" title="Oznámení" aria-label="Oznámení">${ICON.bell}${unread ? `<span class="lib-dot">${unread}</span>` : ''}</button>
-                <button type="button" class="lib-icon-btn" id="lib-me" title="Můj profil a kontaktní údaje" aria-label="Můj profil">${ICON.user}</button>` : ''}
+                <button type="button" class="lib-icon-btn" id="lib-hist" title="Moje historie" aria-label="Moje historie">${ICON.history}</button>` : ''}
         ${isMember() && getLoggedUser() ? '<button type="button" class="lib-btn add" id="lib-add">＋ Přidat knihu</button>' : ''}`;
       box.querySelector('#lib-help').addEventListener('click', () => openWelcome(0));
       const bell = box.querySelector('#lib-bell'); if (bell) bell.addEventListener('click', openNotices);
-      const me = box.querySelector('#lib-me'); if (me) me.addEventListener('click', () => openMyDetails({ edit: false }));
+      const hist = box.querySelector('#lib-hist'); if (hist) hist.addEventListener('click', openMyHistory);
       const add = box.querySelector('#lib-add'); if (add) add.addEventListener('click', () => openBookForm({}));
     }
 
@@ -520,10 +521,6 @@
         const tasks = buildTasks();
         if (tasks.length) parts.push(`<div class="lib-block"><div class="lib-block-head"><h2>Teď na tobě</h2></div><div class="lib-todo">${tasks.map(x => x.html).join('')}</div></div>`);
         if (state.my.owned.length) parts.push(`<div class="lib-block"><div class="lib-block-head"><h2>Moje knihy</h2><span class="lib-small">${state.my.owned.length} ${state.my.owned.length === 1 ? 'kniha' : state.my.owned.length < 5 ? 'knihy' : 'knih'}</span></div><div class="lib-mine">${state.my.owned.map(mineRow).join('')}</div></div>`);
-      }
-      if (state.my && (state.my.history || []).length) {
-        const hist = state.my.history;
-        parts.push(`<div class="lib-block"><div class="lib-block-head"><h2>Moje historie</h2>${hist.length > 4 ? `<button type="button" class="lib-link" id="lib-hist-all">Celá historie (${hist.length}) →</button>` : ''}</div><div class="lib-copy" id="lib-hist-box">${histList(hist.slice(0, 4))}</div></div>`);
       }
       parts.push(`<div class="lib-block" id="lib-catalog"><div class="lib-block-head"><h2>Katalog</h2></div>
         ${!getLoggedUser() ? '<div class="lib-note" style="margin-bottom:16px;">Půjčovat si a přidávat knihy můžou přihlášení členové OOO.</div>' : ''}
@@ -539,8 +536,6 @@
       root.innerHTML = parts.join('');
       wireTasks();
       root.querySelectorAll('[data-mine]').forEach(b => b.addEventListener('click', () => openManage(findMy(b.dataset.mine), {})));
-      const histBox = root.querySelector('#lib-hist-box'); if (histBox) wireHistBooks(histBox);
-      const histAll = root.querySelector('#lib-hist-all'); if (histAll) histAll.addEventListener('click', openMyHistory);
       renderCatalog();
       if (keepFocus !== null) { const n = document.getElementById('lib-q'); n.focus(); n.setSelectionRange(keepFocus, keepFocus); }
       const toAdmin = root.querySelector('#lib-to-admin');
