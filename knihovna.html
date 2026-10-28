@@ -1357,8 +1357,8 @@
         try {
           const saved = await api('library-save-book', payload);
           closeModal(true);
-          // Obálka z katalogu se na serveru nemusí povést - kniha je uložená, jen to řekneme.
-          if (saved && saved.cover_warning) toast('Kniha je uložená, ale obálku z katalogu se nepodařilo stáhnout. Vyfoť ji v úpravě knihy.', true);
+          // Katalog knihovny.cz pouští obálky jen domácí IP, ne našemu serveru - dotáhne se na pozadí do pár minut.
+          if (saved && saved.cover_pending) toast('Kniha je v knihovně. Obálka z katalogu se doplní do pár minut. 📚');
           else toast(editing ? 'Uloženo.' : 'Kniha je v knihovně. Díky! 📚');
           if (admin) await loadAdmin();
           await refresh();
