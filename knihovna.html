@@ -1355,9 +1355,11 @@
         const btn = m.querySelector('#bf-submit');
         btn.disabled = true;
         try {
-          await api('library-save-book', payload);
+          const saved = await api('library-save-book', payload);
           closeModal(true);
-          toast(editing ? 'Uloženo.' : 'Kniha je v knihovně. Díky! 📚');
+          // Obálka z katalogu se na serveru nemusí povést - kniha je uložená, jen to řekneme.
+          if (saved && saved.cover_warning) toast('Kniha je uložená, ale obálku z katalogu se nepodařilo stáhnout. Vyfoť ji v úpravě knihy.', true);
+          else toast(editing ? 'Uloženo.' : 'Kniha je v knihovně. Díky! 📚');
           if (admin) await loadAdmin();
           await refresh();
         } catch (err) {
