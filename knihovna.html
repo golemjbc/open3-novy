@@ -211,6 +211,21 @@
     /* kostry karet při načítání */
     .lib-skel { border-radius: 12px; background: linear-gradient(90deg, var(--bg-alt) 25%, #f4f4f8 50%, var(--bg-alt) 75%); background-size: 200% 100%; animation: lib-shimmer 1.2s infinite linear; }
     @keyframes lib-shimmer { to { background-position: -200% 0; } }
+    .lib-stars-in { display: flex; gap: 4px; justify-content: center; margin: 4px 0 10px; }
+    .lib-stars-in button { border: none; background: none; padding: 2px; cursor: pointer; font-size: 2rem; line-height: 1; color: var(--border, #d6d6e0); transition: transform .1s, color .1s; }
+    .lib-stars-in button.on { color: #f5a623; }
+    .lib-stars-in button:hover { transform: scale(1.12); }
+    .lib-stars { color: #f5a623; letter-spacing: 1px; white-space: nowrap; }
+    .lib-stars .off { color: var(--border, #d6d6e0); }
+    .lib-card-rating { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+    .lib-card-rating .lib-stars { letter-spacing: 0; }
+    .lib-reviews { margin-top: 18px; }
+    .lib-reviews-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+    .lib-reviews-head h3 { margin: 0; font-size: 1rem; }
+    .lib-review { padding: 10px 0; border-top: 1px solid var(--border, #e6e6ee); }
+    .lib-review-top { display: flex; justify-content: space-between; gap: 10px; font-size: 0.82rem; }
+    .lib-review-top strong { font-weight: 700; }
+    .lib-review p { margin: 4px 0 0; font-size: 0.88rem; white-space: pre-line; }
     .lib-badge-new { position: absolute; left: 8px; top: 8px; padding: 2px 8px; border-radius: 6px; background: var(--mint); color: var(--navy); font-size: 0.64rem; font-weight: 800; letter-spacing: .04em; }
     .lib-sort { border: 1.5px solid var(--border); background: var(--surface); border-radius: 999px; padding: 9px 14px; font: inherit; font-size: 0.84rem; font-weight: 600; color: var(--text); cursor: pointer; }
     .lib-count { font-size: 0.8rem; color: var(--text-muted); margin: -8px 0 12px; }
@@ -501,7 +516,7 @@
         ${!getLoggedUser() ? '<div class="lib-note" style="margin-bottom:16px;">Půjčovat si a přidávat knihy můžou přihlášení členové OOO.</div>' : ''}
         <div class="lib-toolbar">
           <div class="lib-search">${ICON.search}<input type="search" id="lib-q" placeholder="Hledat název, autora nebo téma" value="${esc(state.q)}" aria-label="Hledat"></div>
-          <select class="lib-sort" id="lib-sort" aria-label="Řazení">${[['new', 'Nejnovější'], ['az', 'A–Z'], ['free', 'Volné první']].map(([k, l]) => `<option value="${k}"${state.sort === k ? ' selected' : ''}>${l}</option>`).join('')}</select>
+          <select class="lib-sort" id="lib-sort" aria-label="Řazení">${[['new', 'Nejnovější'], ['az', 'A–Z'], ['free', 'Volné první'], ['top', 'Nejlépe hodnocené']].map(([k, l]) => `<option value="${k}"${state.sort === k ? ' selected' : ''}>${l}</option>`).join('')}</select>
           <label class="lib-switch"><input type="checkbox" id="lib-free"${state.onlyFree ? ' checked' : ''}> Jen volné</label>
         </div>
         <div class="lib-chips" id="lib-chips"></div>
@@ -631,6 +646,7 @@
         const added = (t) => Math.max(...t.copies.map(x => Date.parse(x.created_at) || 0));
         const rank = (t) => FREE.includes(bestCopy(t).status) ? 0 : 1;
         if (state.sort === 'new') list.sort((a, b) => added(b) - added(a));
+        else if (state.sort === 'top') list.sort((a, b) => ((b.reviews && b.reviews.avg) || 0) - ((a.reviews && a.reviews.avg) || 0) || ((b.reviews && b.reviews.count) || 0) - ((a.reviews && a.reviews.count) || 0) || a.nazev.localeCompare(b.nazev, 'cs'));
         else if (state.sort === 'free') list.sort((a, b) => rank(a) - rank(b) || a.nazev.localeCompare(b.nazev, 'cs'));
         else list.sort((a, b) => a.nazev.localeCompare(b.nazev, 'cs'));
         const countEl = root.querySelector('#lib-count');
@@ -645,6 +661,7 @@
             <div class="lib-cover">${coverInner(t)}${Date.now() - added(t) < 21 * 86400000 ? '<span class="lib-badge-new">NOVÉ</span>' : ''}<span class="lib-pill ${statusCls(b.status)}">${esc(pillText(b))}</span>${t.copies.some(x => x.owner_type === 'ooo') ? '<span class="lib-badge-ooo">OOO</span>' : ''}</div>
             <div class="lib-card-title">${esc(t.nazev)}</div>
             <div class="lib-card-author">${esc(t.autori.join(', '))}</div>
+            ${t.reviews && t.reviews.count ? `<div class="lib-card-rating">${starsHtml(t.reviews.avg)} ${fmtAvg(t.reviews.avg)} (${t.reviews.count})</div>` : ''}
           </button>`;
         }).join('');
         grid.querySelectorAll('.lib-card').forEach(el => el.addEventListener('click', () => openDetail(el.dataset.title)));
@@ -677,6 +694,7 @@
         </div>
         ${t.popis ? `<div class="lib-desc clamp" id="lib-desc">${esc(t.popis)}</div>${t.popis.length > 320 ? '<button type="button" class="lib-link" id="lib-more">Celý popis</button>' : ''}` : ''}
         ${t.copies.map(c => copyBlock(c, t, t.copies.length > 1)).join('')}
+        ${reviewsBlock(t)}
         ${!logged ? '<div class="lib-note" style="margin-top:14px;">Pro půjčení se prosím přihlas (vpravo nahoře).</div>' : ''}
         <div style="display:flex;justify-content:center;gap:18px;flex-wrap:wrap;margin-top:16px;">
           ${logged && isMember() && !ownsOne ? '<button type="button" class="lib-link" id="lib-have-too">Mám ji doma taky – přidat svůj výtisk</button>' : ''}
@@ -699,6 +717,8 @@
       }));
       const have = m.querySelector('#lib-have-too');
       if (have) have.addEventListener('click', () => openBookForm({ title: t }));
+      const rate = m.querySelector('#lib-rate');
+      if (rate) rate.addEventListener('click', () => openReview(t));
     }
 
     function copyBlock(c, t, several) {
@@ -986,6 +1006,70 @@
       if (cancel) cancel.addEventListener('click', () => act(c.id, 'cancel_transfer', {}, { confirmText: 'Opravdu knihu nechceš? Pošle se dalšímu ve frontě.', okMsg: 'Zrušeno.' }));
     }
 
+    // ----- Hodnocení -----
+    function starsHtml(v) {
+      const full = Math.round(v || 0);
+      return `<span class="lib-stars" aria-label="${String(v).replace('.', ',')} z 5">${'★'.repeat(full)}<span class="off">${'★'.repeat(5 - full)}</span></span>`;
+    }
+    const fmtAvg = (v) => String(v).replace('.', ',');
+    // Hvězdičky + komentář do formuláře; vrací { get() -> {rating, text} }.
+    function reviewInputs(box, prev) {
+      let rating = prev ? prev.rating : 0;
+      box.innerHTML = `
+        <div class="lib-stars-in" role="radiogroup" aria-label="Hodnocení">${[1, 2, 3, 4, 5].map(n => `<button type="button" data-n="${n}" aria-label="${n} z 5">★</button>`).join('')}</div>
+        <div class="lib-field"><textarea rows="3" maxlength="1500" placeholder="Pár slov pro další čtenáře – co ti dala, komu bys ji doporučil(a)… (nepovinné)">${esc(prev ? prev.text : '')}</textarea></div>`;
+      const btns = [...box.querySelectorAll('.lib-stars-in button')];
+      const paint = (n) => btns.forEach(b => b.classList.toggle('on', +b.dataset.n <= n));
+      btns.forEach(b => {
+        b.addEventListener('click', () => { rating = rating === +b.dataset.n ? 0 : +b.dataset.n; paint(rating); });
+        b.addEventListener('mouseenter', () => paint(+b.dataset.n));
+      });
+      box.querySelector('.lib-stars-in').addEventListener('mouseleave', () => paint(rating));
+      paint(rating);
+      return { get: () => ({ rating, text: box.querySelector('textarea').value.trim() }) };
+    }
+    async function saveReview(titleId, r) {
+      return api('library-review', { title_id: titleId, rating: r.rating, text: r.text });
+    }
+    function openReview(t) {
+      const mine = (t.reviews && t.reviews.items || []).find(r => r.mine);
+      const m = openModal(`
+        <h2>${mine ? 'Tvoje hodnocení' : 'Ohodnotit knihu'}</h2>
+        <p class="lib-sub">${esc(t.nazev)}</p>
+        <div id="rv-box"></div>
+        <button type="button" class="lib-btn big" id="rv-ok">Uložit</button>
+        ${mine ? '<div style="text-align:center;margin-top:10px;"><button type="button" class="lib-link" id="rv-del">Smazat hodnocení</button></div>' : ''}`);
+      const inp = reviewInputs(m.querySelector('#rv-box'), mine);
+      m.querySelector('#rv-ok').addEventListener('click', async (e) => {
+        const r = inp.get();
+        if (!r.rating) { toast('Vyber prosím počet hvězdiček.', true); return; }
+        e.target.disabled = true;
+        try { await saveReview(t.id, r); closeModal(true); toast('Díky za hodnocení!'); await refresh(); openDetail(t.id); }
+        catch (err) { toast(err.message, true); e.target.disabled = false; }
+      });
+      const del = m.querySelector('#rv-del');
+      if (del) del.addEventListener('click', async () => {
+        if (!confirm('Smazat tvoje hodnocení?')) return;
+        try { await saveReview(t.id, { rating: null, text: '' }); closeModal(true); toast('Smazáno.'); await refresh(); openDetail(t.id); }
+        catch (err) { toast(err.message, true); }
+      });
+    }
+    function reviewsBlock(t) {
+      const rv = t.reviews || { count: 0, items: [] };
+      if (!rv.count && !t.can_review) return '';
+      const mine = rv.items.find(r => r.mine);
+      return `<div class="lib-reviews">
+        <div class="lib-reviews-head">
+          <h3>Hodnocení čtenářů${rv.count ? ` <span style="font-weight:600;">${starsHtml(rv.avg)} ${fmtAvg(rv.avg)}</span> <span class="lib-small" style="display:inline;">(${rv.count})</span>` : ''}</h3>
+          ${t.can_review ? `<button type="button" class="lib-link" id="lib-rate">${mine ? 'Upravit moje hodnocení' : 'Ohodnotit'}</button>` : ''}
+        </div>
+        ${rv.count ? rv.items.map(r => `<div class="lib-review">
+          <div class="lib-review-top"><span><strong>${esc(r.jmeno)}</strong>${r.mine ? ' (ty)' : ''}</span>${starsHtml(r.rating)}</div>
+          ${r.text ? `<p>${esc(r.text)}</p>` : ''}
+        </div>`).join('') : '<div class="lib-small">Zatím bez hodnocení. Četl(a) jsi ji? Buď první.</div>'}
+      </div>`;
+    }
+
     // ----- Dočteno -----
     // Co se po kliknutí stane, rozhoduje server (akce finish); tady jen srozumitelné shrnutí předem.
     function openFinish(c) {
@@ -998,9 +1082,17 @@
         <h2>Dočteno?</h2>
         <p class="lib-sub">${esc(c.title ? c.title.nazev : '')}</p>
         <div class="lib-note" style="margin-bottom:16px;">${what}</div>
-        <button type="button" class="lib-btn big" id="fn-ok">Ano, dočteno</button>`);
+        <div style="text-align:center;font-weight:700;">Jak se ti líbila? <span class="lib-small" style="display:inline;font-weight:400;">(nepovinné)</span></div>
+        <div id="fn-review"></div>
+        <button type="button" class="lib-btn big" id="fn-ok" style="margin-top:12px;">Ano, dočteno</button>`);
+      const t0 = state.catalog && state.catalog.titles.find(x => x.id === c.title_id);
+      const inp = reviewInputs(m.querySelector('#fn-review'), t0 && t0.reviews && t0.reviews.items.find(r => r.mine));
       m.querySelector('#fn-ok').addEventListener('click', async (e) => {
         e.target.disabled = true;
+        // Hodnocení se uloží před dočtením (dokud je kniha ještě u čtenáře); když selže, dočtení to nezastaví.
+        const r = inp.get();
+        if (r.rating) await saveReview(c.title_id, r).catch(err => toast(`Hodnocení se neuložilo: ${err.message}`, true));
+        else if (r.text) toast('Komentář jsme bez hvězdiček neuložili – můžeš ho doplnit u knihy.', true);
         const res = await act(c.id, 'finish', {}, { okMsg: (x) => x.outcome === 'ceka' ? 'Díky! Kniha počká u tebe.' : 'Díky! Údaje k předání najdeš nahoře.' });
         if (!res) e.target.disabled = false;
         else if (res.outcome !== 'ceka') { const fresh = findMy(c.id); if (fresh && fresh.transfer) openSend(fresh); }
@@ -1159,8 +1251,15 @@
         if (b.isbn && form.isbn && !form.isbn.value) form.isbn.value = b.isbn;
         if (b.description && form.popis && !form.popis.value) form.popis.value = b.description.slice(0, 1500);
         if (b.cover && !coverDataUrl && !t.cover_url) {
+          const prev = m.querySelector('#bf-prev');
+          const before = prev.innerHTML;
           coverRemote = b.cover;
-          m.querySelector('#bf-prev').innerHTML = `<img src="${esc(b.cover)}" alt="" referrerpolicy="no-referrer">`;
+          prev.innerHTML = `<img src="${esc(b.cover)}" alt="" referrerpolicy="no-referrer">`;
+          // Katalog bez obálky vrací malý zástupný obrázek - ten nechceme.
+          const img = prev.querySelector('img');
+          const drop = () => { if (coverRemote === b.cover) { coverRemote = null; prev.innerHTML = before; } };
+          img.addEventListener('load', () => { if (img.naturalWidth < 100) drop(); });
+          img.addEventListener('error', drop);
         }
       };
       const sg = m.querySelector('#bf-sg');
@@ -1170,14 +1269,20 @@
         form.nazev.addEventListener('input', () => {
           clearTimeout(timer);
           const q = form.nazev.value.trim();
-          if (q.length < 3) { hide(); return; }
+          if (q.length < 3) { ++seq; hide(); return; }
+          // staré návrhy hned pryč, ať se omylem nevybere kniha k předchozímu textu
+          items = [];
+          sg.innerHTML = '<div class="lib-sg-head">Hledám v katalogu knihoven…</div>';
+          sg.hidden = false;
           timer = setTimeout(async () => {
             const my = ++seq;
-            items = await searchBooks(q);
+            const found = await searchBooks(q);
             if (my !== seq) return;
-            if (!items.length) { hide(); return; }
-            sg.innerHTML = '<div class="lib-sg-head">Vyber knihu</div>' + items.map((b, i) => `<button type="button" class="lib-sg" data-i="${i}">${b.cover ? `<img src="${esc(b.cover)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="nocover"></span>'}<span><strong>${esc(b.title)}</strong><span>${esc([b.authors, b.year].filter(Boolean).join(' · '))}</span></span></button>`).join('');
+            items = found;
+            if (!items.length) { sg.innerHTML = '<div class="lib-sg-head">Nic jsme nenašli – vyplň údaje ručně</div>'; return; }
+            sg.innerHTML = '<div class="lib-sg-head">Vyber knihu</div>' + items.map((b, i) => `<button type="button" class="lib-sg" data-i="${i}">${b.cover ? `<img src="${esc(b.cover.replace('size=large', 'size=medium'))}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="nocover"></span>'}<span><strong>${esc(b.title)}</strong><span>${esc([b.authors, b.year].filter(Boolean).join(' · '))}</span></span></button>`).join('');
             sg.hidden = false;
+            sg.querySelectorAll('.lib-sg img').forEach(img => img.addEventListener('load', () => { if (img.naturalWidth < 100) img.replaceWith(Object.assign(document.createElement('span'), { className: 'nocover' })); }));
             sg.querySelectorAll('.lib-sg').forEach(el => el.addEventListener('click', () => { applyBook(items[+el.dataset.i]); hide(); }));
           }, 350);
         });
@@ -1272,7 +1377,45 @@
       });
     }
 
-    // ----- Katalog knih pro našeptávač (Google Books, záložně Open Library; obě bez klíče) -----
+    // ----- Katalog knih pro našeptávač -----
+    // Hlavně knihovny.cz (souborný katalog českých knihoven - česká vydání, české obálky),
+    // k tomu Google Books pro cizojazyčné knihy, Open Library jen když oba nic nenajdou. Vše bez klíče.
+    const KNIHOVNY_API = 'https://www.knihovny.cz/api/v1/search';
+    const knihovnyCover = (isbn) => `https://www.knihovny.cz/Cover/Show?isbn=${encodeURIComponent(isbn)}&size=large`;
+    function fromKnihovny(r) {
+      const a = r.authors || {};
+      const names = (o) => (o && !Array.isArray(o)) ? Object.keys(o) : [];
+      // Hlavní autor; když chybí, první z dalších (bývá autor, za ním překladatelé a ilustrátoři).
+      const author = (names(a.primary).length ? names(a.primary) : names(a.secondary).slice(0, 1))
+        .map(n => n.replace(/,\s*[\d\s?.\-–\[\]]*$/, '').replace(/\.$/, '').trim());
+      const isbn = String((r.isbns || [])[0] || '').replace(/[^0-9Xx]/g, '');
+      return {
+        title: String(r.title || '').split(' / ')[0].split(' : ')[0].replace(/\s*[:;/]\s*$/, '').trim(),
+        authors: author.join(', '),
+        year: String((r.publicationDates || [])[0] || '').replace(/[^\d]/g, '').slice(0, 4),
+        isbn, description: String((r.summary || [])[0] || ''),
+        cover: isbn ? knihovnyCover(isbn) : '',
+      };
+    }
+    async function searchKnihovny(q, type = 'AllFields') {
+      const p = new URLSearchParams({ lookfor: q, type, limit: '24' });
+      ['title', 'authors', 'isbns', 'publicationDates', 'summary', 'formats'].forEach(f => p.append('field[]', f));
+      const r = await fetch(`${KNIHOVNY_API}?${p}`);
+      if (!r.ok) throw new Error('knihovny');
+      const seen = new Set();
+      return ((await r.json()).records || [])
+        .filter(x => (x.formats || []).includes('0/BOOKS/'))
+        .map(fromKnihovny)
+        .filter(b => {
+          // stejná kniha je v katalogu z mnoha knihoven a vydání - ukážeme ji jednou
+          const k = bookKey(b);
+          if (!b.title || seen.has(k)) return false;
+          seen.add(k);
+          return true;
+        });
+    }
+    const norm = (v) => String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+    const bookKey = (b) => norm(b.title) + '|' + norm((b.authors.split(',')[0] || '').split(' ').pop());
     function fromGoogle(it) {
       const v = it.volumeInfo || {};
       const ids = v.industryIdentifiers || [];
@@ -1304,10 +1447,18 @@
       return ((await r.json()).docs || []).map(fromOpenLibrary).filter(b => b.title);
     }
     async function searchBooks(q) {
-      try { const g = await searchGoogle(q); if (g.length) return g; } catch (e) { /* kvóta / výpadek → záloha */ }
+      const [cz, g] = await Promise.all([
+        searchKnihovny(q).catch(() => []),
+        searchGoogle(q).catch(() => []), // kvóta / výpadek → nevadí
+      ]);
+      const out = cz.slice(0, 6);
+      const keys = new Set(out.map(bookKey));
+      g.forEach(b => { if (out.length < 9 && !keys.has(bookKey(b))) { keys.add(bookKey(b)); out.push(b); } });
+      if (out.length) return out;
       try { return await searchOpenLibrary(q); } catch (e) { return []; }
     }
     async function lookupByIsbn(isbn) {
+      try { const k = await searchKnihovny(isbn, 'ISN'); if (k.length) return k[0]; } catch (e) { /* záloha */ }
       try { const g = await searchGoogle(`isbn:${isbn}`); if (g.length) return g[0]; } catch (e) { /* záloha */ }
       try { const o = await searchOpenLibrary(`isbn:${isbn}`); return o[0] || null; } catch (e) { return null; }
     }
