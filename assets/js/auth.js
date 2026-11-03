@@ -233,11 +233,11 @@ function initAdminNavLink(user) {
 }
 
 // Položka "Knihovna" v hlavičce (2026-10-14). Vkládá se odsud, ať se nemusí upravovat
-// hlavička na každé stránce zvlášť. Dokud je knihovna ve zkušebním provozu jen pro Radu
-// (LIBRARY_PUBLIC = false, backend LIBRARY_PHASE=rada), ukáže se jen Radě - podle výsledku
+// hlavička na každé stránce zvlášť. Od 2026-11-03 je knihovna veřejná (dřív zkušební provoz jen pro Radu,
+// LIBRARY_PUBLIC = false, backend LIBRARY_PHASE=rada: ukázala se jen Radě - podle výsledku
 // my-roles z initAdminNavLink (cache v localStorage, admin stránky si my-roles řeší samy,
 // tam se použije cache z dřívější návštěvy). Po spuštění pro všechny stačí přepnout na true.
-const LIBRARY_PUBLIC = false;
+const LIBRARY_PUBLIC = true;
 function initLibraryNavLink(user) {
   const links = document.getElementById('nav-links');
   if (!links) return;

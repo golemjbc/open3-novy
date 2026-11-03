@@ -301,7 +301,6 @@
         <div class="lib-hero-actions" id="lib-hero-actions">
           </div>
       </div>
-      <div id="lib-phase-note" class="lib-note hidden" style="margin-top:16px;">🔒 Zkušební provoz – knihovnu zatím vidí jen Rada.</div>
     </div>
   </section>
 
@@ -466,7 +465,6 @@
         renderHeroActions();
         return;
       }
-      document.getElementById('lib-phase-note').classList.toggle('hidden', state.catalog.phase !== 'rada');
       state.my = getLoggedUser() && isMember() ? await myP : null;
       if (state.view === 'admin' && canAdmin()) await loadAdmin();
       writeCache();
