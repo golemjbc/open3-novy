@@ -60,6 +60,20 @@ function getLoggedUser() {
   return getRealLoggedUser();
 }
 
+// Platný přihlašovací lístek Discord cesty? (2026-11-05, nálezy: přihláška bez identity
+// "MISSING_USER_ID" u lidí s chybějícím/vypršelým lístkem.) Lístek je "payload.podpis",
+// payload je base64url JSON s `exp` (ms) - podpis ověřuje server, tady se jen pozná, že
+// lístek chybí nebo už nemá smysl ho posílat.
+function hasValidDiscordSession(user) {
+  try {
+    const t = user && user.discordSession;
+    if (!t || typeof t !== 'string' || !t.includes('.')) return false;
+    const b64 = t.split('.')[0].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(b64 + '='.repeat((4 - b64.length % 4) % 4)));
+    return !!(payload && payload.exp && Date.now() < payload.exp - 60000);
+  } catch (e) { return false; }
+}
+
 function isGoogleUser(user) {
   return !!(user && (user.provider === 'google' || /^google_/.test(user.userId || '')));
 }

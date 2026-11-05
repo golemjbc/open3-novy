@@ -76,7 +76,18 @@
     // Po přihlášení přes hlavičku (na téhle stránce často z access-denied stavu, kdy
     // stránka ještě nezná roli/typ přihlášení) se musí celá stránka znovu vyhodnotit -
     // stejný vzorec jako akce.html, jinak zůstane viset na starém stavu bez obnovení.
-    window.onOooLogin = () => location.reload();
+    // Výjimka (2026-11-05): přihláška čekající na nové přihlášení (chybějící/vypršelý
+    // lístek) se po přihlášení odešle sama, bez reloadu - formulář zůstane vyplněný.
+    window.__pendingRegistrationSubmit = null;
+    window.onOooLogin = (user) => {
+      const pending = window.__pendingRegistrationSubmit;
+      if (pending && user && hasValidDiscordSession(user)) {
+        window.__pendingRegistrationSubmit = null;
+        pending();
+        return;
+      }
+      location.reload();
+    };
 
     const params = new URLSearchParams(window.location.search);
     const eventId = params.get('event_id');
@@ -979,6 +990,16 @@
           return;
         }
         const user = getLoggedUser();
+
+        // Lístek chybí nebo vypršel -> přihláška by vznikla bez identity (MISSING_USER_ID).
+        // Nabídne se přihlášení v okně a po něm se přihláška odešle sama.
+        if (!hasValidDiscordSession(user)) {
+          window.__pendingRegistrationSubmit = () => discordForm.requestSubmit();
+          alert('Tvé přihlášení vypršelo nebo chybí. Přihlas se prosím znovu - po přihlášení se přihláška odešle sama.');
+          const lb = document.getElementById('login-button');
+          if (lb) lb.click();
+          return;
+        }
 
         let depositAmount = event.zaloha || '0';
         let doplatekAmount = '';
