@@ -162,21 +162,13 @@
       // Seznam členů potřebuje jen přihlášený (kontrola rolí, výběr partnera) -
       // nepřihlášenému se vůbec nenačítá.
       const loggedAtLoad = getLoggedUser();
-      const apiEventsPromise = fetch(API_BASE + '/api/events').then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
-      const snapshotEventsPromise = EVENTS_SNAPSHOT_URL
-        ? fetch(EVENTS_SNAPSHOT_URL).then(r => { if (!r.ok) throw new Error('snapshot HTTP ' + r.status); return r.json(); }).then(j => {
-            const fresh = j && j.generated && (Date.now() - new Date(j.generated).getTime()) < 24 * 60 * 60 * 1000;
-            if (!fresh || !Array.isArray(j.events) || !j.events.some(ev => ev.event_id === eventId)) throw new Error('snapshot nepoužitelný');
-            return j.events;
-          })
-        : Promise.reject(new Error('snapshot vypnutý'));
       const membersPromise = (loggedAtLoad && loggedAtLoad.userId)
         ? fetch(API_BASE + '/api/members').then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
         : Promise.resolve([]);
       // Veřejná akce (typ A) role ke zobrazení nepotřebuje - i přihlášenému se vykreslí
       // hned a seznam členů (jen pro našeptávač partnera) se do stejného pole doplní, až
       // dorazí. Typy B/C na členy počkají (kontrola rolí rozhoduje, co se zobrazí).
-      Promise.any([snapshotEventsPromise, apiEventsPromise]).then(events => {
+      loadPublicEvents(eventId).then(events => {
         const ev0 = events.find(ev => ev.event_id === eventId);
         if (ev0 && ev0.typ_akce === 'A') {
           const liveMembers = [];

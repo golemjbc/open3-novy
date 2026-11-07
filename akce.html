@@ -211,11 +211,13 @@
 
     const loggedUser = getLoggedUser();
 
+    // Akce se načítají souběžně s rolemi/přihláškami a ze statického snímku (2026-11-07,
+    // rychlost - viz loadPublicEvents v auth.js), dřív až po nich a jen z /api/events.
+    const eventsPromise = loadPublicEvents();
     Promise.all([loadMyRoles(loggedUser), loadMyRegistrations(loggedUser)]).then(([myRoles, myRegisteredEventIds]) => {
       // Administrace v menu - řeší teď centrálně initAdminNavLink v auth.js (rychlejší,
       // bez zpoždění, kontroluje i Spolupracovník / tvůrce, ne jen Rada; 2026-08-25).
-      fetch(API_BASE + '/api/events')
-        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      eventsPromise
         .then(events => {
           if (!events || events.length === 0) {
             container.innerHTML = '<div class="empty-state">Momentálně nejsou vypsané žádné akce.</div>';

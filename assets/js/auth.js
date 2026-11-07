@@ -5,6 +5,22 @@ const API_BASE = 'https://ooo-functions-hjajhxe2b4aqgqc5.westeurope-01.azurewebs
 // Statický snímek veřejného seznamu akcí (2026-11-07) - viz detail-akce.html a
 // lib/public-events.js v backendu. Prázdné = vypnuto, web jede jen přes /api/events.
 const EVENTS_SNAPSHOT_URL = 'https://ooorgb44b.blob.core.windows.net/verejne/events.json';
+
+// Veřejný seznam akcí z toho, co dorazí dřív: statický snímek (Blob, nikdy nespí) nebo
+// živé /api/events (volá se vždy - probudí backend a obnoví snímek). Snímek starší než
+// 24 h se ignoruje; s needEventId se snímek použije jen když tu akci obsahuje
+// (čerstvě založená akce ještě nemusí ve snímku být). Sdílí detail-akce.html i akce.html.
+function loadPublicEvents(needEventId) {
+  const api = fetch(API_BASE + '/api/events').then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+  if (!EVENTS_SNAPSHOT_URL) return api;
+  const snap = fetch(EVENTS_SNAPSHOT_URL).then(r => { if (!r.ok) throw new Error('snapshot HTTP ' + r.status); return r.json(); }).then(j => {
+    const fresh = j && j.generated && (Date.now() - new Date(j.generated).getTime()) < 24 * 60 * 60 * 1000;
+    if (!fresh || !Array.isArray(j.events)) throw new Error('snapshot neaktuální');
+    if (needEventId && !j.events.some(ev => ev.event_id === needEventId)) throw new Error('akce ve snapshotu není');
+    return j.events;
+  });
+  return Promise.any([snap, api]).catch(() => api); // obojí selhalo -> chyba z API
+}
 const DISCORD_AUTH_URL =
   "https://discord.com/oauth2/authorize?client_id=1452709238601154580&response_type=code&" +
   "redirect_uri=https%3A%2F%2Fooo-functions-hjajhxe2b4aqgqc5.westeurope-01.azurewebsites.net%2Fapi%2Flogin-callback&" +
@@ -208,6 +224,21 @@ function logPageView(pageKey) {
 // tichou opravu, kdyby se role mezitím změnila. Zároveň doplněna kontrola role
 // Spolupracovník / tvůrce (dřív se kontrolovala jen Rada, i když admin panel už týden
 // pouští oba).
+// Omezení opakovaných kontrol při proklikávání webu (2026-11-07, rychlost/stabilita -
+// dřív každá stránka volala my-roles + my-profile + speed-dating znovu, = 4-6 čtení
+// Sheetu na jedno kliknutí a riziko limitu Google). Výsledek poslední kontroly se drží
+// v localStorage a do vypršení se backend znovu neptá. V režimu "Zobrazit jako" se
+// nepoužívá (vždy čerstvě). Backend oprávnění ověřuje u každé akce sám, tohle řídí jen
+// zobrazení odkazů v menu.
+function recentlyChecked(key, maxAgeMs) {
+  if (getGhostTarget()) return false;
+  try { const t = Number(localStorage.getItem('oooChecked_' + key)); return !!t && Date.now() - t < maxAgeMs; } catch (e) { return false; }
+}
+function markChecked(key) {
+  if (getGhostTarget()) return;
+  try { localStorage.setItem('oooChecked_' + key, String(Date.now())); } catch (e) { /* bez úložiště jen bez zrychlení */ }
+}
+
 function initAdminNavLink(user) {
   const nav = document.getElementById('nav-admin');
   // Admin stránky (admin-akce/clenove/dotazniky.html) mají vlastní přístupovou bránu, co
@@ -220,6 +251,14 @@ function initAdminNavLink(user) {
   if (localStorage.getItem(cacheKey) === '1') nav.style.display = '';
   const payload = getIdentityPayload(user);
   if (!payload) { nav.style.display = 'none'; return Promise.resolve(); }
+  if (recentlyChecked('roles_' + user.userId, 5 * 60 * 1000) && localStorage.getItem(cacheKey) !== null) {
+    nav.style.display = localStorage.getItem(cacheKey) === '1' ? '' : 'none';
+    const cachedHref = localStorage.getItem('oooAdminHref_' + user.userId);
+    const cachedLink = nav.querySelector('a');
+    if (cachedLink && cachedHref) cachedLink.setAttribute('href', cachedHref);
+    initLibraryNavLink(user);
+    return Promise.resolve();
+  }
   // Vrací se fetch promise (2026-09-12, oprava "duplicitní členové") - volající ji může
   // počkat před dalším voláním, co by jinak souběžně taky zakládalo/hledalo řádek v
   // members (viz refreshDisplayName níž a fix v lib/members-row.js findOrCreateMemberRow).
@@ -244,6 +283,8 @@ function initAdminNavLink(user) {
       else if (link) link.setAttribute('href', 'admin-akce.html');
       localStorage.setItem(cacheKey, isAdmin ? '1' : '0');
       localStorage.setItem('oooIsRada_' + user.userId, data.ok && data.rada ? '1' : '0');
+      localStorage.setItem('oooAdminHref_' + user.userId, isPatronOnly ? 'admin-dotazniky.html' : 'admin-akce.html');
+      if (data.ok) markChecked('roles_' + user.userId);
       initLibraryNavLink(user);
     })
     .catch(() => {});
@@ -289,6 +330,10 @@ function initSpeedDatingNavLink(user) {
   if (localStorage.getItem(cacheKey) === '1') setVisible(true);
   const payload = getIdentityPayload(user);
   if (!payload || !payload.discord_user_id) { setVisible(false); return; }
+  if (recentlyChecked('speeddating_' + user.userId, 10 * 60 * 1000) && localStorage.getItem(cacheKey) !== null) {
+    setVisible(localStorage.getItem(cacheKey) === '1');
+    return;
+  }
   fetch(API_BASE + '/api/speed-dating-my-schedule', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
   })
@@ -297,6 +342,7 @@ function initSpeedDatingNavLink(user) {
       const isParticipant = !!(data.ok && data.is_participant);
       setVisible(isParticipant);
       localStorage.setItem(cacheKey, isParticipant ? '1' : '0');
+      if (data.ok) markChecked('speeddating_' + user.userId);
     })
     .catch(() => {});
 }
@@ -424,11 +470,13 @@ function initAuthUI() {
   // tam už getLoggedUser() vrací jméno cíle rovnou.
   function refreshDisplayName(user) {
     if (getGhostTarget() || !user || !user.userId) return;
+    if (recentlyChecked('profile_' + user.userId, 30 * 60 * 1000)) return; // jméno se mění zřídka
     fetch(API_BASE + '/api/my-profile', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(getIdentityPayload(user)),
     })
       .then(r => r.json())
       .then(data => {
+        if (data.ok) markChecked('profile_' + user.userId);
         if (!data.ok || !data.jmeno || data.jmeno === user.userName) return;
         user.userName = data.jmeno;
         localStorage.setItem('oooUser', JSON.stringify(user));
