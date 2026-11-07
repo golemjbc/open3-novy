@@ -170,12 +170,21 @@
             return j.events;
           })
         : Promise.reject(new Error('snapshot vypnutý'));
-      Promise.all([
-        Promise.any([snapshotEventsPromise, apiEventsPromise]),
-        (loggedAtLoad && loggedAtLoad.userId)
-          ? fetch(API_BASE + '/api/members').then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-          : Promise.resolve([])
-      ]).then(([events, members]) => {
+      const membersPromise = (loggedAtLoad && loggedAtLoad.userId)
+        ? fetch(API_BASE + '/api/members').then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        : Promise.resolve([]);
+      // Veřejná akce (typ A) role ke zobrazení nepotřebuje - i přihlášenému se vykreslí
+      // hned a seznam členů (jen pro našeptávač partnera) se do stejného pole doplní, až
+      // dorazí. Typy B/C na členy počkají (kontrola rolí rozhoduje, co se zobrazí).
+      Promise.any([snapshotEventsPromise, apiEventsPromise]).then(events => {
+        const ev0 = events.find(ev => ev.event_id === eventId);
+        if (ev0 && ev0.typ_akce === 'A') {
+          const liveMembers = [];
+          membersPromise.then(m => { liveMembers.push(...m); }).catch(err => console.error('members:', err));
+          return [events, liveMembers];
+        }
+        return membersPromise.then(m => [events, m]);
+      }).then(([events, members]) => {
         const event = events.find(ev => ev.event_id === eventId);
         if (!event) {
           pageBody.innerHTML = '<div class="empty-state">Akce s ID ' + eventId + ' nebyla nalezena.</div>';
@@ -483,7 +492,8 @@
       if (typParEl) typParEl.addEventListener('change', function () { if (this.checked) partnerGroup.classList.remove('hidden'); });
 
       // Partner autocomplete (stejná logika jako produkce, jen nový markup)
-      let discordMembers = members.map(m => {
+      // Počítá se až při psaní - u akce typu A se seznam členů může donačítat na pozadí.
+      const discordMembersList = () => members.map(m => {
         const displayName = m.roles['Zobrazované jméno'] || m.roles['Uživatelské jméno'] || 'Neznámý';
         const username = m.roles['Uživatelské jméno'] || 'Neznámý';
         return { userId: m.user_id, displayName, username };
@@ -494,7 +504,7 @@
         partnerInput.addEventListener('input', function () {
           const q = this.value.toLowerCase();
           if (q.length < 2) { dropdown.style.display = 'none'; return; }
-          const matches = discordMembers.filter(m =>
+          const matches = discordMembersList().filter(m =>
             m.userId.toLowerCase().includes(q) || m.displayName.toLowerCase().includes(q) || m.username.toLowerCase().includes(q)
           ).slice(0, 8);
           dropdown.innerHTML = matches.map(m =>
