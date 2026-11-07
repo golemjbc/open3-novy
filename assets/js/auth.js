@@ -2,6 +2,9 @@
 // Funkčně 1:1 s open3-novy, jen bez jQuery.
 
 const API_BASE = 'https://ooo-functions-hjajhxe2b4aqgqc5.westeurope-01.azurewebsites.net';
+// Statický snímek veřejného seznamu akcí (2026-11-07) - viz detail-akce.html a
+// lib/public-events.js v backendu. Prázdné = vypnuto, web jede jen přes /api/events.
+const EVENTS_SNAPSHOT_URL = '';
 const DISCORD_AUTH_URL =
   "https://discord.com/oauth2/authorize?client_id=1452709238601154580&response_type=code&" +
   "redirect_uri=https%3A%2F%2Fooo-functions-hjajhxe2b4aqgqc5.westeurope-01.azurewebsites.net%2Fapi%2Flogin-callback&" +

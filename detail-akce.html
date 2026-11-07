@@ -155,9 +155,26 @@
     if (!eventId) {
       pageBody.innerHTML = '<div class="empty-state">Akce nenalezena (chybí event_id v URL).</div>';
     } else {
+      // Rychlé načtení (2026-11-07, "lidi z IG odejdou, než se akce načte"): backend se po
+      // nečinnosti ~6 s probouzí. Data akce se proto berou z toho, co dorazí dřív - statický
+      // snímek events.json (Blob, nikdy nespí, viz lib/public-events.js v backendu) nebo
+      // živé /api/events (to se volá vždy, zároveň probudí backend pro další kroky).
+      // Seznam členů potřebuje jen přihlášený (kontrola rolí, výběr partnera) -
+      // nepřihlášenému se vůbec nenačítá.
+      const loggedAtLoad = getLoggedUser();
+      const apiEventsPromise = fetch(API_BASE + '/api/events').then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+      const snapshotEventsPromise = EVENTS_SNAPSHOT_URL
+        ? fetch(EVENTS_SNAPSHOT_URL).then(r => { if (!r.ok) throw new Error('snapshot HTTP ' + r.status); return r.json(); }).then(j => {
+            const fresh = j && j.generated && (Date.now() - new Date(j.generated).getTime()) < 24 * 60 * 60 * 1000;
+            if (!fresh || !Array.isArray(j.events) || !j.events.some(ev => ev.event_id === eventId)) throw new Error('snapshot nepoužitelný');
+            return j.events;
+          })
+        : Promise.reject(new Error('snapshot vypnutý'));
       Promise.all([
-        fetch(API_BASE + '/api/events').then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }),
-        fetch(API_BASE + '/api/members').then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        Promise.any([snapshotEventsPromise, apiEventsPromise]),
+        (loggedAtLoad && loggedAtLoad.userId)
+          ? fetch(API_BASE + '/api/members').then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+          : Promise.resolve([])
       ]).then(([events, members]) => {
         const event = events.find(ev => ev.event_id === eventId);
         if (!event) {
