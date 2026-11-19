@@ -93,6 +93,26 @@ function hasValidDiscordSession(user) {
   } catch (e) { return false; }
 }
 
+// Vypršelo přihlášení? (2026-11-19, na žádost - "po vypršení se hlavička tváří jako přihlášená,
+// ale okno píše, že nemám oprávnění".) Discord: `discordSession` (30 dní, exp v ms), Google:
+// `credential` = Google ID token (cca 1 hodina, exp v sekundách). Kontrola je jen lokální
+// (podpis ověřuje server), slouží k tomu, aby hlavička neukazovala jméno/avatar odhlášeného.
+function jwtExpMs(token, inMs) {
+  try {
+    const b64 = token.split('.')[inMs ? 0 : 1].replace(/-/g, '+').replace(/_/g, '/');
+    const exp = JSON.parse(atob(b64 + '='.repeat((4 - b64.length % 4) % 4))).exp;
+    return exp ? (inMs ? exp : exp * 1000) : 0;
+  } catch (e) { return 0; }
+}
+function isSessionExpired(user) {
+  if (!user || !user.userId) return false;
+  if (isGoogleUser(user)) {
+    const exp = typeof user.credential === 'string' ? jwtExpMs(user.credential, false) : 0;
+    return !exp || Date.now() >= exp - 30000;
+  }
+  return !hasValidDiscordSession(user);
+}
+
 function isGoogleUser(user) {
   return !!(user && (user.provider === 'google' || /^google_/.test(user.userId || '')));
 }
@@ -499,8 +519,22 @@ function initAuthUI() {
     initLibraryNavLink(null);
   }
 
-  const stored = getLoggedUser();
+  let stored = getLoggedUser();
+  // Vypršené přihlášení = odhlášený (v ghost modu se netýká - tam jde o náhled cizí identity).
+  if (stored && !getGhostTarget() && isSessionExpired(stored)) {
+    localStorage.removeItem('oooUser');
+    stored = null;
+  }
   if (stored && stored.userId) setLoggedIn(stored); else setLoggedOut();
+  // Karta zůstala otevřená a přihlášení mezitím vypršelo -> po návratu na kartu hlavičku odhlásit.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible' || getGhostTarget()) return;
+    const u = getRealLoggedUser();
+    if (u && isSessionExpired(u)) {
+      setLoggedOut();
+      if (typeof window.onOooLogout === 'function') window.onOooLogout();
+    }
+  });
   // initAdminNavLink a refreshDisplayName obě volají endpointy, co (pro Google cestu)
   // umí založit nový řádek v members, když ještě neexistuje (findOrCreateMemberRow) -
   // spuštěné souběžně (ne za sebou) závodily o vytvoření řádku a duplikovaly ho (nález
