@@ -47,6 +47,29 @@
     .sd-submit-status { font-size: 0.9rem; color: var(--text-muted); }
     .sd-sraz-link { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 16px; }
 
+    /* Obrázkový návod pro účastníky (2026-11-23, úkol #299) - sbalitelná sekce nad kartami kol. */
+    .sd-guide { margin: 0 0 20px; background: var(--surface, #fff); border: 1px solid var(--border); border-radius: 16px; }
+    .sd-guide > summary { cursor: pointer; padding: 14px 18px; font-weight: 700; list-style: none; display: flex; align-items: center; gap: 10px; }
+    .sd-guide > summary::-webkit-details-marker { display: none; }
+    .sd-guide > summary::after { content: '▾'; margin-left: auto; color: var(--text-muted); transition: transform .15s; }
+    .sd-guide[open] > summary::after { transform: rotate(180deg); }
+    .sd-guide-body { padding: 0 18px 18px; display: flex; flex-direction: column; gap: 14px; }
+    .sd-guide-body p { margin: 0; }
+    .sd-guide-lead { color: var(--text-muted); }
+    .sd-guide-note { background: rgba(175,59,110,.08); border-left: 4px solid var(--primary); border-radius: 12px; padding: 12px 16px; display: flex; flex-direction: column; gap: 4px; }
+    .sd-guide-note strong { color: var(--primary); }
+    .sd-guide-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+    .sd-guide-step { border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; display: grid; grid-template-columns: 40px 1fr; gap: 6px 12px; }
+    .sd-guide-num { grid-row: span 2; width: 36px; height: 36px; border-radius: 50%; background: var(--primary); color: #fff; font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; display: grid; place-items: center; }
+    .sd-guide-step h3 { margin: 0; font-family: 'Bebas Neue', sans-serif; font-weight: 400; font-size: 1.5rem; letter-spacing: .02em; }
+    .sd-guide-text { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .sd-guide-step img { grid-column: 2; display: block; max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); margin-top: 6px; }
+    .sd-guide-step img.small { max-width: 420px; width: 100%; }
+    .sd-guide-flow { background: var(--navy, #0a1045); color: #fff; border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; }
+    .sd-guide-flow h3 { margin: 0; font-family: 'Bebas Neue', sans-serif; font-weight: 400; font-size: 1.5rem; color: var(--mint, #21fa90); }
+    .sd-guide-flow ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+    @media (max-width: 520px) { .sd-guide-step { grid-template-columns: 1fr; } .sd-guide-num { grid-row: auto; } .sd-guide-step img { grid-column: 1; } }
+
     /* Odpovědi na téma kola (2026-09-26, na žádost - "druhé okno kde budou vidět
        odpovědi na otázky od bota, půjde je editovat") - stejný karetní jazyk jako kola
        setkání výš, jen s textovým polem místo tlačítek. */
@@ -90,6 +113,62 @@
 
       <div id="sd-content" class="hidden">
         <p id="sd-sraz-link" class="sd-sraz-link hidden"><a href="#" target="_blank" rel="noopener" class="btn btn-outline btn-sm">🎤 Sraz kanál na Discordu</a></p>
+
+
+        <details class="sd-guide">
+          <summary>📖 Jak to bude probíhat – návod na seznamovací večer</summary>
+          <div class="sd-guide-body">
+            <p class="sd-guide-lead">Seznamovací večer běží na Discordu OOO. Na tomhle webu máš odkaz do sraz místnosti a sem po každém kole zapisuješ odpovědi.</p>
+            <div class="sd-guide-note">
+              <p><strong>Máš Mac?</strong> Nainstaluj si aplikaci Discord. Ve webovém Discordu na Macu nefunguje zvuk.</p>
+              <p>Na Windows, Androidu i iPhonu funguje všechno bez omezení.</p>
+            </div>
+            <ol class="sd-guide-steps">
+              <li class="sd-guide-step">
+                <span class="sd-guide-num">1</span>
+                <div class="sd-guide-text">
+                  <h3>Otevři sraz místnost</h3>
+                  <p>Nahoře na této stránce je tlačítko <strong>Sraz kanál na Discordu</strong>. Pošle tě rovnou do společné místnosti, kde se všichni sejdeme před začátkem.</p>
+                </div>
+                <img src="assets/images/dating/1-web-dating.png" alt="Stránka Dating: záložka Dating v menu a tlačítko Sraz kanál na Discordu" loading="lazy">
+              </li>
+              <li class="sd-guide-step">
+                <span class="sd-guide-num">2</span>
+                <div class="sd-guide-text">
+                  <h3>Připoj se na Discordu vlevo</h3>
+                  <p>Klikni na místnost <strong>sraz – speed dating</strong> v levém sloupci. První klik tě připojí, druhý ti ukáže i kamery ostatních, podobně jako v Google Meet.</p>
+                </div>
+                <img class="small" src="assets/images/dating/2-discord-pripojeni.png" alt="Discord: místnost sraz – speed dating v levém sloupci, vedle ní ikonka chatu" loading="lazy">
+              </li>
+              <li class="sd-guide-step">
+                <span class="sd-guide-num">3</span>
+                <div class="sd-guide-text">
+                  <h3>Zapni kameru</h3>
+                  <p>Kamera se po přesunu do nové místnosti sama nezapne. Zkontroluj ji proto na začátku <strong>každého kola</strong>.</p>
+                </div>
+                <img class="small" src="assets/images/dating/3-kamera.png" alt="Discord: tlačítko pro zapnutí kamery v panelu hlasu" loading="lazy">
+              </li>
+              <li class="sd-guide-step">
+                <span class="sd-guide-num">4</span>
+                <div class="sd-guide-text">
+                  <h3>Odpovídej tady na webu</h3>
+                  <p>U každého setkání zvol <strong>Ano / Možná / Ne</strong> a k otázce kola napište vaši <strong>společnou odpověď</strong>. Stačí, když ji napíše jeden z dvojice. Na konci klikni <strong>Odeslat</strong>.</p>
+                  <p class="sd-guide-lead">Nikdo neuvidí, co jsi odpověděl/a. Po akci ti bot pošle soukromou zprávu jen o vzájemných shodách. Kdyby nepřišla, podívej se na Discordu do Žádostí o zprávy.</p>
+                </div>
+                <img src="assets/images/dating/4-web-odpovedi.png" alt="Stránka Dating: tlačítka Ano, Možná, Ne, tlačítko Odeslat a pole pro společnou odpověď na otázku kola" loading="lazy">
+              </li>
+            </ol>
+            <section class="sd-guide-flow">
+              <h3>Jak běží kola</h3>
+              <ol>
+                <li>Bot tě na začátku kola sám přesune do nové místnosti s novým člověkem.</li>
+                <li>Otázku na rozjezd najdeš v chatu té místnosti. Otevřeš ho ikonkou bublinky vedle názvu místnosti.</li>
+                <li>Před koncem kola přijde upozornění „1 minuta“, pak „posledních 30 sekund“ a odpočet.</li>
+                <li>Po odpočtu tě bot přesune do dalšího kola. Po posledním kole se všichni vrátíme do sraz místnosti.</li>
+              </ol>
+            </section>
+          </div>
+        </details>
 
         <div id="sd-rounds"></div>
         <div class="sd-submit-bar">
