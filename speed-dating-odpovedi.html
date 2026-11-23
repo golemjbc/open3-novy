@@ -102,8 +102,8 @@
         </p>
 
         <div id="sd-tema-section" class="hidden" style="margin-top:32px;">
-          <h2 style="margin-bottom:6px;">Odpovědi na téma kola</h2>
-          <p class="form-hint" style="margin-top:0;">Co jsi napsal/a botovi do hlasového kanálu ke společné otázce kola - dá se tu i dodatečně upravit. Přibývá to postupně, jak se kola uzavírají.</p>
+          <h2 style="margin-bottom:6px;">Společné odpovědi na téma kola</h2>
+          <p class="form-hint" style="margin-top:0;">Společná odpověď vás dvou na otázku kola - ta, na které jste se shodli. Vidíte a můžete ji upravovat oba a platí poslední zápis (kdo napíše později, přepíše předchozí text). Přibývá to postupně, jak se kola uzavírají.</p>
           <div id="sd-tema-list"></div>
         </div>
       </div>
@@ -248,7 +248,7 @@
         <div class="admin-card sd-tema-card" data-tema-round="${t.round_no}">
           <div class="sd-round-no" style="margin-bottom:6px;">Kolo ${t.round_no}</div>
           <div class="sd-tema-question">${escapeHtml(t.question || '')}</div>
-          <textarea class="sd-tema-textarea" data-round="${t.round_no}" placeholder="Tvoje odpověď…">${escapeHtml(t.text || '')}</textarea>
+          <textarea class="sd-tema-textarea" data-round="${t.round_no}" placeholder="Vaše společná odpověď…">${escapeHtml(t.text || '')}</textarea>
           <div class="sd-save-note" id="sd-tema-note-${t.round_no}"></div>
         </div>
       `).join('');
