@@ -403,7 +403,9 @@ function renderMemberModal(body, data) {
   body.innerHTML = `
     <div class="member-modal-header">
       <div>
-        ${photoUrl ? `<img src="${photoUrl}" alt="" class="member-modal-photo" id="member-modal-photo-el" title="Klikni pro zvětšení">` : '<div class="member-modal-photo member-modal-photo-empty"></div>'}
+        ${photoUrl ? `<img src="${photoUrl}" alt="" class="member-modal-photo" id="member-modal-photo-el" title="Klikni pro zvětšení">` : (data.discord_id
+          ? `<div class="member-modal-photo member-modal-photo-empty" id="member-modal-avatar-ph"></div><img src="" alt="" class="member-modal-photo" id="member-modal-avatar-el" data-discord-avatar="${escapeHtml(String(data.discord_id))}" style="display:none;cursor:zoom-in;border-radius:50%;" title="Discord avatar – klikni pro zvětšení">`
+          : '<div class="member-modal-photo member-modal-photo-empty"></div>')}
         ${allPhotos.length > 1 ? `<button type="button" class="member-photo-count" id="member-photo-count-el">${memberPhotoCountLabel(allPhotos.length - 1)}</button>` : ''}
       </div>
       <div>
@@ -436,6 +438,20 @@ function renderMemberModal(body, data) {
     ` : ''}
   `;
 
+  // Bez fotky z dotazníku se místo ní ukáže Discord avatar (2026-11-24, na žádost); klik ho
+  // zvětší ve stejném okně jako fotky, v rozlišení 512 px (CDN umí size=...).
+  const avatarEl = document.getElementById('member-modal-avatar-el');
+  if (avatarEl) {
+    loadMemberAvatars(body).then(() => {
+      if (avatarEl.style.display !== 'none') {
+        const ph = document.getElementById('member-modal-avatar-ph');
+        if (ph) ph.remove();
+      }
+    });
+    avatarEl.addEventListener('click', () => {
+      openMemberPhotoGallery([avatarEl.src.replace(/size=\d+/, 'size=512')], 0);
+    });
+  }
   const photoEl = document.getElementById('member-modal-photo-el');
   if (photoEl) photoEl.addEventListener('click', () => openMemberPhotoGallery(allPhotos, 0));
   const photoCountEl = document.getElementById('member-photo-count-el');
