@@ -404,7 +404,7 @@ function renderMemberModal(body, data) {
     <div class="member-modal-header">
       <div>
         ${photoUrl ? `<img src="${photoUrl}" alt="" class="member-modal-photo" id="member-modal-photo-el" title="Klikni pro zvětšení">` : (data.discord_id
-          ? `<div class="member-modal-photo member-modal-photo-empty" id="member-modal-avatar-ph"></div><img src="" alt="" class="member-modal-photo" id="member-modal-avatar-el" data-discord-avatar="${escapeHtml(String(data.discord_id))}" style="display:none;cursor:zoom-in;border-radius:50%;" title="Discord avatar – klikni pro zvětšení">`
+          ? `<div class="member-modal-photo member-modal-photo-empty" id="member-modal-avatar-ph"></div><img src="" alt="" class="member-modal-photo" id="member-modal-avatar-el" data-discord-avatar="${escapeHtml(String(data.discord_id))}" style="display:none;cursor:zoom-in;" title="Discord avatar – klikni pro zvětšení">`
           : '<div class="member-modal-photo member-modal-photo-empty"></div>')}
         ${allPhotos.length > 1 ? `<button type="button" class="member-photo-count" id="member-photo-count-el">${memberPhotoCountLabel(allPhotos.length - 1)}</button>` : ''}
       </div>
